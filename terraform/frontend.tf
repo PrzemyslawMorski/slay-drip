@@ -91,7 +91,7 @@ resource "aws_cloudfront_distribution" "frontend_distribution" {
   enabled             = true
   is_ipv6_enabled    = true
   default_root_object = "index.html"
-  price_class         = "PriceClass_100" # Use only North America and Europe
+  price_class         = "PriceClass_100" # Use only North America and Europe for the moment
 
   # Custom error responses for SPA routing
   custom_error_response {

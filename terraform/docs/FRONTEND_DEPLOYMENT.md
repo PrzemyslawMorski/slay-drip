@@ -92,7 +92,7 @@ You can customize the deployment by setting these variables:
 # Set custom values
 export TF_VAR_app_name="my-app"
 export TF_VAR_environment="production"
-export TF_VAR_aws_region="us-west-2"
+export TF_VAR_aws_region="eu-central-1"
 
 # Then run terraform apply
 terraform apply
