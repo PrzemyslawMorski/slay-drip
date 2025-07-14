@@ -1,0 +1,329 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  SCAN_PATHS: "."
+  EXCLUDE_PATHS: "node_modules,.git,.terraform,dist,build"
+
+jobs:
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better scanning
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install security tools
+        run: |
+          pip install trufflehog
+          pip install detect-secrets
+          npm install -g @snyk/cli
+
+      - name: Run TruffleHog scan
+        id: trufflehog
+        run: |
+          echo "🔍 Running TruffleHog scan..."
+          trufflehog --only-verified --fail --no-update . || {
+            echo "❌ TruffleHog found potential secrets!"
+            exit 1
+          }
+          echo "✅ TruffleHog scan passed"
+
+      - name: Run detect-secrets scan
+        id: detect-secrets
+        run: |
+          echo "🔍 Running detect-secrets scan..."
+          detect-secrets scan --baseline .secrets.baseline || {
+            echo "❌ detect-secrets found potential secrets!"
+            exit 1
+          }
+          echo "✅ detect-secrets scan passed"
+
+      - name: Custom regex scan
+        id: custom-scan
+        run: |
+          echo "🔍 Running custom regex scan..."
+          
+          # Patterns to scan for
+          PATTERNS=(
+            "AKIA[0-9A-Z]{16}"                    # AWS Access Key ID
+            "sk_[a-zA-Z0-9]{24}"                  # Stripe Secret Key
+            "pk_[a-zA-Z0-9]{24}"                  # Stripe Publishable Key
+            "ghp_[a-zA-Z0-9]{36}"                 # GitHub Personal Access Token
+            "gho_[a-zA-Z0-9]{36}"                 # GitHub OAuth Token
+            "ghu_[a-zA-Z0-9]{36}"                 # GitHub User Token
+            "ghs_[a-zA-Z0-9]{36}"                 # GitHub Server Token
+            "ghr_[a-zA-Z0-9]{36}"                 # GitHub Refresh Token
+            "[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{4}" # Credit Card
+            "password.*=.*['\"][^'\"]{8,}"        # Password assignments
+            "secret.*=.*['\"][^'\"]{8,}"          # Secret assignments
+            "key.*=.*['\"][^'\"]{8,}"             # Key assignments
+            "token.*=.*['\"][^'\"]{8,}"           # Token assignments
+          )
+          
+          FOUND_SECRETS=false
+          
+          for pattern in "${PATTERNS[@]}"; do
+            echo "Scanning for pattern: $pattern"
+            if grep -r --exclude-dir={.git,node_modules,.terraform,dist,build} -E "$pattern" .; then
+              echo "❌ Found potential secret with pattern: $pattern"
+              FOUND_SECRETS=true
+            fi
+          done
+          
+          if [ "$FOUND_SECRETS" = true ]; then
+            echo "❌ Custom scan found potential secrets!"
+            exit 1
+          fi
+          
+          echo "✅ Custom regex scan passed"
+
+      - name: Check for environment files
+        id: env-files
+        run: |
+          echo "🔍 Checking for environment files..."
+          
+          # Check for .env files
+          if find . -name ".env*" -not -path "./.git/*" -not -path "./node_modules/*" | grep -q .; then
+            echo "❌ Found .env files that should not be committed!"
+            find . -name ".env*" -not -path "./.git/*" -not -path "./node_modules/*"
+            exit 1
+          fi
+          
+          # Check for config files with potential secrets
+          if find . -name "config.json" -o -name "secrets.json" -o -name "*.pem" -o -name "*.key" -o -name "*.crt" -o -name "*.p12" | grep -q .; then
+            echo "❌ Found potential secret files!"
+            find . -name "config.json" -o -name "secrets.json" -o -name "*.pem" -o -name "*.key" -o -name "*.crt" -o -name "*.p12"
+            exit 1
+          fi
+          
+          echo "✅ No environment files found"
+
+      - name: Check Terraform state files
+        id: terraform-state
+        run: |
+          echo "🔍 Checking for Terraform state files..."
+          
+          # Check for .tfstate files
+          if find . -name "*.tfstate*" -not -path "./.git/*" | grep -q .; then
+            echo "❌ Found Terraform state files that should not be committed!"
+            find . -name "*.tfstate*" -not -path "./.git/*"
+            exit 1
+          fi
+          
+          echo "✅ No Terraform state files found"
+
+      - name: Check for hardcoded URLs
+        id: hardcoded-urls
+        run: |
+          echo "🔍 Checking for hardcoded URLs..."
+          
+          # Check for hardcoded URLs that might contain secrets
+          if grep -r --exclude-dir={.git,node_modules,.terraform,dist,build} -E "https?://[^/]*:[^/]*@" .; then
+            echo "❌ Found URLs with embedded credentials!"
+            grep -r --exclude-dir={.git,node_modules,.terraform,dist,build} -E "https?://[^/]*:[^/]*@" .
+            exit 1
+          fi
+          
+          echo "✅ No hardcoded URLs with credentials found"
+
+      - name: Check file permissions
+        id: file-permissions
+        run: |
+          echo "🔍 Checking file permissions..."
+          
+          # Check for files with sensitive permissions
+          if find . -type f -perm /600 -not -path "./.git/*" -not -path "./node_modules/*" | grep -q .; then
+            echo "❌ Found files with sensitive permissions!"
+            find . -type f -perm /600 -not -path "./.git/*" -not -path "./node_modules/*"
+            exit 1
+          fi
+          
+          echo "✅ No files with sensitive permissions found"
+
+      - name: Generate security report
+        id: report
+        if: always()
+        run: |
+          echo "📊 Security Scan Report" >> $GITHUB_STEP_SUMMARY
+          echo "=======================" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Repository:** ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.trufflehog.outcome }}" == "success" ]; then
+            echo "✅ **TruffleHog:** No secrets found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **TruffleHog:** Potential secrets detected" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ steps.detect-secrets.outcome }}" == "success" ]; then
+            echo "✅ **detect-secrets:** No secrets found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **detect-secrets:** Potential secrets detected" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ steps.custom-scan.outcome }}" == "success" ]; then
+            echo "✅ **Custom Regex:** No secrets found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Custom Regex:** Potential secrets detected" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ steps.env-files.outcome }}" == "success" ]; then
+            echo "✅ **Environment Files:** No .env files found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Environment Files:** .env files detected" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ steps.terraform-state.outcome }}" == "success" ]; then
+            echo "✅ **Terraform State:** No state files found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Terraform State:** State files detected" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ steps.hardcoded-urls.outcome }}" == "success" ]; then
+            echo "✅ **Hardcoded URLs:** No credentials in URLs" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Hardcoded URLs:** Credentials found in URLs" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ steps.file-permissions.outcome }}" == "success" ]; then
+            echo "✅ **File Permissions:** No sensitive permissions" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **File Permissions:** Sensitive permissions detected" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  dependency-scan:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+      - name: Run npm audit
+        run: |
+          cd frontend
+          npm audit --audit-level=high || {
+            echo "❌ npm audit found high severity vulnerabilities!"
+            exit 1
+          }
+
+  code-quality:
+    name: Code Quality & Security
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run ESLint security rules
+        run: |
+          cd frontend
+          npm run lint || echo "Linting completed with warnings"
+
+      - name: Check for console.log statements
+        run: |
+          echo "🔍 Checking for console.log statements..."
+          if grep -r "console\.log" frontend/src --exclude-dir=node_modules; then
+            echo "⚠️  Found console.log statements (potential security risk)"
+            echo "Consider removing console.log statements before production"
+          else
+            echo "✅ No console.log statements found"
+          fi
+
+      - name: Check for hardcoded values
+        run: |
+          echo "🔍 Checking for hardcoded values..."
+          
+          # Check for hardcoded IPs, URLs, etc.
+          if grep -r --exclude-dir={node_modules,.git} -E "(localhost|127\.0\.0\.1|0\.0\.0\.0)" frontend/src; then
+            echo "⚠️  Found hardcoded localhost/IP addresses"
+          fi
+          
+          if grep -r --exclude-dir={node_modules,.git} -E "http://" frontend/src; then
+            echo "⚠️  Found HTTP URLs (should use HTTPS in production)"
+          fi
+
+  notify:
+    name: Security Scan Results
+    runs-on: ubuntu-latest
+    needs: [security-scan, dependency-scan, code-quality]
+    if: always()
+    
+    steps:
+      - name: Security Scan Summary
+        run: |
+          echo "## 🔒 Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.security-scan.result }}" == "success" ]; then
+            echo "✅ **Security Scan:** PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Security Scan:** FAILED - Secrets detected!" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.dependency-scan.result }}" == "success" ]; then
+            echo "✅ **Dependency Scan:** PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Dependency Scan:** FAILED - Vulnerabilities found!" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.code-quality.result }}" == "success" ]; then
+            echo "✅ **Code Quality:** PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️  **Code Quality:** WARNINGS - Review recommended" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Review any failed scans" >> $GITHUB_STEP_SUMMARY
+          echo "- Remove any detected secrets" >> $GITHUB_STEP_SUMMARY
+          echo "- Update dependencies if vulnerabilities found" >> $GITHUB_STEP_SUMMARY 

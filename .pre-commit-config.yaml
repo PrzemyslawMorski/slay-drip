@@ -1,0 +1,86 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-docstring-first
+      - id: check-json
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: debug-statements
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args:
+          - '--baseline'
+          - .secrets.baseline
+        exclude: |
+          (?x)^(
+              \.git/|
+              node_modules/|
+              \.terraform/|
+              dist/|
+              build/|
+              \.secrets\.baseline
+          )$
+
+  - repo: https://github.com/gruntwork-io/pre-commit
+    rev: v0.1.0
+    hooks:
+      - id: terraform-fmt
+      - id: terraform-validate
+        args:
+          - '--args=-no-color'
+          - '--args=-var-file=terraform.tfvars'
+
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        language_version: python3
+        types:
+          - python
+
+  - repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v8.56.0
+    hooks:
+      - id: eslint
+        files: \.(js|jsx|ts|tsx)$
+        additional_dependencies:
+          - eslint@8.56.0
+          - '@typescript-eslint/eslint-plugin@6.19.0'
+          - '@typescript-eslint/parser@6.19.0'
+
+  - repo: local
+    hooks:
+      - id: custom-secret-scan
+        name: Custom Secret Scan
+        entry: bash -c 'scripts/pre-commit-secret-scan.sh'
+        language: system
+        files: ''
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: check-env-files
+        name: Check for Environment Files
+        entry: bash -c 'scripts/pre-commit-env-check.sh'
+        language: system
+        files: ''
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: check-terraform-state
+        name: Check for Terraform State Files
+        entry: bash -c 'scripts/pre-commit-terraform-check.sh'
+        language: system
+        files: ''
+        pass_filenames: false
