@@ -3,10 +3,11 @@
   "configurations": [
     {
       "name": "Launch Frontend",
-      "type": "chrome",
+      "type": "node",
       "request": "launch",
-      "url": "http://localhost:3000",
-      "webRoot": "${workspaceFolder}/frontend"
+      "cwd": "${workspaceFolder}/frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["start"]
     },
     {
       "name": "Launch Backend",
@@ -14,6 +15,12 @@
       "request": "launch",
       "mode": "auto",
       "program": "${workspaceFolder}/backend/main.go"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Launch Frontend + Backend",
+      "configurations": ["Launch Frontend", "Launch Backend"]
     }
   ]
 }
