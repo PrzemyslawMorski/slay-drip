@@ -10,13 +10,8 @@ terraform {
 
 provider "aws" {
   region = "us-east-1"
-}
-
-resource "aws_s3_bucket" "app_bucket" {
-  bucket = "slay-drip-app-bucket"
-
-  tags = {
-    Name        = "Slay Drip App Bucket"
-    Environment = "Dev"
-  }
+  
+  # Explicitly disable SSO and use default credentials
+  shared_credentials_files = ["~/.aws/credentials"]
+  profile                  = "default"
 }

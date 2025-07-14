@@ -1,3 +1,20 @@
+# Backend swagger docs
 backend/docs/ 
 
+# Executables
 **/*.exe
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl.backup
+.terraform.tfstate.lock.info
+
+# Environment files
+.env*
+*.env
+
+# OS
+.DS_Store
+Thumbs.db

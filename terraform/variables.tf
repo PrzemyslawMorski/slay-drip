@@ -16,18 +16,3 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
-
-variable "docker_image_url" {
-  description = "The URL of the Docker image to deploy."
-  type        = string
-}
-
-variable "subnet_ids" {
-  description = "The subnet IDs to deploy to."
-  type        = list(string)
-}
-
-variable "security_group_ids" {
-  description = "The security group IDs to deploy to."
-  type        = list(string)
-}
