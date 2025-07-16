@@ -81,6 +81,30 @@ resource "aws_iam_role_policy" "github_actions" {
           "${aws_s3_bucket.frontend_bucket.arn}/*"
         ]
       },
+      # S3 permissions for Terraform backend (state management)
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::slay-drip-tfstate",
+          "arn:aws:s3:::slay-drip-tfstate/*"
+        ]
+      },
+      # DynamoDB permissions for Terraform state locking
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem"
+        ]
+        Resource = "arn:aws:dynamodb:eu-central-1:*:table/slay-drip-tfstate-lock"
+      },
       # CloudFront permissions for cache invalidation (environment-specific)
       {
         Effect = "Allow"
