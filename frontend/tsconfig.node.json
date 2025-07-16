@@ -3,8 +3,10 @@
     "composite": true,
     "skipLibCheck": true,
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true
   },
-  "include": ["vite.config.ts", "vitest.config.ts"]
+  "include": ["vite.config.mjs"]
+  // Note: vite.config.mjs is not a TypeScript file, so TypeScript will show "no inputs" warning
+  // This is expected behavior when using .mjs config files
 } 
