@@ -28,14 +28,19 @@ jobs:
 
       - name: Install security tools
         run: |
-          pip install trufflehog
           pip install detect-secrets
+
+      - name: Install Go TruffleHog
+        run: |
+          wget https://github.com/trufflesecurity/trufflehog/releases/latest/download/trufflehog_Linux_x86_64.tar.gz
+          tar -xzf trufflehog_Linux_x86_64.tar.gz
+          sudo mv trufflehog /usr/local/bin/
 
       - name: Run TruffleHog scan
         id: trufflehog
         run: |
           echo "🔍 Running TruffleHog scan..."
-          trufflehog --only-verified --fail --no-update . || {
+          trufflehog filesystem --only-verified --fail --no-update . || {
             echo "❌ TruffleHog found potential secrets!"
             exit 1
           }
