@@ -83,11 +83,12 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:GetBucketCors",
           "s3:GetBucketWebsite",
           "s3:GetBucketAccelerateConfiguration",
-          "s3:PutBucketAccelerateConfiguration"
+          "s3:PutBucketAccelerateConfiguration",
+          "s3:GetAccelerateConfiguration"
         ]
         Resource = [
-          aws_s3_bucket.frontend_bucket.arn,
-          "${aws_s3_bucket.frontend_bucket.arn}/*"
+          "arn:aws:s3:::${var.app_name}-frontend-${var.environment}",
+          "arn:aws:s3:::${var.app_name}-frontend-${var.environment}/*"
         ]
       },
       # S3 permissions for Terraform backend (state management)
@@ -122,7 +123,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "cloudfront:GetInvalidation",
           "cloudfront:ListInvalidations"
         ]
-        Resource = aws_cloudfront_distribution.frontend_distribution.arn
+        Resource = "arn:aws:cloudfront::*:distribution/*"
       },
       # IAM permissions for reading existing resources
       {
