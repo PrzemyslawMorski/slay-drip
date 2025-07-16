@@ -8,6 +8,7 @@ backend/docs/
 .terraform/
 *.tfstate
 *.tfstate.*
+*.tfplan
 .terraform.lock.hcl.backup
 .terraform.tfstate.lock.info
 

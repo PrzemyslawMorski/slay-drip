@@ -1,9 +1,30 @@
 # GitHub Actions OIDC Provider and IAM Role
 # This allows GitHub Actions to authenticate with AWS without storing long-lived credentials
 
-# GitHub Actions OIDC Provider (use existing or create if not exists)
-data "aws_iam_openid_connect_provider" "github_actions" {
+# GitHub Actions OIDC Provider (create if not exists, otherwise reference existing)
+resource "aws_iam_openid_connect_provider" "github_actions" {
   url = "https://token.actions.githubusercontent.com"
+  
+  client_id_list = ["sts.amazonaws.com"]
+  
+  thumbprint_list = [
+    "6938fd4d98bab03faadb97b34396831e3780aea1",
+    "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
+  ]
+  
+  tags = {
+    Name        = "github-actions-oidc-provider"
+    Environment = "global"
+    Purpose     = "GitHub Actions OIDC authentication"
+  }
+  
+  # Use lifecycle to ignore changes to tags and other attributes
+  lifecycle {
+    ignore_changes = [
+      tags,
+      tags_all
+    ]
+  }
 }
 
 # IAM Role for GitHub Actions (environment-specific)
@@ -16,7 +37,7 @@ resource "aws_iam_role" "github_actions" {
       {
         Effect = "Allow"
         Principal = {
-          Federated = data.aws_iam_openid_connect_provider.github_actions.arn
+          Federated = aws_iam_openid_connect_provider.github_actions.arn
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
@@ -111,5 +132,5 @@ output "github_actions_role_arn" {
 # Output the OIDC provider ARN
 output "github_actions_oidc_provider_arn" {
   description = "ARN of the GitHub Actions OIDC provider"
-  value       = data.aws_iam_openid_connect_provider.github_actions.arn
+  value       = aws_iam_openid_connect_provider.github_actions.arn
 } 

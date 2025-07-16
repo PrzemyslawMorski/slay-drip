@@ -2,20 +2,20 @@ name: Deploy Frontend to S3
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
     paths:
-      - 'frontend/**'
-      - '.github/workflows/deploy-frontend.yml'
+      - "frontend/**"
+      - ".github/workflows/deploy-frontend.yml"
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'frontend/**'
+      - "frontend/**"
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Environment to deploy to'
+        description: "Environment to deploy to"
         required: true
-        default: 'development'
+        default: "development"
         type: choice
         options:
           - development
@@ -24,7 +24,7 @@ on:
 
 env:
   AWS_REGION: eu-central-1
-  NODE_VERSION: '24'
+  NODE_VERSION: "24"
 
 jobs:
   test:
@@ -33,7 +33,7 @@ jobs:
     defaults:
       run:
         working-directory: ./frontend
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -42,7 +42,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
@@ -61,7 +61,7 @@ jobs:
     defaults:
       run:
         working-directory: ./frontend
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -70,7 +70,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
@@ -94,7 +94,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'development')
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -145,14 +145,14 @@ jobs:
       - name: Deploy to S3
         run: |
           aws s3 sync frontend/build/ s3://${{ steps.get-bucket.outputs.bucket_name }}/ --delete
-          
+
           # Set proper cache headers for PWA assets
           if [ -f "frontend/build/service-worker.js" ]; then
             aws s3 cp frontend/build/service-worker.js s3://${{ steps.get-bucket.outputs.bucket_name }}/service-worker.js \
               --cache-control "no-cache, no-store, must-revalidate" \
               --content-type "application/javascript"
           fi
-          
+
           if [ -f "frontend/build/manifest.json" ]; then
             aws s3 cp frontend/build/manifest.json s3://${{ steps.get-bucket.outputs.bucket_name }}/manifest.json \
               --cache-control "max-age=3600" \
@@ -189,7 +189,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -240,14 +240,14 @@ jobs:
       - name: Deploy to S3
         run: |
           aws s3 sync frontend/build/ s3://${{ steps.get-bucket.outputs.bucket_name }}/ --delete
-          
+
           # Set proper cache headers for PWA assets
           if [ -f "frontend/build/service-worker.js" ]; then
             aws s3 cp frontend/build/service-worker.js s3://${{ steps.get-bucket.outputs.bucket_name }}/service-worker.js \
               --cache-control "no-cache, no-store, must-revalidate" \
               --content-type "application/javascript"
           fi
-          
+
           if [ -f "frontend/build/manifest.json" ]; then
             aws s3 cp frontend/build/manifest.json s3://${{ steps.get-bucket.outputs.bucket_name }}/manifest.json \
               --cache-control "max-age=3600" \
@@ -284,7 +284,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -335,14 +335,14 @@ jobs:
       - name: Deploy to S3
         run: |
           aws s3 sync frontend/build/ s3://${{ steps.get-bucket.outputs.bucket_name }}/ --delete
-          
+
           # Set proper cache headers for PWA assets
           if [ -f "frontend/build/service-worker.js" ]; then
             aws s3 cp frontend/build/service-worker.js s3://${{ steps.get-bucket.outputs.bucket_name }}/service-worker.js \
               --cache-control "no-cache, no-store, must-revalidate" \
               --content-type "application/javascript"
           fi
-          
+
           if [ -f "frontend/build/manifest.json" ]; then
             aws s3 cp frontend/build/manifest.json s3://${{ steps.get-bucket.outputs.bucket_name }}/manifest.json \
               --cache-control "max-age=3600" \
@@ -379,7 +379,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [deploy-development, deploy-staging, deploy-production]
     if: always()
-    
+
     steps:
       - name: Deployment Summary
         run: |
@@ -390,21 +390,21 @@ jobs:
           echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ needs.deploy-development.result }}" == "success" ]; then
             echo "✅ **Development deployment:** Success" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ needs.deploy-development.result }}" == "failure" ]; then
             echo "❌ **Development deployment:** Failed" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ "${{ needs.deploy-staging.result }}" == "success" ]; then
             echo "✅ **Staging deployment:** Success" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ needs.deploy-staging.result }}" == "failure" ]; then
             echo "❌ **Staging deployment:** Failed" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if [ "${{ needs.deploy-production.result }}" == "success" ]; then
             echo "✅ **Production deployment:** Success" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ needs.deploy-production.result }}" == "failure" ]; then
             echo "❌ **Production deployment:** Failed" >> $GITHUB_STEP_SUMMARY
-          fi 
+          fi
