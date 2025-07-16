@@ -80,7 +80,8 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:DeleteBucketPolicy",
           "s3:GetBucketAcl",
           "s3:PutBucketAcl",
-          "s3:GetBucketCors"
+          "s3:GetBucketCors",
+          "s3:GetBucketWebsite"
         ]
         Resource = [
           aws_s3_bucket.frontend_bucket.arn,
