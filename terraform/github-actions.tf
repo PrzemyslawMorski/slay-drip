@@ -84,7 +84,17 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:GetBucketWebsite",
           "s3:GetBucketAccelerateConfiguration",
           "s3:PutBucketAccelerateConfiguration",
-          "s3:GetAccelerateConfiguration"
+          "s3:GetAccelerateConfiguration",
+          "s3:GetBucketRequestPayment",
+          "s3:PutBucketRequestPayment",
+          "s3:GetBucketVersioning",
+          "s3:PutBucketVersioning",
+          "s3:GetBucketLifecycle",
+          "s3:PutBucketLifecycle",
+          "s3:GetBucketEncryption",
+          "s3:PutBucketEncryption",
+          "s3:GetBucketReplication",
+          "s3:PutBucketReplication"
         ]
         Resource = [
           "arn:aws:s3:::${var.app_name}-frontend-${var.environment}",

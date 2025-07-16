@@ -39,6 +39,12 @@ resource "aws_s3_bucket_accelerate_configuration" "frontend_bucket_acceleration"
   }
 }
 
+# S3 Bucket Request Payment Configuration
+resource "aws_s3_bucket_request_payment_configuration" "frontend_bucket_request_payment" {
+  bucket = aws_s3_bucket.frontend_bucket.id
+  payer  = "BucketOwner"
+}
+
 # S3 Bucket Policy for Public Read Access
 resource "aws_s3_bucket_policy" "frontend_bucket_policy" {
   bucket = aws_s3_bucket.frontend_bucket.id
