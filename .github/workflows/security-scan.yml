@@ -51,7 +51,7 @@ jobs:
         id: detect-secrets
         run: |
           echo "🔍 Running detect-secrets scan..."
-          detect-secrets scan --baseline .secrets.baseline || {
+          detect-secrets scan || {
             echo "❌ detect-secrets found potential secrets!"
             exit 1
           }
