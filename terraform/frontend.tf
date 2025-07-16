@@ -67,6 +67,17 @@ resource "aws_s3_bucket_lifecycle_configuration" "frontend_bucket_lifecycle" {
   }
 }
 
+# S3 Bucket Server-Side Encryption Configuration
+resource "aws_s3_bucket_server_side_encryption_configuration" "frontend_bucket_encryption" {
+  bucket = aws_s3_bucket.frontend_bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
 # S3 Bucket Policy for Public Read Access
 resource "aws_s3_bucket_policy" "frontend_bucket_policy" {
   bucket = aws_s3_bucket.frontend_bucket.id
