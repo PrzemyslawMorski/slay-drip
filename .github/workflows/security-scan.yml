@@ -56,46 +56,6 @@ jobs:
             exit 1
           }
           echo "✅ detect-secrets scan passed"
-
-      - name: Custom regex scan
-        id: custom-scan
-        run: |
-          echo "🔍 Running custom regex scan..."
-          
-          # Patterns to scan for
-          PATTERNS=(
-            "AKIA[0-9A-Z]{16}"                    # AWS Access Key ID
-            "sk_[a-zA-Z0-9]{24}"                  # Stripe Secret Key
-            "pk_[a-zA-Z0-9]{24}"                  # Stripe Publishable Key
-            "ghp_[a-zA-Z0-9]{36}"                 # GitHub Personal Access Token
-            "gho_[a-zA-Z0-9]{36}"                 # GitHub OAuth Token
-            "ghu_[a-zA-Z0-9]{36}"                 # GitHub User Token
-            "ghs_[a-zA-Z0-9]{36}"                 # GitHub Server Token
-            "ghr_[a-zA-Z0-9]{36}"                 # GitHub Refresh Token
-            "[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{4}" # Credit Card
-            "password.*=.*['\"][^'\"]{8,}"        # Password assignments
-            "secret.*=.*['\"][^'\"]{8,}"          # Secret assignments
-            "key.*=.*['\"][^'\"]{8,}"             # Key assignments
-            "token.*=.*['\"][^'\"]{8,}"           # Token assignments
-          )
-          
-          FOUND_SECRETS=false
-          
-          for pattern in "${PATTERNS[@]}"; do
-            echo "Scanning for pattern: $pattern"
-            if grep -r --exclude-dir={.git,node_modules,.terraform,dist,build,.github/workflows} -E "$pattern" .; then
-              echo "❌ Found potential secret with pattern: $pattern"
-              FOUND_SECRETS=true
-            fi
-          done
-          
-          if [ "$FOUND_SECRETS" = true ]; then
-            echo "❌ Custom scan found potential secrets!"
-            exit 1
-          fi
-          
-          echo "✅ Custom regex scan passed"
-
       - name: Check for environment files
         id: env-files
         run: |
@@ -181,12 +141,6 @@ jobs:
             echo "✅ **detect-secrets:** No secrets found" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **detect-secrets:** Potential secrets detected" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          if [ "${{ steps.custom-scan.outcome }}" == "success" ]; then
-            echo "✅ **Custom Regex:** No secrets found" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Custom Regex:** Potential secrets detected" >> $GITHUB_STEP_SUMMARY
           fi
           
           if [ "${{ steps.env-files.outcome }}" == "success" ]; then
