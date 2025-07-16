@@ -74,7 +74,10 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:GetObject",
           "s3:PutObject",
           "s3:DeleteObject",
-          "s3:ListBucket"
+          "s3:ListBucket",
+          "s3:GetBucketPolicy",
+          "s3:PutBucketPolicy",
+          "s3:DeleteBucketPolicy"
         ]
         Resource = [
           aws_s3_bucket.frontend_bucket.arn,
@@ -115,13 +118,15 @@ resource "aws_iam_role_policy" "github_actions" {
         ]
         Resource = aws_cloudfront_distribution.frontend_distribution.arn
       },
-      # Additional permissions for debugging and troubleshooting
+      # IAM permissions for reading existing resources
       {
         Effect = "Allow"
         Action = [
           "sts:GetCallerIdentity",
           "iam:GetRole",
-          "iam:GetRolePolicy"
+          "iam:GetRolePolicy",
+          "iam:GetOpenIDConnectProvider",
+          "iam:ListOpenIDConnectProviders"
         ]
         Resource = "*"
       }
