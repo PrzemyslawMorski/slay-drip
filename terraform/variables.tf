@@ -14,5 +14,11 @@ variable "app_name" {
 variable "environment" {
   description = "The environment to deploy to."
   type        = string
-  default     = "dev"
+  default     = "development"
+}
+
+variable "github_repository" {
+  description = "The GitHub repository in format 'owner/repo-name' (e.g., 'username/slay-drip')"
+  type        = string
+  default     = "prmo/slay-drip"
 }
