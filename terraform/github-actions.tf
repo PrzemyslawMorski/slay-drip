@@ -4,20 +4,20 @@
 # GitHub Actions OIDC Provider (create if not exists, otherwise reference existing)
 resource "aws_iam_openid_connect_provider" "github_actions" {
   url = "https://token.actions.githubusercontent.com"
-  
+
   client_id_list = ["sts.amazonaws.com"]
-  
+
   thumbprint_list = [
     "6938fd4d98bab03faadb97b34396831e3780aea1",
     "1c58a3a8518e8759bf075b76b750d4f2df264fcd"
   ]
-  
+
   tags = {
     Name        = "github-actions-oidc-provider"
     Environment = "global"
     Purpose     = "GitHub Actions OIDC authentication"
   }
-  
+
   # Use lifecycle to ignore changes to tags and other attributes
   lifecycle {
     ignore_changes = [
@@ -79,7 +79,8 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:PutBucketPolicy",
           "s3:DeleteBucketPolicy",
           "s3:GetBucketAcl",
-          "s3:PutBucketAcl"
+          "s3:PutBucketAcl",
+          "s3:GetBucketCors"
         ]
         Resource = [
           aws_s3_bucket.frontend_bucket.arn,
@@ -129,38 +130,39 @@ resource "aws_iam_role_policy" "github_actions" {
           "iam:GetRolePolicy",
           "iam:ListRolePolicies",
           "iam:GetOpenIDConnectProvider",
-          "iam:ListOpenIDConnectProviders"
+          "iam:ListOpenIDConnectProviders",
+          "iam:ListAttachedRolePolicies"
         ]
         Resource = "*"
       }
-    ],
-    # Additional permissions based on environment
-    var.environment == "production" ? [
-      # Production-specific permissions (if needed)
-      {
-        Effect = "Allow"
-        Action = [
-          "cloudwatch:PutMetricData",
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ]
-        Resource = "*"
-      }
-    ] : [],
-    # Development/Staging permissions
-    var.environment != "production" ? [
-      # Additional debugging permissions for non-production
-      {
-        Effect = "Allow"
-        Action = [
-          "s3:GetBucketVersioning",
-          "cloudfront:GetDistribution",
-          "cloudfront:GetDistributionConfig"
-        ]
-        Resource = "*"
-      }
-    ] : []
+      ],
+      # Additional permissions based on environment
+      var.environment == "production" ? [
+        # Production-specific permissions (if needed)
+        {
+          Effect = "Allow"
+          Action = [
+            "cloudwatch:PutMetricData",
+            "logs:CreateLogGroup",
+            "logs:CreateLogStream",
+            "logs:PutLogEvents"
+          ]
+          Resource = "*"
+        }
+      ] : [],
+      # Development/Staging permissions
+      var.environment != "production" ? [
+        # Additional debugging permissions for non-production
+        {
+          Effect = "Allow"
+          Action = [
+            "s3:GetBucketVersioning",
+            "cloudfront:GetDistribution",
+            "cloudfront:GetDistributionConfig"
+          ]
+          Resource = "*"
+        }
+      ] : []
     )
   })
 }
@@ -175,4 +177,4 @@ output "github_actions_role_arn" {
 output "github_actions_oidc_provider_arn" {
   description = "ARN of the GitHub Actions OIDC provider"
   value       = aws_iam_openid_connect_provider.github_actions.arn
-} 
+}
