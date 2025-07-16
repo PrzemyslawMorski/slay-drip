@@ -109,7 +109,13 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:PutBucketTagging",
           "s3:GetBucketLifecycleConfiguration",
           "s3:GetLifecycleConfiguration",
-          "s3:PutLifecycleConfiguration"
+          "s3:PutLifecycleConfiguration",
+          "s3:GetBucketObjectLockConfiguration",
+          "s3:GetObjectRetention",
+          "s3:PutObjectRetention",
+          "s3:GetObjectLegalHold",
+          "s3:PutObjectLegalHold",
+          "s3:GetBucketPolicyStatus"
         ]
         Resource = [
           "arn:aws:s3:::${var.app_name}-frontend-${var.environment}",

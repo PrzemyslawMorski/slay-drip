@@ -78,6 +78,18 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "frontend_bucket_e
   }
 }
 
+# S3 Bucket Object Lock Configuration
+resource "aws_s3_bucket_object_lock_configuration" "frontend_bucket_object_lock" {
+  bucket = aws_s3_bucket.frontend_bucket.id
+
+  rule {
+    default_retention {
+      mode = "GOVERNANCE"
+      days = 1
+    }
+  }
+}
+
 # S3 Bucket Policy for Public Read Access
 resource "aws_s3_bucket_policy" "frontend_bucket_policy" {
   bucket = aws_s3_bucket.frontend_bucket.id
