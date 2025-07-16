@@ -77,7 +77,9 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:ListBucket",
           "s3:GetBucketPolicy",
           "s3:PutBucketPolicy",
-          "s3:DeleteBucketPolicy"
+          "s3:DeleteBucketPolicy",
+          "s3:GetBucketAcl",
+          "s3:PutBucketAcl"
         ]
         Resource = [
           aws_s3_bucket.frontend_bucket.arn,
@@ -125,6 +127,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "sts:GetCallerIdentity",
           "iam:GetRole",
           "iam:GetRolePolicy",
+          "iam:ListRolePolicies",
           "iam:GetOpenIDConnectProvider",
           "iam:ListOpenIDConnectProviders"
         ]
