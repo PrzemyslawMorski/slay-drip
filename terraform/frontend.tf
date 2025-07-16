@@ -28,6 +28,17 @@ resource "aws_s3_bucket_public_access_block" "frontend_bucket_public_access" {
   restrict_public_buckets = false
 }
 
+# S3 Bucket Acceleration Configuration
+resource "aws_s3_bucket_accelerate_configuration" "frontend_bucket_acceleration" {
+  bucket = aws_s3_bucket.frontend_bucket.id
+  status = "Enabled"
+  
+  # Handle existing buckets with acceleration already enabled
+  lifecycle {
+    ignore_changes = [status]
+  }
+}
+
 # S3 Bucket Policy for Public Read Access
 resource "aws_s3_bucket_policy" "frontend_bucket_policy" {
   bucket = aws_s3_bucket.frontend_bucket.id
