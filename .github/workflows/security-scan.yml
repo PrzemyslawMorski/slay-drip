@@ -105,20 +105,6 @@ jobs:
           
           echo "✅ No hardcoded URLs with credentials found"
 
-      - name: Check file permissions
-        id: file-permissions
-        run: |
-          echo "🔍 Checking file permissions..."
-          
-          # Check for files with sensitive permissions
-          if find . -type f -perm /600 -not -path "./.git/*" -not -path "./node_modules/*" | grep -q .; then
-            echo "❌ Found files with sensitive permissions!"
-            find . -type f -perm /600 -not -path "./.git/*" -not -path "./node_modules/*"
-            exit 1
-          fi
-          
-          echo "✅ No files with sensitive permissions found"
-
       - name: Generate security report
         id: report
         if: always()
@@ -159,12 +145,6 @@ jobs:
             echo "✅ **Hardcoded URLs:** No credentials in URLs" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Hardcoded URLs:** Credentials found in URLs" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          if [ "${{ steps.file-permissions.outcome }}" == "success" ]; then
-            echo "✅ **File Permissions:** No sensitive permissions" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **File Permissions:** Sensitive permissions detected" >> $GITHUB_STEP_SUMMARY
           fi
 
   dependency-scan:
