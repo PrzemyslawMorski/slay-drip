@@ -45,6 +45,14 @@ resource "aws_s3_bucket_request_payment_configuration" "frontend_bucket_request_
   payer  = "BucketOwner"
 }
 
+# S3 Bucket Logging Configuration
+resource "aws_s3_bucket_logging" "frontend_bucket_logging" {
+  bucket = aws_s3_bucket.frontend_bucket.id
+
+  target_bucket = aws_s3_bucket.frontend_bucket.id
+  target_prefix  = "logs/"
+}
+
 # S3 Bucket Policy for Public Read Access
 resource "aws_s3_bucket_policy" "frontend_bucket_policy" {
   bucket = aws_s3_bucket.frontend_bucket.id

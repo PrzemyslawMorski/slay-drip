@@ -94,7 +94,13 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:GetBucketEncryption",
           "s3:PutBucketEncryption",
           "s3:GetBucketReplication",
-          "s3:PutBucketReplication"
+          "s3:PutBucketReplication",
+          "s3:GetBucketLogging",
+          "s3:PutBucketLogging",
+          "s3:GetBucketNotification",
+          "s3:PutBucketNotification",
+          "s3:GetBucketTagging",
+          "s3:PutBucketTagging"
         ]
         Resource = [
           "arn:aws:s3:::${var.app_name}-frontend-${var.environment}",
