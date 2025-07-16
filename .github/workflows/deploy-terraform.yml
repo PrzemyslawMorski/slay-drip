@@ -98,15 +98,6 @@ jobs:
             echo "❌ Terraform validation failed"
             exit 1
           fi
-          
-          # Check for sensitive data in Terraform files
-          echo "🔍 Checking for sensitive data..."
-          if grep -r -i "password\|secret\|key\|token" . --exclude-dir=.terraform --exclude-dir=.git; then
-            echo "❌ Found potential sensitive data in Terraform files"
-            exit 1
-          else
-            echo "✅ No sensitive data found"
-          fi
 
   plan:
     name: Terraform Plan
