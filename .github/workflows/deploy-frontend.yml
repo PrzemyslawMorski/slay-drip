@@ -201,6 +201,12 @@ jobs:
         env:
           TF_VAR_environment: development
 
+      - name: Print OIDC info
+        run: |
+          echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
+          echo "GITHUB_REF: $GITHUB_REF"
+          echo "GITHUB_ACTOR: $GITHUB_ACTOR"
+
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
@@ -309,6 +315,12 @@ jobs:
         env:
           TF_VAR_environment: staging
 
+      - name: Print OIDC info
+        run: |
+          echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
+          echo "GITHUB_REF: $GITHUB_REF"
+          echo "GITHUB_ACTOR: $GITHUB_ACTOR"
+
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
@@ -416,6 +428,12 @@ jobs:
           fi
         env:
           TF_VAR_environment: production
+
+      - name: Print OIDC info
+        run: |
+          echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
+          echo "GITHUB_REF: $GITHUB_REF"
+          echo "GITHUB_ACTOR: $GITHUB_ACTOR"
 
   notify:
     name: Notify Deployment Status
