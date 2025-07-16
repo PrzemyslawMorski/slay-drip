@@ -20,5 +20,5 @@ variable "environment" {
 variable "github_repository" {
   description = "The GitHub repository in format 'owner/repo-name' (e.g., 'username/slay-drip')"
   type        = string
-  default     = "prmo/slay-drip"
+  default     = "PrzemyslawMorski/slay-drip"
 }
