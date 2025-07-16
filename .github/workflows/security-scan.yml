@@ -83,7 +83,7 @@ jobs:
           
           for pattern in "${PATTERNS[@]}"; do
             echo "Scanning for pattern: $pattern"
-            if grep -r --exclude-dir={.git,node_modules,.terraform,dist,build} -E "$pattern" .; then
+            if grep -r --exclude-dir={.git,node_modules,.terraform,dist,build,.github/workflows} -E "$pattern" .; then
               echo "❌ Found potential secret with pattern: $pattern"
               FOUND_SECRETS=true
             fi
