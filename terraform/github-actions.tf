@@ -115,7 +115,12 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:PutObjectRetention",
           "s3:GetObjectLegalHold",
           "s3:PutObjectLegalHold",
-          "s3:GetBucketPolicyStatus"
+          "s3:GetBucketPolicyStatus",
+          "s3:GetBucketPublicAccessBlock",
+          "s3:PutBucketPublicAccessBlock",
+          "s3:DeleteBucketPublicAccessBlock",
+          "s3:GetBucketLocation",
+          "s3:GetBucketOwnershipControls"
         ]
         Resource = [
           "arn:aws:s3:::${var.app_name}-frontend-${var.environment}",

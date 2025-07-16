@@ -175,8 +175,8 @@ jobs:
           # Select workspace
           terraform workspace select ${{ steps.env.outputs.environment }} || terraform workspace new ${{ steps.env.outputs.environment }}
           
-          # Run plan
-          terraform plan -out=${{ steps.env.outputs.environment }}.tfplan
+          # Run plan with environment variable
+          terraform plan -var="environment=${{ steps.env.outputs.environment }}" -out=${{ steps.env.outputs.environment }}.tfplan
           
           # Save plan for apply job
           echo "PLAN_FILE=${{ steps.env.outputs.environment }}.tfplan" >> $GITHUB_ENV
@@ -251,8 +251,8 @@ jobs:
           # Select workspace
           terraform workspace select ${{ steps.env.outputs.environment }} || terraform workspace new ${{ steps.env.outputs.environment }}
           
-          # Apply the plan
-          terraform apply -auto-approve ${{ steps.env.outputs.environment }}.tfplan
+          # Apply the plan with environment variable
+          terraform apply -var="environment=${{ steps.env.outputs.environment }}" -auto-approve ${{ steps.env.outputs.environment }}.tfplan
           
           # Get outputs
           echo "## 🏗️ Terraform Deployment Summary" >> $GITHUB_STEP_SUMMARY
