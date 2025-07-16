@@ -43,10 +43,23 @@ jobs:
   terraform-validation:
     name: Terraform Validation
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging') || 'development' }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Validate AWS credentials
+        run: |
+          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
+            echo "❌ Error: AWS_ROLE_ARN is not set in the ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging') || 'development' }} environment!"
+            echo "Please configure the AWS_ROLE_ARN secret in your environment settings."
+            echo "Go to Settings > Environments > ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging') || 'development' }} > Add secret"
+            echo "Name: AWS_ROLE_ARN"
+            echo "Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME"
+            exit 1
+          fi
+          echo "✅ AWS_ROLE_ARN is configured in ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging') || 'development' }} environment"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -127,6 +140,18 @@ jobs:
             echo "environment=development" >> $GITHUB_OUTPUT
           fi
 
+      - name: Validate AWS credentials
+        run: |
+          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
+            echo "❌ Error: AWS_ROLE_ARN is not set in the ${{ steps.env.outputs.environment }} environment!"
+            echo "Please configure the AWS_ROLE_ARN secret in your environment settings."
+            echo "Go to Settings > Environments > ${{ steps.env.outputs.environment }} > Add secret"
+            echo "Name: AWS_ROLE_ARN"
+            echo "Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME"
+            exit 1
+          fi
+          echo "✅ AWS_ROLE_ARN is configured in ${{ steps.env.outputs.environment }} environment"
+
       - name: Initialize and Plan
         run: |
           cd terraform
@@ -182,6 +207,18 @@ jobs:
           else
             echo "environment=development" >> $GITHUB_OUTPUT
           fi
+
+      - name: Validate AWS credentials
+        run: |
+          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
+            echo "❌ Error: AWS_ROLE_ARN is not set in the ${{ steps.env.outputs.environment }} environment!"
+            echo "Please configure the AWS_ROLE_ARN secret in your environment settings."
+            echo "Go to Settings > Environments > ${{ steps.env.outputs.environment }} > Add secret"
+            echo "Name: AWS_ROLE_ARN"
+            echo "Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME"
+            exit 1
+          fi
+          echo "✅ AWS_ROLE_ARN is configured in ${{ steps.env.outputs.environment }} environment"
 
       - name: Validate Infrastructure
         run: |
@@ -247,6 +284,18 @@ jobs:
           else
             echo "environment=development" >> $GITHUB_OUTPUT
           fi
+
+      - name: Validate AWS credentials
+        run: |
+          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
+            echo "❌ Error: AWS_ROLE_ARN is not set in the ${{ steps.env.outputs.environment }} environment!"
+            echo "Please configure the AWS_ROLE_ARN secret in your environment settings."
+            echo "Go to Settings > Environments > ${{ steps.env.outputs.environment }} > Add secret"
+            echo "Name: AWS_ROLE_ARN"
+            echo "Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME"
+            exit 1
+          fi
+          echo "✅ AWS_ROLE_ARN is configured in ${{ steps.env.outputs.environment }} environment"
 
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
