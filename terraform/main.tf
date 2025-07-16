@@ -10,8 +10,4 @@ terraform {
 
 provider "aws" {
   region = "eu-central-1"
-  
-  # Explicitly disable SSO and use default credentials
-  shared_credentials_files = ["~/.aws/credentials"]
-  profile                  = "default"
 }
