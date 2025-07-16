@@ -53,6 +53,20 @@ resource "aws_s3_bucket_logging" "frontend_bucket_logging" {
   target_prefix  = "logs/"
 }
 
+# S3 Bucket Lifecycle Configuration
+resource "aws_s3_bucket_lifecycle_configuration" "frontend_bucket_lifecycle" {
+  bucket = aws_s3_bucket.frontend_bucket.id
+
+  rule {
+    id     = "cleanup_old_versions"
+    status = "Enabled"
+
+    noncurrent_version_expiration {
+      noncurrent_days = 30
+    }
+  }
+}
+
 # S3 Bucket Policy for Public Read Access
 resource "aws_s3_bucket_policy" "frontend_bucket_policy" {
   bucket = aws_s3_bucket.frontend_bucket.id
