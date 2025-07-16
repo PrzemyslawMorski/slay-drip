@@ -42,7 +42,8 @@ resource "aws_iam_role" "github_actions" {
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
           StringEquals = {
-            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com",
+            "token.actions.githubusercontent.com:iss": "https://token.actions.githubusercontent.com"
           }
           StringLike = {
             "token.actions.githubusercontent.com:sub" = "repo:${var.github_repository}:*"
@@ -90,6 +91,16 @@ resource "aws_iam_role_policy" "github_actions" {
           "cloudfront:ListInvalidations"
         ]
         Resource = aws_cloudfront_distribution.frontend_distribution.arn
+      },
+      # Additional permissions for debugging and troubleshooting
+      {
+        Effect = "Allow"
+        Action = [
+          "sts:GetCallerIdentity",
+          "iam:GetRole",
+          "iam:GetRolePolicy"
+        ]
+        Resource = "*"
       }
     ],
     # Additional permissions based on environment
