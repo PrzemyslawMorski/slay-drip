@@ -99,6 +99,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Validate AWS credentials
+        run: |
+          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
+            echo "❌ Error: AWS_ROLE_ARN secret is not set!"
+            echo "Please configure the AWS_ROLE_ARN secret in your repository settings."
+            echo "Go to Settings > Secrets and variables > Actions > New repository secret"
+            echo "Name: AWS_ROLE_ARN"
+            echo "Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME"
+            exit 1
+          fi
+          echo "✅ AWS_ROLE_ARN secret is configured"
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -194,6 +206,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Validate AWS credentials
+        run: |
+          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
+            echo "❌ Error: AWS_ROLE_ARN secret is not set!"
+            echo "Please configure the AWS_ROLE_ARN secret in your repository settings."
+            echo "Go to Settings > Secrets and variables > Actions > New repository secret"
+            echo "Name: AWS_ROLE_ARN"
+            echo "Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME"
+            exit 1
+          fi
+          echo "✅ AWS_ROLE_ARN secret is configured"
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
@@ -288,6 +312,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Validate AWS credentials
+        run: |
+          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
+            echo "❌ Error: AWS_ROLE_ARN secret is not set!"
+            echo "Please configure the AWS_ROLE_ARN secret in your repository settings."
+            echo "Go to Settings > Secrets and variables > Actions > New repository secret"
+            echo "Name: AWS_ROLE_ARN"
+            echo "Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME"
+            exit 1
+          fi
+          echo "✅ AWS_ROLE_ARN secret is configured"
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
