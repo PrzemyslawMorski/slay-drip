@@ -127,9 +127,9 @@ function Build-Function {
     
     Write-Info "Building $FunctionName for $Environment environment..."
     
-    # Build the Docker image
+    # Build the Docker image with platform specification
     Write-Info "Building Docker image: $ImageName"
-    docker build --build-arg FUNCTION_NAME=$FunctionName -f Dockerfile.template -t $ImageName .
+    docker build --platform linux/amd64 --build-arg FUNCTION_NAME=$FunctionName -f Dockerfile.template -t $ImageName .
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Failed to build Docker image for $FunctionName"
         return $false

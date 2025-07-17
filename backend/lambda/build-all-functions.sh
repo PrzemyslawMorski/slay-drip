@@ -98,9 +98,13 @@ function build_function() {
     
     print_info "Building $function_name for $environment environment..."
     
-    # Build the Docker image
+    # Build the Docker image with platform specification
     print_info "Building Docker image: $image_name"
-    if docker build --build-arg FUNCTION_NAME="$function_name" -f Dockerfile.template -t "$image_name" .; then
+    if docker build \
+        --platform linux/amd64 \
+        --build-arg FUNCTION_NAME="$function_name" \
+        -f Dockerfile.template \
+        -t "$image_name" .; then
         print_info "Docker build successful for $function_name"
     else
         print_error "Failed to build Docker image for $function_name"
