@@ -22,6 +22,9 @@ permissions:
   id-token: write # Required for OIDC
   contents: read
 
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+
 jobs:
   test:
     name: Test Lambda Functions
@@ -85,7 +88,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           role-session-name: GitHubActions
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
