@@ -55,6 +55,10 @@ $FUNCTIONS = @(
     "create-outfit"
 )
 
+# Download dependencies once at the root level
+Write-Info "Downloading dependencies..."
+go mod download
+
 # Build each function
 foreach ($func in $FUNCTIONS) {
     Write-Info "Building $func..."
@@ -67,13 +71,11 @@ foreach ($func in $FUNCTIONS) {
     Write-Info "  Copying shared code..."
     Copy-Item -Path "models" -Destination $FUNC_DIR -Recurse -Force
     Copy-Item -Path "handlers" -Destination $FUNC_DIR -Recurse -Force
-    Copy-Item -Path "go.mod" -Destination $FUNC_DIR -Force
-    Copy-Item -Path "go.sum" -Destination $FUNC_DIR -Force
     
     # Copy the function's main.go
     Copy-Item -Path "functions\$func\main.go" -Destination $FUNC_DIR -Force
     
-    # Build Go binary for Lambda
+    # Build Go binary for Lambda using the root module
     Write-Info "  Building Go binary..."
     Push-Location $FUNC_DIR
     
@@ -82,9 +84,9 @@ foreach ($func in $FUNCTIONS) {
         $env:GOARCH = "amd64"
         
         if ($Verbose) {
-            go build -v -o bootstrap main.go
+            go build -mod=mod -v -o bootstrap main.go
         } else {
-            go build -o bootstrap main.go
+            go build -mod=mod -o bootstrap main.go
         }
         
         if ($LASTEXITCODE -ne 0) {

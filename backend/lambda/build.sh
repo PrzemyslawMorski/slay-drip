@@ -16,6 +16,10 @@ echo -e "${GREEN}Building Lambda functions...${NC}"
 BUILD_DIR="build"
 mkdir -p $BUILD_DIR
 
+# Download dependencies once at the root level
+echo -e "${YELLOW}Downloading dependencies...${NC}"
+go mod download
+
 # List of functions to build
 FUNCTIONS=(
     "get-items"
@@ -37,15 +41,13 @@ for func in "${FUNCTIONS[@]}"; do
     # Copy shared code to function directory
     cp -r models $FUNC_DIR/
     cp -r handlers $FUNC_DIR/
-    cp go.mod $FUNC_DIR/
-    cp go.sum $FUNC_DIR/
     
     # Copy the function's main.go
     cp functions/$func/main.go $FUNC_DIR/
     
-    # Build Go binary for Lambda
+    # Build Go binary for Lambda using the root module
     cd $FUNC_DIR
-    GOOS=linux GOARCH=amd64 go build -o bootstrap main.go
+    GOOS=linux GOARCH=amd64 go build -mod=mod -o bootstrap main.go
     
     # Create ZIP file
     zip -r ../$func.zip .
