@@ -110,26 +110,41 @@ jobs:
           ENVIRONMENT="${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging' || 'development') }}"
           echo "🚀 Deploying Lambda functions to $ENVIRONMENT environment..."
           
+          # List of functions to deploy (matching build.sh)
+          FUNCTIONS=(
+            "get-items"
+            "get-item"
+            "create-item"
+            "get-outfits"
+            "get-outfit"
+            "create-outfit"
+          )
+          
           # Deploy each Lambda function
-          for function_dir in functions/*/; do
-            if [ -d "$function_dir" ]; then
-              function_name=$(basename "$function_dir")
-              zip_file="${function_name}.zip"
-              
-              echo "📦 Deploying $function_name..."
-              
-              # Update Lambda function code
-              aws lambda update-function-code \
-                --function-name "slay-drip-${function_name}-${ENVIRONMENT}" \
-                --zip-file "fileb://${zip_file}" \
-                --region "${{ env.AWS_REGION }}"
-              
-              if [ $? -eq 0 ]; then
-                echo "✅ Successfully deployed $function_name"
-              else
-                echo "❌ Failed to deploy $function_name"
-                exit 1
-              fi
+          for function_name in "${FUNCTIONS[@]}"; do
+            zip_file="build/${function_name}.zip"
+            
+            echo "📦 Deploying $function_name..."
+            
+            # Check if zip file exists
+            if [ ! -f "$zip_file" ]; then
+              echo "❌ Error: Zip file $zip_file not found!"
+              echo "Available files in build directory:"
+              ls -la build/
+              exit 1
+            fi
+            
+            # Update Lambda function code
+            aws lambda update-function-code \
+              --function-name "slay-drip-${function_name}-${ENVIRONMENT}" \
+              --zip-file "fileb://${zip_file}" \
+              --region "${{ env.AWS_REGION }}"
+            
+            if [ $? -eq 0 ]; then
+              echo "✅ Successfully deployed $function_name"
+            else
+              echo "❌ Failed to deploy $function_name"
+              exit 1
             fi
           done
           
