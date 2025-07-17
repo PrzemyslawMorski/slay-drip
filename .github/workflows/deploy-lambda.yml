@@ -1,0 +1,82 @@
+name: Deploy Lambda Functions
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/lambda/**'
+      - 'terraform/**'
+
+permissions:
+  id-token: write  # Required for OIDC
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    - run: |
+        cd backend/lambda
+        go test -race ./...
+        go test -coverprofile=coverage.out ./...
+        go tool cover -func=coverage.out
+
+  generate-docs:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    - name: Install swag
+      run: go install github.com/swaggo/swag/cmd/swag@latest
+    - name: Generate OpenAPI docs
+      run: |
+        cd backend/lambda
+        ./scripts/generate-docs.sh
+    - name: Commit generated docs
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add backend/lambda/api-docs/
+        git commit -m "Auto-generate API docs from code" || echo "No changes to commit"
+        git push
+
+  build-and-deploy:
+    needs: [test, generate-docs]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    
+    - name: Build Lambda functions
+      run: |
+        cd backend/lambda
+        ./build.sh
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        role-session-name: GitHubActions
+        aws-region: ${{ secrets.AWS_REGION }}
+    
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: "1.5.0"
+    
+    - name: Deploy to AWS
+      run: |
+        cd terraform
+        terraform init
+        terraform apply -auto-approve
+      env:
+        TF_VAR_github_repository: ${{ github.repository }} 

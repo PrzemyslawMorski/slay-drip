@@ -151,6 +151,82 @@ resource "aws_iam_role_policy" "github_actions" {
         ]
         Resource = "arn:aws:dynamodb:eu-central-1:*:table/slay-drip-tfstate-lock"
       },
+      # Lambda deployment permissions
+      {
+        Effect = "Allow"
+        Action = [
+          "lambda:CreateFunction",
+          "lambda:UpdateFunctionCode",
+          "lambda:UpdateFunctionConfiguration",
+          "lambda:DeleteFunction",
+          "lambda:GetFunction",
+          "lambda:ListFunctions",
+          "lambda:AddPermission",
+          "lambda:RemovePermission",
+          "lambda:GetPolicy",
+          "lambda:PutFunctionConcurrency",
+          "lambda:DeleteFunctionConcurrency"
+        ]
+        Resource = [
+          "arn:aws:lambda:${var.aws_region}:*:function:${var.app_name}-*"
+        ]
+      },
+      # IAM permissions for Lambda roles
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:GetRole",
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:PassRole"
+        ]
+        Resource = [
+          "arn:aws:iam::*:role/${var.app_name}-*"
+        ]
+      },
+      # CloudWatch Logs for Lambda
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DeleteLogGroup"
+        ]
+        Resource = [
+          "arn:aws:logs:${var.aws_region}:*:log-group:/aws/lambda/${var.app_name}-*"
+        ]
+      },
+      # DynamoDB permissions for backend data
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:DescribeTable",
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:Scan"
+        ]
+        Resource = [
+          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.app_name}-*"
+        ]
+      },
+      # API Gateway permissions
+      {
+        Effect = "Allow"
+        Action = [
+          "apigateway:*"
+        ]
+        Resource = [
+          "arn:aws:apigateway:${var.aws_region}::/restapis/*"
+        ]
+      },
       # CloudFront permissions for cache invalidation (environment-specific)
       {
         Effect = "Allow"
