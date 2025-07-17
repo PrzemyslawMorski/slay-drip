@@ -59,6 +59,7 @@ jobs:
       - name: Build Lambda functions
         run: |
           cd backend/lambda
+          chmod +x build.sh
           ./build.sh
 
       - name: Configure AWS credentials
