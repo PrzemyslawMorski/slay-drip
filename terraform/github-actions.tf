@@ -67,10 +67,12 @@ resource "aws_iam_role_policy" "github_actions" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = concat([
-      # S3 permissions for frontend deployment (environment-specific)
+      # S3 permissions for bucket management and deployment
       {
         Effect = "Allow"
         Action = [
+          "s3:CreateBucket",
+          "s3:DeleteBucket",
           "s3:GetObject",
           "s3:PutObject",
           "s3:DeleteObject",
@@ -81,7 +83,11 @@ resource "aws_iam_role_policy" "github_actions" {
           "s3:GetBucketAcl",
           "s3:PutBucketAcl",
           "s3:GetBucketCors",
+          "s3:PutBucketCors",
+          "s3:DeleteBucketCors",
           "s3:GetBucketWebsite",
+          "s3:PutBucketWebsite",
+          "s3:DeleteBucketWebsite",
           "s3:GetBucketAccelerateConfiguration",
           "s3:PutBucketAccelerateConfiguration",
           "s3:GetAccelerateConfiguration",
@@ -124,7 +130,9 @@ resource "aws_iam_role_policy" "github_actions" {
         ]
         Resource = [
           "arn:aws:s3:::${var.app_name}-frontend-${var.environment}",
-          "arn:aws:s3:::${var.app_name}-frontend-${var.environment}/*"
+          "arn:aws:s3:::${var.app_name}-frontend-${var.environment}/*",
+          "arn:aws:s3:::${var.app_name}-lambda-deployment-${var.environment}",
+          "arn:aws:s3:::${var.app_name}-lambda-deployment-${var.environment}/*"
         ]
       },
       # S3 permissions for Terraform backend (state management)
@@ -167,7 +175,12 @@ resource "aws_iam_role_policy" "github_actions" {
           "lambda:RemovePermission",
           "lambda:GetPolicy",
           "lambda:PutFunctionConcurrency",
-          "lambda:DeleteFunctionConcurrency"
+          "lambda:DeleteFunctionConcurrency",
+          "lambda:GetFunctionConcurrency",
+          "lambda:GetFunctionConfiguration",
+          "lambda:GetFunctionEventInvokeConfig",
+          "lambda:GetFunctionUrlConfig",
+          "lambda:GetFunctionCodeSigningConfig",
         ]
         Resource = [
           "arn:aws:lambda:${var.aws_region}:*:function:${var.app_name}-*"

@@ -75,6 +75,35 @@ resource "aws_s3_bucket" "lambda_deployment" {
   }
 }
 
+# S3 Bucket versioning for Lambda deployment
+resource "aws_s3_bucket_versioning" "lambda_deployment" {
+  bucket = aws_s3_bucket.lambda_deployment.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# S3 Bucket server-side encryption for Lambda deployment
+resource "aws_s3_bucket_server_side_encryption_configuration" "lambda_deployment" {
+  bucket = aws_s3_bucket.lambda_deployment.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# S3 Bucket public access block for Lambda deployment
+resource "aws_s3_bucket_public_access_block" "lambda_deployment" {
+  bucket = aws_s3_bucket.lambda_deployment.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 # IAM Role for Lambda functions
 resource "aws_iam_role" "lambda_execution" {
   name = "${var.app_name}-lambda-execution-role-${var.environment}"
