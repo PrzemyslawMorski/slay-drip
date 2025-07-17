@@ -28,9 +28,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-go@v4
         with:
           go-version: "1.24"
+          cache: true
+          cache-dependency-path: backend/lambda/go.sum
+      
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('backend/lambda/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      
       - run: |
           cd backend/lambda
           go test -race ./...
@@ -43,9 +57,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-go@v4
         with:
           go-version: "1.24"
+          cache: true
+          cache-dependency-path: backend/lambda/go.sum
+      
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('backend/lambda/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       - name: Build Lambda functions
         run: |
