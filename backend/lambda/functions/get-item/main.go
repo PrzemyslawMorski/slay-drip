@@ -9,8 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 
-	"pmorski-slay/main/lambda/handlers"
-	"pmorski-slay/main/lambda/models"
+	"pmorski-slay/main/handlers"
+	"pmorski-slay/main/models"
 )
 
 var itemsHandler *handlers.ItemsHandler

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"pmorski-slay/main/lambda/models"
+	"pmorski-slay/main/models"
 
 	"github.com/aws/aws-lambda-go/events"
 )

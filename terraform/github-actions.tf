@@ -205,7 +205,32 @@ resource "aws_iam_role_policy" "github_actions" {
       {
         Effect = "Allow"
         Action = [
-          "dynamodb:*"
+          "dynamodb:DescribeTable",
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:Query",
+          "dynamodb:Scan",
+          "dynamodb:CreateTable",
+          "dynamodb:DeleteTable",
+          "dynamodb:DescribeContinuousBackups",
+          "dynamodb:UpdateContinuousBackups",
+          "dynamodb:UpdateTable",
+          "dynamodb:UpdateContinuousBackups",
+          "dynamodb:BatchGetItem",
+          "dynamodb:BatchWriteItem",
+          "dynamodb:TagResource",
+          "dynamodb:UntagResource",
+          "dynamodb:ListTagsOfResource",
+          "dynamodb:ListTables",
+          "dynamodb:ListBackups",
+          "dynamodb:ListStreams",
+          "dynamodb:ListTagsOfResource",
+          "dynamodb:ListTagsOfResource",
+          "dynamodb:ListGlobalTables",
+          "dynamodb:ListExports",
+          "dynamodb:ListImports"
         ]
         Resource = [
           "arn:aws:dynamodb:${var.aws_region}:*:table/${var.app_name}-*",
