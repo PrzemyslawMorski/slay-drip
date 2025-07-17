@@ -34,11 +34,14 @@ for func in "${FUNCTIONS[@]}"; do
     FUNC_DIR="$BUILD_DIR/$func"
     mkdir -p $FUNC_DIR
     
-    # Copy shared code
+    # Copy shared code to function directory
     cp -r models $FUNC_DIR/
     cp -r handlers $FUNC_DIR/
     cp go.mod $FUNC_DIR/
     cp go.sum $FUNC_DIR/
+    
+    # Copy the function's main.go
+    cp functions/$func/main.go $FUNC_DIR/
     
     # Build Go binary for Lambda
     cd $FUNC_DIR
@@ -46,7 +49,7 @@ for func in "${FUNCTIONS[@]}"; do
     
     # Create ZIP file
     zip -r ../$func.zip .
-    cd ..
+    cd ../..
     
     echo -e "${GREEN}✅ Built $func.zip${NC}"
 done
