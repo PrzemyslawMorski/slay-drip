@@ -1,4 +1,4 @@
-module pmorski-slay/main
+module github.com/pmorski/slay-drip/backend
 
 go 1.24.4
 
