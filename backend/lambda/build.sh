@@ -12,10 +12,6 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}Building Lambda functions...${NC}"
 
-# Generate documentation first
-echo -e "${YELLOW}Generating API documentation...${NC}"
-./scripts/generate-docs.sh
-
 # Create build directory
 BUILD_DIR="build"
 mkdir -p $BUILD_DIR
@@ -60,5 +56,3 @@ echo -e "${YELLOW} Build artifacts:${NC}"
 ls -la $BUILD_DIR/*.zip
 echo ""
 echo -e "${YELLOW} API Documentation:${NC}"
-echo "   - Generated: api-docs/swagger.json"
-echo "   - Viewer: api-docs/index.html" 

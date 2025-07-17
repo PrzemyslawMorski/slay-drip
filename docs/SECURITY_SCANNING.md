@@ -47,7 +47,8 @@ jobs:
     # ... rest of test job
 
   build-and-deploy:
-    needs: [security-scan, test, generate-docs]  # All jobs depend on security scan
+    needs: [security-scan, test]  
+    # All jobs depend on security scan
     # ... rest of deployment job
 ```
 
