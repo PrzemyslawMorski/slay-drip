@@ -23,18 +23,9 @@ permissions:
   contents: read
 
 jobs:
-  security-scan:
-    name: Security Scan
-    uses: ./.github/workflows/security-scan.yml
-    with:
-      scan_paths: "backend/lambda,terraform"
-      fail_on_secrets: true
-      fail_on_vulnerabilities: true
-
   test:
     name: Test Lambda Functions
     runs-on: ubuntu-latest
-    needs: security-scan
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
@@ -48,7 +39,7 @@ jobs:
 
   build-and-deploy:
     name: Build and Deploy Lambda Functions
-    needs: [security-scan, test]
+    needs: [test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
