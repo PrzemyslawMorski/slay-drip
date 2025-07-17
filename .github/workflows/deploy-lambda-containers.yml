@@ -1,0 +1,174 @@
+name: Build and Push Lambda Container Images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/lambda/**"
+      - ".github/workflows/deploy-lambda-containers.yml"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy to"
+        required: true
+        default: "development"
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+
+env:
+  AWS_REGION: ${{ 'eu-central-1' }}
+  ECR_REPOSITORY_PREFIX: slay-drip
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging' || 'development') }}
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build and push Lambda functions
+      working-directory: ./backend/lambda
+      run: |
+        # List of functions to build
+        FUNCTIONS=(
+          "get-items"
+          "get-item"
+          "create-item"
+          "get-outfits"
+          "get-outfit"
+          "create-outfit"
+        )
+
+        # Build and push each function
+        for func in "${FUNCTIONS[@]}"; do
+          echo "Building $func..."
+          
+          # Get AWS account ID
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          
+          # Create ECR repository if it doesn't exist
+          REPO_NAME="${ECR_REPOSITORY_PREFIX}-${func}-${{ github.event.inputs.environment || 'development' }}"
+          aws ecr describe-repositories --repository-names ${REPO_NAME} --region ${AWS_REGION} 2>/dev/null || {
+            echo "Creating ECR repository: ${REPO_NAME}"
+            aws ecr create-repository --repository-name ${REPO_NAME} --region ${AWS_REGION}
+          }
+          
+          # Build Docker image
+          IMAGE_TAG="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO_NAME}:latest"
+          
+          docker build \
+            --build-arg FUNCTION_NAME=${func} \
+            -f Dockerfile.template \
+            -t ${REPO_NAME}:latest \
+            -t ${IMAGE_TAG} \
+            .
+          
+          # Push to ECR
+          echo "Pushing $func to ECR..."
+          docker push ${IMAGE_TAG}
+          
+          echo "✅ Built and pushed $func"
+          echo "Image URI: ${IMAGE_TAG}"
+        done
+
+    - name: Update Lambda functions with new images
+      run: |
+        # List of functions to update
+        FUNCTIONS=(
+          "get-items"
+          "get-item"
+          "create-item"
+          "get-outfits"
+          "get-outfit"
+          "create-outfit"
+        )
+
+        # Update each Lambda function
+        for func in "${FUNCTIONS[@]}"; do
+          echo "Updating $func..."
+          
+          # Get AWS account ID
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          
+          # Update Lambda function with new image
+          REPO_NAME="${ECR_REPOSITORY_PREFIX}-${func}-${{ github.event.inputs.environment || 'development' }}"
+          IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO_NAME}:latest"
+          
+          # Check if Lambda function exists before updating
+          if aws lambda get-function --function-name "slay-drip-${func}-${{ github.event.inputs.environment || 'development' }}" --region ${AWS_REGION} 2>/dev/null; then
+            aws lambda update-function-code \
+              --function-name "slay-drip-${func}-${{ github.event.inputs.environment || 'development' }}" \
+              --image-uri ${IMAGE_URI} \
+              --region ${AWS_REGION}
+            echo "✅ Updated $func"
+          else
+            echo "⚠️  Lambda function slay-drip-${func}-${{ github.event.inputs.environment || 'development' }} does not exist. Skipping update."
+            echo "   Deploy infrastructure first using Terraform."
+          fi
+        done
+
+  test-deployment:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging' || 'development') }}
+    needs: build-and-push
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Get API Gateway URL
+      id: get-api-url
+      run: |
+        API_URL=$(aws apigateway get-rest-apis --query "items[?name=='slay-drip-api-${{ github.event.inputs.environment || 'development' }}'].id" --output text)
+        if [ "$API_URL" != "None" ] && [ -n "$API_URL" ]; then
+          echo "api_url=https://${API_URL}.execute-api.${{ env.AWS_REGION }}.amazonaws.com/${{ github.event.inputs.environment || 'development' }}/api/v1" >> $GITHUB_OUTPUT
+        else
+          echo "⚠️  API Gateway not found. Infrastructure may not be deployed yet."
+          exit 0
+        fi
+
+    - name: Test API endpoints
+      run: |
+        # Only test if API Gateway exists
+        if [ -n "${{ steps.get-api-url.outputs.api_url }}" ]; then
+          # Wait for Lambda functions to be ready
+          sleep 30
+          
+          # Test get-items endpoint
+          curl -f "${{ steps.get-api-url.outputs.api_url }}/items" || {
+            echo "❌ get-items endpoint test failed"
+            exit 1
+          }
+          
+          echo "✅ API endpoints test passed"
+        else
+          echo "⚠️  Skipping API tests - infrastructure not deployed"
+        fi

@@ -1,4 +1,4 @@
-# Lambda Functions for Slay Drip Backend
+# Lambda Functions for Slay Drip Backend (Container Images)
 
 # DynamoDB Table for backend data
 resource "aws_dynamodb_table" "backend_table" {
@@ -65,43 +65,52 @@ resource "aws_dynamodb_table" "backend_table" {
   }
 }
 
-# S3 Bucket for Lambda deployment packages
-resource "aws_s3_bucket" "lambda_deployment" {
-  bucket = "${var.app_name}-lambda-deployment-${var.environment}"
-
-  tags = {
-    Name        = "${var.app_name}-lambda-deployment-${var.environment}"
-    Environment = var.environment
-  }
-}
-
-# S3 Bucket versioning for Lambda deployment
-resource "aws_s3_bucket_versioning" "lambda_deployment" {
-  bucket = aws_s3_bucket.lambda_deployment.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-# S3 Bucket server-side encryption for Lambda deployment
-resource "aws_s3_bucket_server_side_encryption_configuration" "lambda_deployment" {
-  bucket = aws_s3_bucket.lambda_deployment.id
-
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+# ECR Repositories for Lambda functions
+locals {
+  lambda_functions = {
+    "get-items" = {
+      timeout     = 30
+      memory_size = 128
+    }
+    "get-item" = {
+      timeout     = 30
+      memory_size = 128
+    }
+    "create-item" = {
+      timeout     = 30
+      memory_size = 128
+    }
+    "get-outfits" = {
+      timeout     = 30
+      memory_size = 128
+    }
+    "get-outfit" = {
+      timeout     = 30
+      memory_size = 128
+    }
+    "create-outfit" = {
+      timeout     = 30
+      memory_size = 128
     }
   }
 }
 
-# S3 Bucket public access block for Lambda deployment
-resource "aws_s3_bucket_public_access_block" "lambda_deployment" {
-  bucket = aws_s3_bucket.lambda_deployment.id
+# ECR Repositories
+resource "aws_ecr_repository" "lambda_functions" {
+  for_each = local.lambda_functions
 
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
+  name                 = "${var.app_name}-${each.key}-${var.environment}"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  tags = {
+    Name        = "${var.app_name}-${each.key}-${var.environment}"
+    Environment = var.environment
+    Function    = each.key
+  }
 }
 
 # IAM Role for Lambda functions
@@ -160,61 +169,39 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
   })
 }
 
-# Lambda Functions
-locals {
-  lambda_functions = {
-    "get-items" = {
-      handler     = "bootstrap"
-      runtime     = "provided.al2"
-      timeout     = 30
-      memory_size = 128
-    }
-    "get-item" = {
-      handler     = "bootstrap"
-      runtime     = "provided.al2"
-      timeout     = 30
-      memory_size = 128
-    }
-    "create-item" = {
-      handler     = "bootstrap"
-      runtime     = "provided.al2"
-      timeout     = 30
-      memory_size = 128
-    }
-    "get-outfits" = {
-      handler     = "bootstrap"
-      runtime     = "provided.al2"
-      timeout     = 30
-      memory_size = 128
-    }
-    "get-outfit" = {
-      handler     = "bootstrap"
-      runtime     = "provided.al2"
-      timeout     = 30
-      memory_size = 128
-    }
-    "create-outfit" = {
-      handler     = "bootstrap"
-      runtime     = "provided.al2"
-      timeout     = 30
-      memory_size = 128
-    }
-  }
+# Custom policy for Lambda to access ECR
+resource "aws_iam_role_policy" "lambda_ecr" {
+  name = "${var.app_name}-lambda-ecr-policy-${var.environment}"
+  role = aws_iam_role.lambda_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:BatchCheckLayerAvailability"
+        ]
+        Resource = [
+          for repo in aws_ecr_repository.lambda_functions : repo.arn
+        ]
+      }
+    ]
+  })
 }
 
-# Create Lambda functions
+# Lambda Functions using container images
 resource "aws_lambda_function" "backend_functions" {
   for_each = local.lambda_functions
 
   function_name = "${var.app_name}-${each.key}-${var.environment}"
   role          = aws_iam_role.lambda_execution.arn
-  handler       = each.value.handler
-  runtime       = each.value.runtime
+  package_type  = "Image"
+  image_uri     = "${aws_ecr_repository.lambda_functions[each.key].repository_url}:latest"
   timeout       = each.value.timeout
   memory_size   = each.value.memory_size
-
-  # Source code will be uploaded by GitHub Actions
-  filename = "dummy.zip" # Placeholder, will be replaced by actual deployment
 
   environment {
     variables = {
@@ -228,6 +215,10 @@ resource "aws_lambda_function" "backend_functions" {
     Environment = var.environment
     Function    = each.key
   }
+
+  depends_on = [
+    aws_ecr_repository.lambda_functions
+  ]
 }
 
 # API Gateway
@@ -331,8 +322,8 @@ resource "aws_api_gateway_integration" "get_items" {
   http_method = aws_api_gateway_method.get_items.http_method
 
   integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.backend_functions["get-items"].invoke_arn
+  type                   = "AWS_PROXY"
+  uri                    = aws_lambda_function.backend_functions["get-items"].invoke_arn
 }
 
 resource "aws_api_gateway_integration" "create_item" {
@@ -341,8 +332,8 @@ resource "aws_api_gateway_integration" "create_item" {
   http_method = aws_api_gateway_method.create_item.http_method
 
   integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.backend_functions["create-item"].invoke_arn
+  type                   = "AWS_PROXY"
+  uri                    = aws_lambda_function.backend_functions["create-item"].invoke_arn
 }
 
 resource "aws_api_gateway_integration" "get_item" {
@@ -351,8 +342,8 @@ resource "aws_api_gateway_integration" "get_item" {
   http_method = aws_api_gateway_method.get_item.http_method
 
   integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.backend_functions["get-item"].invoke_arn
+  type                   = "AWS_PROXY"
+  uri                    = aws_lambda_function.backend_functions["get-item"].invoke_arn
 }
 
 resource "aws_api_gateway_integration" "get_outfits" {
@@ -361,8 +352,8 @@ resource "aws_api_gateway_integration" "get_outfits" {
   http_method = aws_api_gateway_method.get_outfits.http_method
 
   integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.backend_functions["get-outfits"].invoke_arn
+  type                   = "AWS_PROXY"
+  uri                    = aws_lambda_function.backend_functions["get-outfits"].invoke_arn
 }
 
 resource "aws_api_gateway_integration" "create_outfit" {
@@ -371,8 +362,8 @@ resource "aws_api_gateway_integration" "create_outfit" {
   http_method = aws_api_gateway_method.create_outfit.http_method
 
   integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.backend_functions["create-outfit"].invoke_arn
+  type                   = "AWS_PROXY"
+  uri                    = aws_lambda_function.backend_functions["create-outfit"].invoke_arn
 }
 
 resource "aws_api_gateway_integration" "get_outfit" {
@@ -381,11 +372,11 @@ resource "aws_api_gateway_integration" "get_outfit" {
   http_method = aws_api_gateway_method.get_outfit.http_method
 
   integration_http_method = "POST"
-  type                    = "AWS_PROXY"
-  uri                     = aws_lambda_function.backend_functions["get-outfit"].invoke_arn
+  type                   = "AWS_PROXY"
+  uri                    = aws_lambda_function.backend_functions["get-outfit"].invoke_arn
 }
 
-# Lambda permissions for API Gateway
+# Lambda Permissions for API Gateway
 resource "aws_lambda_permission" "get_items" {
   statement_id  = "AllowExecutionFromAPIGateway"
   action        = "lambda:InvokeFunction"
@@ -434,7 +425,7 @@ resource "aws_lambda_permission" "get_outfit" {
   source_arn    = "${aws_api_gateway_rest_api.main.execution_arn}/*/*"
 }
 
-# API Gateway Deployment (updated to use modern approach)
+# API Gateway Deployment
 resource "aws_api_gateway_deployment" "main" {
   depends_on = [
     aws_api_gateway_integration.get_items,
@@ -452,7 +443,7 @@ resource "aws_api_gateway_deployment" "main" {
   }
 }
 
-# API Gateway Stage (modern approach)
+# API Gateway Stage
 resource "aws_api_gateway_stage" "main" {
   deployment_id = aws_api_gateway_deployment.main.id
   rest_api_id   = aws_api_gateway_rest_api.main.id
@@ -464,20 +455,27 @@ resource "aws_api_gateway_stage" "main" {
   }
 }
 
-# Outputs (updated to use stage)
+# Outputs
 output "api_gateway_url" {
-  description = "URL of the API Gateway"
-  value       = "${aws_api_gateway_stage.main.invoke_url}"
+  description = "API Gateway URL"
+  value       = "${aws_api_gateway_stage.main.invoke_url}/api/v1"
 }
 
 output "dynamodb_table_name" {
-  description = "Name of the DynamoDB table"
+  description = "DynamoDB table name"
   value       = aws_dynamodb_table.backend_table.name
 }
 
 output "lambda_functions" {
-  description = "Map of Lambda function names"
+  description = "Lambda function names"
   value = {
     for k, v in aws_lambda_function.backend_functions : k => v.function_name
   }
 }
+
+output "ecr_repositories" {
+  description = "ECR repository URLs"
+  value = {
+    for k, v in aws_ecr_repository.lambda_functions : k => v.repository_url
+  }
+} 

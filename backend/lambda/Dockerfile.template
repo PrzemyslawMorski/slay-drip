@@ -1,0 +1,43 @@
+# Multi-stage build for Lambda functions
+FROM public.ecr.aws/lambda/provided:al2 AS builder
+
+# Install Go 1.24
+RUN yum update -y && \
+    yum install -y wget tar gzip && \
+    wget https://go.dev/dl/go1.24.0.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go1.24.0.linux-amd64.tar.gz && \
+    rm go1.24.0.linux-amd64.tar.gz
+
+# Set Go environment variables
+ENV PATH="/usr/local/go/bin:${PATH}"
+ENV GOROOT="/usr/local/go"
+ENV GOPATH="/go"
+
+# Set working directory
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build the application
+# ARG FUNCTION_NAME will be passed during build
+ARG FUNCTION_NAME
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-s -w" \
+    -o bootstrap \
+    functions/${FUNCTION_NAME}/main.go
+
+# Runtime stage
+FROM public.ecr.aws/lambda/provided:al2
+
+# Copy the binary from builder stage
+COPY --from=builder /app/bootstrap ${LAMBDA_RUNTIME_DIR}/bootstrap
+
+# Set the CMD to your handler
+CMD [ "bootstrap" ] 
