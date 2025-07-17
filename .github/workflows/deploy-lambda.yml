@@ -58,6 +58,7 @@ jobs:
     name: Build and Deploy Lambda Functions
     needs: [test]
     runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'development' }}
     steps:
       - uses: actions/checkout@v4
       
@@ -82,6 +83,18 @@ jobs:
           cd backend/lambda
           chmod +x build.sh
           ./build.sh
+
+      - name: Validate AWS credentials
+        run: |
+          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
+            echo "❌ Error: AWS_ROLE_ARN is not set in the ${{ github.event.inputs.environment || 'development' }} environment!"
+            echo "Please configure the AWS_ROLE_ARN secret in your environment settings."
+            echo "Go to Settings > Environments > ${{ github.event.inputs.environment || 'development' }} > Add secret"
+            echo "Name: AWS_ROLE_ARN"
+            echo "Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME"
+            exit 1
+          fi
+          echo "✅ AWS_ROLE_ARN is configured in ${{ github.event.inputs.environment || 'development' }} environment"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
