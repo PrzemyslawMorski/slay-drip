@@ -12,7 +12,172 @@
 # Environment files
 .env*
 *.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.staging
+
+# Secrets and Credentials
+secrets/
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cert
+id_rsa
+id_rsa.pub
+*.pub
+private_key
+private_key.pem
+public_key
+public_key.pem
+*.jks
+*.keystore
+credentials.json
+service-account-key.json
+gcp-key.json
+aws-credentials
+.aws/
+.aws/credentials
+.aws/config
+
+# API Keys and Tokens
+api-keys.txt
+tokens.txt
+access-tokens.txt
+*.token
+*.secret
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+database.yml
+db.yml
+
+# Logs
+*.log
+logs/
+log/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.sublime-*
+.atom/
+.brackets.json
 
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# Build outputs
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# Coverage reports
+coverage/
+*.lcov
+.nyc_output/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+public
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Local development
+.local/
+local/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Test files with sensitive data
+test-credentials.json
+test-secrets.json
+mock-secrets.json
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Kubernetes
+*.kubeconfig
+
+# Helm
+charts/*.tgz
+
+# Local configuration overrides
+config.local.*
+settings.local.*
