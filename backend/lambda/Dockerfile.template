@@ -1,4 +1,4 @@
-# Multi-stage build for Lambda functions - Ultra minimal version
+# Multi-stage build for Lambda functions - Lambda-compatible version
 FROM golang:1.24-alpine AS builder
 
 # Install build dependencies
@@ -30,20 +30,14 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -o bootstrap \
     functions/$FUNCTION_NAME/main.go
 
-# Runtime stage - use minimal alpine base
-FROM alpine:latest
-
-# Install runtime dependencies
-RUN apk add --no-cache ca-certificates tzdata
-
-# Create Lambda runtime directory structure
-RUN mkdir -p /var/runtime
+# Runtime stage - use Lambda-provided al2023 base image
+FROM public.ecr.aws/lambda/provided:al2023
 
 # Copy only the binary from builder stage
-COPY --from=builder /app/bootstrap /var/runtime/bootstrap
+COPY --from=builder /app/bootstrap ${LAMBDA_RUNTIME_DIR}/bootstrap
 
 # Set proper permissions
-RUN chmod +x /var/runtime/bootstrap
+RUN chmod +x ${LAMBDA_RUNTIME_DIR}/bootstrap
 
 # Set the CMD to your handler
-CMD [ "/var/runtime/bootstrap" ] 
+CMD [ "bootstrap" ] 
