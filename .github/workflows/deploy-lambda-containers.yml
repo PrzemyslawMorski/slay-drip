@@ -18,6 +18,10 @@ on:
           - staging
           - development
 
+permissions:
+  id-token: write
+  contents: read
+
 env:
   AWS_REGION: ${{ 'eu-central-1' }}
   ECR_REPOSITORY_PREFIX: slay-drip
