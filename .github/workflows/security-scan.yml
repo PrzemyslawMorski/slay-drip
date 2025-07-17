@@ -5,15 +5,43 @@ on:
     types: [opened, synchronize, reopened]
     branches: [ main, develop ]
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      scan_paths:
+        description: 'Paths to scan (comma-separated)'
+        required: false
+        default: '.'
+        type: string
+      fail_on_secrets:
+        description: 'Fail workflow if secrets are found'
+        required: false
+        default: true
+        type: boolean
+      fail_on_vulnerabilities:
+        description: 'Fail workflow if vulnerabilities are found'
+        required: false
+        default: true
+        type: boolean
+    outputs:
+      secrets_found:
+        description: 'Whether secrets were found'
+        value: ${{ jobs.security-scan.outputs.secrets_found }}
+      vulnerabilities_found:
+        description: 'Whether vulnerabilities were found'
+        value: ${{ jobs.dependency-scan.outputs.vulnerabilities_found }}
 
 env:
-  SCAN_PATHS: "."
-  EXCLUDE_PATHS: "node_modules,.git,.terraform,dist,build"
+  SCAN_PATHS: ${{ inputs.scan_paths || '.' }}
+  EXCLUDE_PATHS: "node_modules,.git,.terraform,dist,build,.venv,__pycache__,.pytest_cache"
+  FAIL_ON_SECRETS: ${{ inputs.fail_on_secrets || true }}
+  FAIL_ON_VULNERABILITIES: ${{ inputs.fail_on_vulnerabilities || true }}
 
 jobs:
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
+    outputs:
+      secrets_found: ${{ steps.secrets-check.outputs.found }}
     
     steps:
       - name: Checkout code
@@ -56,6 +84,7 @@ jobs:
             exit 1
           }
           echo "✅ detect-secrets scan passed"
+
       - name: Check for environment files
         id: env-files
         run: |
@@ -105,6 +134,49 @@ jobs:
           
           echo "✅ No hardcoded URLs with credentials found"
 
+      - name: Check for hardcoded secrets in Go files
+        id: go-secrets
+        run: |
+          echo "🔍 Checking for hardcoded secrets in Go files..."
+          
+          # Check for hardcoded API keys, passwords, etc. in Go files
+          if grep -r --include="*.go" --exclude-dir={.git,node_modules,.terraform,dist,build} -E "(password|secret|key|token)\s*[:=]\s*[\"'][^\"']{8,}[\"']" .; then
+            echo "❌ Found potential hardcoded secrets in Go files!"
+            grep -r --include="*.go" --exclude-dir={.git,node_modules,.terraform,dist,build} -E "(password|secret|key|token)\s*[:=]\s*[\"'][^\"']{8,}[\"']" .
+            exit 1
+          fi
+          
+          echo "✅ No hardcoded secrets found in Go files"
+
+      - name: Check for hardcoded secrets in JS/TS files
+        id: js-secrets
+        run: |
+          echo "🔍 Checking for hardcoded secrets in JS/TS files..."
+          
+          # Check for hardcoded API keys, passwords, etc. in JS/TS files
+          if grep -r --include="*.js" --include="*.ts" --include="*.jsx" --include="*.tsx" --exclude-dir={.git,node_modules,.terraform,dist,build} -E "(password|secret|key|token)\s*[:=]\s*[\"'][^\"']{8,}[\"']" .; then
+            echo "❌ Found potential hardcoded secrets in JS/TS files!"
+            grep -r --include="*.js" --include="*.ts" --include="*.jsx" --include="*.tsx" --exclude-dir={.git,node_modules,.terraform,dist,build} -E "(password|secret|key|token)\s*[:=]\s*[\"'][^\"']{8,}[\"']" .
+            exit 1
+          fi
+          
+          echo "✅ No hardcoded secrets found in JS/TS files"
+
+      - name: Set secrets check output
+        id: secrets-check
+        run: |
+          if [ "${{ steps.trufflehog.outcome }}" == "success" ] && \
+             [ "${{ steps.detect-secrets.outcome }}" == "success" ] && \
+             [ "${{ steps.env-files.outcome }}" == "success" ] && \
+             [ "${{ steps.terraform-state.outcome }}" == "success" ] && \
+             [ "${{ steps.hardcoded-urls.outcome }}" == "success" ] && \
+             [ "${{ steps.go-secrets.outcome }}" == "success" ] && \
+             [ "${{ steps.js-secrets.outcome }}" == "success" ]; then
+            echo "found=false" >> $GITHUB_OUTPUT
+          else
+            echo "found=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Generate security report
         id: report
         if: always()
@@ -146,10 +218,24 @@ jobs:
           else
             echo "❌ **Hardcoded URLs:** Credentials found in URLs" >> $GITHUB_STEP_SUMMARY
           fi
+          
+          if [ "${{ steps.go-secrets.outcome }}" == "success" ]; then
+            echo "✅ **Go Secrets:** No hardcoded secrets in Go files" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Go Secrets:** Hardcoded secrets found in Go files" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ steps.js-secrets.outcome }}" == "success" ]; then
+            echo "✅ **JS/TS Secrets:** No hardcoded secrets in JS/TS files" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **JS/TS Secrets:** Hardcoded secrets found in JS/TS files" >> $GITHUB_STEP_SUMMARY
+          fi
 
   dependency-scan:
     name: Dependency Security Scan
     runs-on: ubuntu-latest
+    outputs:
+      vulnerabilities_found: ${{ steps.vulnerabilities-check.outputs.found }}
     
     steps:
       - name: Checkout code
@@ -168,6 +254,7 @@ jobs:
           npm ci
 
       - name: Run npm audit
+        id: npm-audit
         run: |
           cd frontend
           npm audit --audit-level=high || {
@@ -182,6 +269,7 @@ jobs:
           npm outdated || echo "✅ All packages are up to date"
 
       - name: Check for known vulnerable packages
+        id: vulnerable-packages
         run: |
           cd frontend
           echo "🔍 Checking for known vulnerable packages..."
@@ -208,6 +296,38 @@ jobs:
             echo "⚠️  Consider updating or replacing vulnerable packages"
           else
             echo "✅ No known vulnerable packages found"
+          fi
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Go dependency vulnerability scan
+        id: go-audit
+        run: |
+          cd backend
+          echo "🔍 Running Go vulnerability scan..."
+          
+          # Install govulncheck
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          
+          # Run vulnerability check
+          govulncheck ./... || {
+            echo "❌ Go vulnerability scan found issues!"
+            exit 1
+          }
+          
+          echo "✅ Go vulnerability scan passed"
+
+      - name: Set vulnerabilities check output
+        id: vulnerabilities-check
+        run: |
+          if [ "${{ steps.npm-audit.outcome }}" == "success" ] && \
+             [ "${{ steps.go-audit.outcome }}" == "success" ]; then
+            echo "found=false" >> $GITHUB_OUTPUT
+          else
+            echo "found=true" >> $GITHUB_OUTPUT
           fi
 
   code-quality:
@@ -258,6 +378,25 @@ jobs:
             echo "⚠️  Found HTTP URLs (should use HTTPS in production)"
           fi
 
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Go security checks
+        run: |
+          cd backend
+          echo "🔍 Running Go security checks..."
+          
+          # Check for race conditions
+          go test -race ./... || echo "⚠️  Race condition tests failed"
+          
+          # Check for security issues with go vet
+          go vet ./... || echo "⚠️  go vet found issues"
+          
+          # Check for unused imports and variables
+          go vet -unusedresultfuncs ./... || echo "⚠️  Unused result functions found"
+
   notify:
     name: Security Scan Results
     runs-on: ubuntu-latest
@@ -277,7 +416,7 @@ jobs:
           fi
           
           if [ "${{ needs.dependency-scan.result }}" == "success" ]; then
-            echo "✅ **Dependency Scan:** PASSED (npm audit + free tools)" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **Dependency Scan:** PASSED (npm audit + govulncheck)" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Dependency Scan:** FAILED - Vulnerabilities found!" >> $GITHUB_STEP_SUMMARY
           fi

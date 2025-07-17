@@ -39,10 +39,18 @@ env:
   TF_VERSION: "1.5.0"
 
 jobs:
+  security-scan:
+    name: Security Scan
+    uses: ./.github/workflows/security-scan.yml
+    with:
+      scan_paths: 'terraform'
+      fail_on_secrets: true
+      fail_on_vulnerabilities: true
 
   terraform-validation:
     name: Terraform Validation
     runs-on: ubuntu-latest
+    needs: security-scan
     environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging') || 'development' }}
 
     steps:
@@ -124,7 +132,7 @@ jobs:
   plan:
     name: Terraform Plan
     runs-on: ubuntu-latest
-    needs: terraform-validation
+    needs: [security-scan, terraform-validation]
     environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging') || 'development' }}
 
     steps:
@@ -191,7 +199,7 @@ jobs:
   apply:
     name: Terraform Apply
     runs-on: ubuntu-latest
-    needs: [terraform-validation, plan]
+    needs: [security-scan, terraform-validation, plan]
     if: |
       github.event_name != 'pull_request' &&
       (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' || github.event_name == 'push')
@@ -223,18 +231,6 @@ jobs:
             echo "environment=development" >> $GITHUB_OUTPUT
           fi
 
-      - name: Validate AWS credentials
-        run: |
-          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
-            echo "❌ Error: AWS_ROLE_ARN is not set in the ${{ steps.env.outputs.environment }} environment!"
-            echo "Please configure the AWS_ROLE_ARN secret in your environment settings."
-            echo "Go to Settings > Environments > ${{ steps.env.outputs.environment }} > Add secret"
-            echo "Name: AWS_ROLE_ARN"
-            echo "Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME"
-            exit 1
-          fi
-          echo "✅ AWS_ROLE_ARN is configured in ${{ steps.env.outputs.environment }} environment"
-
       - name: Download Terraform Plan
         uses: actions/download-artifact@v4
         with:
@@ -251,58 +247,48 @@ jobs:
           # Select workspace
           terraform workspace select ${{ steps.env.outputs.environment }} || terraform workspace new ${{ steps.env.outputs.environment }}
           
-          # Apply the plan (without -var since plan already contains variables)
-          terraform apply -auto-approve ${{ steps.env.outputs.environment }}.tfplan
-          
-          # Get outputs
-          echo "## 🏗️ Terraform Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** ${{ steps.env.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Repository:** ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          # Display outputs
-          if terraform output -json > outputs.json 2>/dev/null; then
-            echo "**Infrastructure Outputs:**" >> $GITHUB_STEP_SUMMARY
-            cat outputs.json | jq -r 'to_entries[] | "- **\(.key):** \(.value.value)"' >> $GITHUB_STEP_SUMMARY
-          fi
+          # Apply the plan
+          terraform apply ${{ steps.env.outputs.environment }}.tfplan
 
   notify:
-    name: Notify Deployment Status
+    name: Terraform Deployment Summary
     runs-on: ubuntu-latest
-    needs: [terraform-validation, plan, apply]
+    needs: [security-scan, terraform-validation, plan, apply]
     if: always()
 
     steps:
       - name: Deployment Summary
         run: |
-          echo "## 🚀 Terraform Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## 🏗️ Terraform Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Repository:** ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Event type:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [ "${{ needs.terraform-validation.result }}" == "success" ]; then
-            echo "✅ **Terraform validation:** Success" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.security-scan.result }}" == "success" ]; then
+            echo "✅ **Security Scan:** PASSED" >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ **Terraform validation:** Failed" >> $GITHUB_STEP_SUMMARY
+            echo "❌ **Security Scan:** FAILED - Deployment blocked!" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ needs.terraform-validation.result }}" == "success" ]; then
+            echo "✅ **Terraform Validation:** PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Terraform Validation:** FAILED" >> $GITHUB_STEP_SUMMARY
           fi
 
           if [ "${{ needs.plan.result }}" == "success" ]; then
-            echo "✅ **Terraform plan:** Success" >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ needs.plan.result }}" == "failure" ]; then
-            echo "❌ **Terraform plan:** Failed" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **Terraform Plan:** PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Terraform Plan:** FAILED" >> $GITHUB_STEP_SUMMARY
           fi
 
           if [ "${{ needs.apply.result }}" == "success" ]; then
-            echo "✅ **Terraform apply:** Success" >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ needs.apply.result }}" == "failure" ]; then
-            echo "❌ **Terraform apply:** Failed" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **Terraform Apply:** SUCCESS" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ needs.apply.result }}" == "skipped" ]; then
-            echo "⏭️  **Terraform apply:** Skipped (Pull Request)" >> $GITHUB_STEP_SUMMARY
+            echo "⏭️  **Terraform Apply:** SKIPPED (PR or plan-only)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Terraform Apply:** FAILED" >> $GITHUB_STEP_SUMMARY
           fi 

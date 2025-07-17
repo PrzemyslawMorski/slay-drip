@@ -31,9 +31,18 @@ env:
   NODE_VERSION: "24"
 
 jobs:
+  security-scan:
+    name: Security Scan
+    uses: ./.github/workflows/security-scan.yml
+    with:
+      scan_paths: 'frontend,terraform'
+      fail_on_secrets: true
+      fail_on_vulnerabilities: true
+
   test:
     name: Test Frontend
     runs-on: ubuntu-latest
+    needs: security-scan
     defaults:
       run:
         working-directory: ./frontend
@@ -61,7 +70,7 @@ jobs:
   build:
     name: Build Frontend
     runs-on: ubuntu-latest
-    needs: test
+    needs: [security-scan, test]
     defaults:
       run:
         working-directory: ./frontend
@@ -96,7 +105,7 @@ jobs:
   deploy-development:
     name: Deploy to Development
     runs-on: ubuntu-latest
-    needs: build
+    needs: [security-scan, build]
     environment: development
     if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'development')
 
@@ -216,7 +225,7 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    needs: build
+    needs: [security-scan, build]
     environment: staging
     if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
 
@@ -336,7 +345,7 @@ jobs:
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: build
+    needs: [security-scan, build]
     environment: production
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
 
@@ -456,7 +465,7 @@ jobs:
   notify:
     name: Notify Deployment Status
     runs-on: ubuntu-latest
-    needs: [deploy-development, deploy-staging, deploy-production]
+    needs: [security-scan, deploy-development, deploy-staging, deploy-production]
     if: always()
 
     steps:
@@ -469,6 +478,12 @@ jobs:
           echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ needs.security-scan.result }}" == "success" ]; then
+            echo "✅ **Security Scan:** PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Security Scan:** FAILED - Deployment blocked!" >> $GITHUB_STEP_SUMMARY
+          fi
 
           if [ "${{ needs.deploy-development.result }}" == "success" ]; then
             echo "✅ **Development deployment:** Success" >> $GITHUB_STEP_SUMMARY
