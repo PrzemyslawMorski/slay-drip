@@ -26,12 +26,17 @@ RUN go mod download
 COPY . .
 
 # Build the application
-# ARG FUNCTION_NAME will be passed during build
+# FUNCTION_NAME will be passed during build
 ARG FUNCTION_NAME
+RUN if [ -z "$FUNCTION_NAME" ]; then \
+        echo "Error: FUNCTION_NAME build argument is required"; \
+        exit 1; \
+    fi
+
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-s -w" \
     -o bootstrap \
-    functions/${FUNCTION_NAME}/main.go
+    functions/$FUNCTION_NAME/main.go
 
 # Runtime stage
 FROM public.ecr.aws/lambda/provided:al2

@@ -181,6 +181,7 @@ resource "aws_iam_role_policy" "github_actions" {
           "lambda:GetFunctionEventInvokeConfig",
           "lambda:GetFunctionUrlConfig",
           "lambda:GetFunctionCodeSigningConfig",
+          "lambda:TagResource",
         ]
         Resource = [
           "arn:aws:lambda:${var.aws_region}:*:function:${var.app_name}-*"
@@ -294,6 +295,56 @@ resource "aws_iam_role_policy" "github_actions" {
           "iam:GetOpenIDConnectProvider",
           "iam:ListOpenIDConnectProviders",
           "iam:ListAttachedRolePolicies"
+        ]
+        Resource = "*"
+      },
+      # ECR permissions for Docker image management
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:PutImage",
+          "ecr:CreateRepository",
+          "ecr:DeleteRepository",
+          "ecr:DescribeRepositories",
+          "ecr:ListImages",
+          "ecr:DescribeImages",
+          "ecr:BatchDeleteImage",
+          "ecr:GetLifecyclePolicy",
+          "ecr:PutLifecyclePolicy",
+          "ecr:DeleteLifecyclePolicy",
+          "ecr:GetRepositoryPolicy",
+          "ecr:SetRepositoryPolicy",
+          "ecr:DeleteRepositoryPolicy",
+          "ecr:TagResource",
+          "ecr:UntagResource",
+          "ecr:ListTagsForResource"
+        ]
+        Resource = [
+          "arn:aws:ecr:${var.aws_region}:*:repository/${var.app_name}-*",
+          "arn:aws:ecr:${var.aws_region}:*:repository/${var.app_name}-*/*"
+        ]
+      },
+      # ECR registry permissions
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken",
+          "ecr:DescribeRegistry",
+          "ecr:GetRegistryPolicy",
+          "ecr:PutRegistryPolicy",
+          "ecr:DeleteRegistryPolicy",
+          "ecr:GetRegistryScanningConfiguration",
+          "ecr:PutRegistryScanningConfiguration",
+          "ecr:PutReplicationConfiguration",
+          "ecr:GetReplicationConfiguration",
+          "ecr:DeleteReplicationConfiguration"
         ]
         Resource = "*"
       }

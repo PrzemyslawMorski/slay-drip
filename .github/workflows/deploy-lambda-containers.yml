@@ -51,47 +51,13 @@ jobs:
     - name: Build and push Lambda functions
       working-directory: ./backend/lambda
       run: |
-        # List of functions to build
-        FUNCTIONS=(
-          "get-items"
-          "get-item"
-          "create-item"
-          "get-outfits"
-          "get-outfit"
-          "create-outfit"
-        )
-
-        # Build and push each function
-        for func in "${FUNCTIONS[@]}"; do
-          echo "Building $func..."
-          
-          # Get AWS account ID
-          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          
-          # Create ECR repository if it doesn't exist
-          REPO_NAME="${ECR_REPOSITORY_PREFIX}-${func}-${{ github.event.inputs.environment || 'development' }}"
-          aws ecr describe-repositories --repository-names ${REPO_NAME} --region ${AWS_REGION} 2>/dev/null || {
-            echo "Creating ECR repository: ${REPO_NAME}"
-            aws ecr create-repository --repository-name ${REPO_NAME} --region ${AWS_REGION}
-          }
-          
-          # Build Docker image
-          IMAGE_TAG="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO_NAME}:latest"
-          
-          docker build \
-            --build-arg FUNCTION_NAME=${func} \
-            -f Dockerfile.template \
-            -t ${REPO_NAME}:latest \
-            -t ${IMAGE_TAG} \
-            .
-          
-          # Push to ECR
-          echo "Pushing $func to ECR..."
-          docker push ${IMAGE_TAG}
-          
-          echo "✅ Built and pushed $func"
-          echo "Image URI: ${IMAGE_TAG}"
-        done
+        # Use the shell build script
+        ENVIRONMENT="${{ github.event.inputs.environment || 'development' }}"
+        echo "Building Lambda functions for environment: $ENVIRONMENT"
+        
+        # Make script executable and run it
+        chmod +x build-all-functions.sh
+        ./build-all-functions.sh "$ENVIRONMENT"
 
     - name: Update Lambda functions with new images
       run: |
