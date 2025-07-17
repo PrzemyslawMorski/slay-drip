@@ -58,7 +58,7 @@ jobs:
     name: Build and Deploy Lambda Functions
     needs: [test]
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'development' }}
+    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging' || 'development') }}
     steps:
       - uses: actions/checkout@v4
       
@@ -86,15 +86,16 @@ jobs:
 
       - name: Validate AWS credentials
         run: |
+          ENVIRONMENT="${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging' || 'development') }}"
           if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
-            echo "❌ Error: AWS_ROLE_ARN is not set in the ${{ github.event.inputs.environment || 'development' }} environment!"
+            echo "❌ Error: AWS_ROLE_ARN is not set in the $ENVIRONMENT environment!"
             echo "Please configure the AWS_ROLE_ARN secret in your environment settings."
-            echo "Go to Settings > Environments > ${{ github.event.inputs.environment || 'development' }} > Add secret"
+            echo "Go to Settings > Environments > $ENVIRONMENT > Add secret"
             echo "Name: AWS_ROLE_ARN"
             echo "Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME"
             exit 1
           fi
-          echo "✅ AWS_ROLE_ARN is configured in ${{ github.event.inputs.environment || 'development' }} environment"
+          echo "✅ AWS_ROLE_ARN is configured in $ENVIRONMENT environment"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -103,15 +104,33 @@ jobs:
           role-session-name: GitHubActions
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.5.0"
-
-      - name: Deploy to AWS
+      - name: Deploy Lambda Functions
         run: |
-          cd terraform
-          terraform init
-          terraform apply -auto-approve
-        env:
-          TF_VAR_github_repository: ${{ github.repository }}
+          cd backend/lambda
+          ENVIRONMENT="${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging' || 'development') }}"
+          echo "🚀 Deploying Lambda functions to $ENVIRONMENT environment..."
+          
+          # Deploy each Lambda function
+          for function_dir in functions/*/; do
+            if [ -d "$function_dir" ]; then
+              function_name=$(basename "$function_dir")
+              zip_file="${function_name}.zip"
+              
+              echo "📦 Deploying $function_name..."
+              
+              # Update Lambda function code
+              aws lambda update-function-code \
+                --function-name "slay-drip-${function_name}-${ENVIRONMENT}" \
+                --zip-file "fileb://${zip_file}" \
+                --region "${{ env.AWS_REGION }}"
+              
+              if [ $? -eq 0 ]; then
+                echo "✅ Successfully deployed $function_name"
+              else
+                echo "❌ Failed to deploy $function_name"
+                exit 1
+              fi
+            fi
+          done
+          
+          echo "🎉 All Lambda functions deployed successfully!"
