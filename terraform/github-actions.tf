@@ -201,20 +201,16 @@ resource "aws_iam_role_policy" "github_actions" {
           "arn:aws:logs:${var.aws_region}:*:log-group:/aws/lambda/${var.app_name}-*"
         ]
       },
-      # DynamoDB permissions for backend data
+      # DynamoDB permissions for backend data (full access for Terraform management)
       {
         Effect = "Allow"
         Action = [
-          "dynamodb:DescribeTable",
-          "dynamodb:GetItem",
-          "dynamodb:PutItem",
-          "dynamodb:UpdateItem",
-          "dynamodb:DeleteItem",
-          "dynamodb:Query",
-          "dynamodb:Scan"
+          "dynamodb:*"
         ]
         Resource = [
-          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.app_name}-*"
+          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.app_name}-*",
+          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.app_name}-*/index/*",
+          "arn:aws:dynamodb:${var.aws_region}:*:table/${var.app_name}-*/backup/*"
         ]
       },
       # API Gateway permissions
