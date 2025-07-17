@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -22,7 +23,14 @@ func init() {
 	}
 
 	client := dynamodb.NewFromConfig(cfg)
-	db := models.NewDynamoDBClient(client, "slay-drip-table")
+
+	// Get table name from environment variable with fallback
+	tableName := os.Getenv("DYNAMODB_TABLE_NAME")
+	if tableName == "" {
+		log.Fatal("DYNAMODB_TABLE_NAME environment variable is required")
+	}
+
+	db := models.NewDynamoDBClient(client, tableName)
 	outfitsHandler = handlers.NewOutfitsHandler(db)
 }
 

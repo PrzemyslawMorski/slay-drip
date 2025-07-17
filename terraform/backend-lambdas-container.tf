@@ -205,8 +205,8 @@ resource "aws_lambda_function" "backend_functions" {
 
   environment {
     variables = {
-      ENVIRONMENT = var.environment
-      TABLE_NAME  = aws_dynamodb_table.backend_table.name
+      ENVIRONMENT        = var.environment
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.backend_table.name
     }
   }
 
