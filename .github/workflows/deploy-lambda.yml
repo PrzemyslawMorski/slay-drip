@@ -46,32 +46,9 @@ jobs:
           go test -coverprofile=coverage.out ./...
           go tool cover -func=coverage.out
 
-  generate-docs:
-    name: Generate API Documentation
-    needs: [security-scan, test]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v4
-        with:
-          go-version: "1.24"
-      - name: Install swag
-        run: go install github.com/swaggo/swag/cmd/swag@latest
-      - name: Generate OpenAPI docs
-        run: |
-          cd backend/lambda
-          ./scripts/generate-docs.sh
-      - name: Commit generated docs
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add backend/lambda/api-docs/
-          git commit -m "Auto-generate API docs from code" || echo "No changes to commit"
-          git push
-
   build-and-deploy:
     name: Build and Deploy Lambda Functions
-    needs: [security-scan, test, generate-docs]
+    needs: [security-scan, test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
