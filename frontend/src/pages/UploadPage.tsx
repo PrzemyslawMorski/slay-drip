@@ -1,10 +1,10 @@
 import React from 'react';
 import ClothingUpload from '../components/ClothingUpload';
 import { ClothingItem, WardrobeState } from '../types';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useIndexedDB } from '../hooks/useIndexedDB';
 
 const UploadPage: React.FC = () => {
-  const [wardrobeState, setWardrobeState] = useLocalStorage<WardrobeState>('wardrobeState', {
+  const [wardrobeState, setWardrobeState] = useIndexedDB<WardrobeState>('wardrobeState', {
     clothingItems: [],
     outfits: [],
   });

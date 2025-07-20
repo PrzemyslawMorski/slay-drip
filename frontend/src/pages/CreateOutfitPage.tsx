@@ -1,10 +1,10 @@
 import React from 'react';
 import OutfitCreator from '../components/OutfitCreator';
 import { Outfit, WardrobeState } from '../types';
-import { useLocalStorage } from '../hooks/useLocalStorage';
+import { useIndexedDB } from '../hooks/useIndexedDB';
 
 const CreateOutfitPage: React.FC = () => {
-  const [wardrobeState, setWardrobeState] = useLocalStorage<WardrobeState>('wardrobeState', {
+  const [wardrobeState, setWardrobeState] = useIndexedDB<WardrobeState>('wardrobeState', {
     clothingItems: [],
     outfits: [],
   });
