@@ -32,7 +32,7 @@ resource "aws_s3_bucket_public_access_block" "frontend_bucket_public_access" {
 resource "aws_s3_bucket_accelerate_configuration" "frontend_bucket_acceleration" {
   bucket = aws_s3_bucket.frontend_bucket.id
   status = "Enabled"
-  
+
   # Handle existing buckets with acceleration already enabled
   lifecycle {
     ignore_changes = [status]
@@ -50,7 +50,7 @@ resource "aws_s3_bucket_logging" "frontend_bucket_logging" {
   bucket = aws_s3_bucket.frontend_bucket.id
 
   target_bucket = aws_s3_bucket.frontend_bucket.id
-  target_prefix  = "logs/"
+  target_prefix = "logs/"
 }
 
 # S3 Bucket Lifecycle Configuration
@@ -92,6 +92,8 @@ resource "aws_s3_bucket_object_lock_configuration" "frontend_bucket_object_lock"
       days = 1
     }
   }
+
+  depends_on = [aws_s3_bucket_versioning.frontend_bucket_versioning]
 }
 
 # S3 Bucket Policy for Public Read Access
@@ -155,7 +157,7 @@ resource "aws_cloudfront_distribution" "frontend_distribution" {
   }
 
   enabled             = true
-  is_ipv6_enabled    = true
+  is_ipv6_enabled     = true
   default_root_object = "index.html"
   price_class         = "PriceClass_100" # Use only North America and Europe for the moment
 
@@ -239,8 +241,8 @@ resource "aws_cloudfront_distribution" "frontend_distribution" {
 
     viewer_protocol_policy = "redirect-to-https"
     min_ttl                = 0
-    default_ttl            = 3600     # 1 hour (allow updates)
-    max_ttl                = 86400    # 24 hours
+    default_ttl            = 3600  # 1 hour (allow updates)
+    max_ttl                = 86400 # 24 hours
   }
 
   # Cache behavior for service worker (no caching)
@@ -259,7 +261,7 @@ resource "aws_cloudfront_distribution" "frontend_distribution" {
 
     viewer_protocol_policy = "redirect-to-https"
     min_ttl                = 0
-    default_ttl            = 0        # No caching for service worker
+    default_ttl            = 0 # No caching for service worker
     max_ttl                = 0
   }
 

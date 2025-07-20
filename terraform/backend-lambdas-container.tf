@@ -113,6 +113,31 @@ resource "aws_ecr_repository" "lambda_functions" {
   }
 }
 
+# ECR Repository Policies to allow Lambda to pull images
+resource "aws_ecr_repository_policy" "lambda_functions" {
+  for_each = local.lambda_functions
+
+  repository = aws_ecr_repository.lambda_functions[each.key].name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowLambdaPull"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+        Action = [
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer"
+        ]
+        Resource = aws_ecr_repository.lambda_functions[each.key].arn
+      }
+    ]
+  })
+}
+
 # IAM Role for Lambda functions
 resource "aws_iam_role" "lambda_execution" {
   name = "${var.app_name}-lambda-execution-role-${var.environment}"
@@ -169,7 +194,7 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
   })
 }
 
-# Custom policy for Lambda to access ECR
+# Enhanced ECR policy for Lambda execution role
 resource "aws_iam_role_policy" "lambda_ecr" {
   name = "${var.app_name}-lambda-ecr-policy-${var.environment}"
   role = aws_iam_role.lambda_execution.id
@@ -182,11 +207,21 @@ resource "aws_iam_role_policy" "lambda_ecr" {
         Action = [
           "ecr:GetDownloadUrlForLayer",
           "ecr:BatchGetImage",
-          "ecr:BatchCheckLayerAvailability"
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:DescribeRepositories",
+          "ecr:ListImages",
+          "ecr:DescribeImages"
         ]
         Resource = [
           for repo in aws_ecr_repository.lambda_functions : repo.arn
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
       }
     ]
   })
