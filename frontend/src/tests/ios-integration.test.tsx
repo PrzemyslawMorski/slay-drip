@@ -105,7 +105,7 @@ describe('iOS Integration Tests', () => {
       
       // Open edit dialog
       await waitFor(() => {
-        const editButton = screen.getByLabelText(/edit item/i);
+        const editButton = screen.getByRole("button", { name: /edit details/i });
         return user.click(editButton);
       });
       
@@ -167,7 +167,7 @@ describe('iOS Integration Tests', () => {
       await user.upload(fileInput, file);
       
       await waitFor(() => {
-        const editButton = screen.getByLabelText(/edit item/i);
+        const editButton = screen.getByRole("button", { name: /edit details/i });
         return user.click(editButton);
       });
       
@@ -224,7 +224,7 @@ describe('iOS Integration Tests', () => {
       render(<OutfitCreator clothingItems={mockItems} onSaveOutfit={mockSaveOutfit} />);
       
       // Enter selection mode
-      await user.click(screen.getByText('Select Items'));
+      await user.click(screen.getByText('Add Items'));
       
       // Select item
       const itemCard = screen.getByText('Test Shirt').closest('.MuiCard-root');
@@ -262,7 +262,7 @@ describe('iOS Integration Tests', () => {
       render(<OutfitCreator clothingItems={mockItems} onSaveOutfit={mockSaveOutfit} />);
       
       // Same workflow should work on desktop
-      await user.click(screen.getByText('Select Items'));
+      await user.click(screen.getByText('Add Items'));
       
       const itemCard = screen.getByText('Test Shirt').closest('.MuiCard-root');
       if (itemCard) await user.click(itemCard);
@@ -299,7 +299,7 @@ describe('iOS Integration Tests', () => {
       await user.upload(fileInput, file);
       
       await waitFor(() => {
-        const editButton = screen.getByLabelText(/edit item/i);
+        const editButton = screen.getByRole("button", { name: /edit details/i });
         return user.click(editButton);
       });
       
@@ -332,7 +332,7 @@ describe('iOS Integration Tests', () => {
       await user.upload(fileInput2, file);
       
       await waitFor(() => {
-        const editButton = screen.getByLabelText(/edit item/i);
+        const editButton = screen.getByRole("button", { name: /edit details/i });
         return user.click(editButton);
       });
       
@@ -370,7 +370,7 @@ describe('iOS Integration Tests', () => {
       await user.upload(fileInput, file);
       
       await waitFor(() => {
-        const editButton = screen.getByLabelText(/edit item/i);
+        const editButton = screen.getByRole("button", { name: /edit details/i });
         return user.click(editButton);
       });
       
@@ -391,7 +391,7 @@ describe('iOS Integration Tests', () => {
       await user.upload(fileInput, file);
       
       await waitFor(() => {
-        const editButton = screen.getByLabelText(/edit item/i);
+        const editButton = screen.getByRole("button", { name: /edit details/i });
         return user.click(editButton);
       });
       

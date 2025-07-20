@@ -86,7 +86,7 @@ describe('ClothingUpload', () => {
     await user.upload(fileInput, file);
     
     await waitFor(() => {
-      const editButton = screen.getByLabelText(/edit item/i);
+      const editButton = screen.getByRole("button", { name: /edit details/i });
       return user.click(editButton);
     });
     
@@ -106,7 +106,7 @@ describe('ClothingUpload', () => {
       await user.upload(fileInput, file);
       
       await waitFor(() => {
-        const editButton = screen.getByLabelText(/edit item/i);
+        const editButton = screen.getByRole("button", { name: /edit details/i });
         return user.click(editButton);
       });
       
@@ -130,7 +130,7 @@ describe('ClothingUpload', () => {
       await user.upload(fileInput, file);
       
       await waitFor(() => {
-        const editButton = screen.getByLabelText(/edit item/i);
+        const editButton = screen.getByRole("button", { name: /edit details/i });
         return user.click(editButton);
       });
       
@@ -150,7 +150,7 @@ describe('ClothingUpload', () => {
       await user.upload(fileInput, file);
       
       await waitFor(() => {
-        const editButton = screen.getByLabelText(/edit item/i);
+        const editButton = screen.getByRole("button", { name: /edit details/i });
         return user.click(editButton);
       });
       
@@ -177,7 +177,7 @@ describe('ClothingUpload', () => {
       
       // Edit the item to add required fields
       await waitFor(() => {
-        const editButton = screen.getByLabelText(/edit item/i);
+        const editButton = screen.getByRole("button", { name: /edit details/i });
         return user.click(editButton);
       });
       
@@ -248,7 +248,7 @@ describe('ClothingUpload', () => {
       
       // Edit to add required fields
       await waitFor(() => {
-        const editButton = screen.getByLabelText(/edit item/i);
+        const editButton = screen.getByRole("button", { name: /edit details/i });
         return user.click(editButton);
       });
       
@@ -285,7 +285,7 @@ describe('ClothingUpload', () => {
       
       // Add required fields and save
       await waitFor(() => {
-        const editButton = screen.getByLabelText(/edit item/i);
+        const editButton = screen.getByRole("button", { name: /edit details/i });
         return user.click(editButton);
       });
       
@@ -319,7 +319,7 @@ describe('ClothingUpload', () => {
       
       // Add required fields
       await waitFor(() => {
-        const editButton = screen.getByLabelText(/edit item/i);
+        const editButton = screen.getByRole("button", { name: /edit details/i });
         return user.click(editButton);
       });
       

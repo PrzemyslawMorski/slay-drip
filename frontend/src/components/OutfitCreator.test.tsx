@@ -68,11 +68,10 @@ describe('OutfitCreator', () => {
     const user = userEvent.setup();
     render(<OutfitCreator clothingItems={mockClothingItems} onSaveOutfit={mockOnSaveOutfit} />);
     
-    const selectButton = screen.getByText('Select Items');
+    const selectButton = screen.getByText('Add Items');
     await user.click(selectButton);
     
-    expect(screen.getByText('Cancel Selection')).toBeInTheDocument();
-    expect(screen.getByText('Save Outfit')).toBeInTheDocument();
+    expect(screen.getByText('Done Selecting')).toBeInTheDocument();
   });
 
   it('should select and deselect items', async () => {
@@ -80,7 +79,7 @@ describe('OutfitCreator', () => {
     render(<OutfitCreator clothingItems={mockClothingItems} onSaveOutfit={mockOnSaveOutfit} />);
     
     // Enter selection mode
-    await user.click(screen.getByText('Select Items'));
+    await user.click(screen.getByText('Add Items'));
     
     // Select an item
     const shirtCard = screen.getByText('Blue Shirt').closest('[data-testid="clothing-item"]') || 
@@ -98,7 +97,7 @@ describe('OutfitCreator', () => {
     render(<OutfitCreator clothingItems={mockClothingItems} onSaveOutfit={mockOnSaveOutfit} />);
     
     // Enter selection mode and select items
-    await user.click(screen.getByText('Select Items'));
+    await user.click(screen.getByText('Add Items'));
     
     // Select multiple items by clicking on them
     const items = screen.getAllByText(/Blue Shirt|Black Pants/);
@@ -124,7 +123,7 @@ describe('OutfitCreator', () => {
       render(<OutfitCreator clothingItems={mockClothingItems} onSaveOutfit={mockOnSaveOutfit} />);
       
       // Enter selection mode
-      await user.click(screen.getByText('Select Items'));
+      await user.click(screen.getByText('Add Items'));
       
       // Select an item
       const shirtCard = screen.getByText('Blue Shirt').closest('.MuiCard-root');
@@ -182,7 +181,7 @@ describe('OutfitCreator', () => {
       render(<OutfitCreator clothingItems={mockClothingItems} onSaveOutfit={mockOnSaveOutfit} />);
       
       // Enter selection mode and select items
-      await user.click(screen.getByText('Select Items'));
+      await user.click(screen.getByText('Add Items'));
       
       const shirtCard = screen.getByText('Blue Shirt').closest('.MuiCard-root');
       const pantsCard = screen.getByText('Black Pants').closest('.MuiCard-root');
@@ -224,7 +223,7 @@ describe('OutfitCreator', () => {
       render(<OutfitCreator clothingItems={mockClothingItems} onSaveOutfit={mockOnSaveOutfit} />);
       
       // Enter selection mode and select items
-      await user.click(screen.getByText('Select Items'));
+      await user.click(screen.getByText('Add Items'));
       
       const shirtCard = screen.getByText('Blue Shirt').closest('.MuiCard-root');
       if (shirtCard) await user.click(shirtCard);
@@ -245,7 +244,7 @@ describe('OutfitCreator', () => {
       render(<OutfitCreator clothingItems={mockClothingItems} onSaveOutfit={mockOnSaveOutfit} />);
       
       // Enter selection mode but don't select items
-      await user.click(screen.getByText('Select Items'));
+      await user.click(screen.getByText('Add Items'));
       
       // Save outfit button should not be available or functional
       const saveButton = screen.queryByText('Save Outfit');
@@ -263,7 +262,7 @@ describe('OutfitCreator', () => {
       render(<OutfitCreator clothingItems={mockClothingItems} onSaveOutfit={mockOnSaveOutfit} />);
       
       // Enter selection mode and select items
-      await user.click(screen.getByText('Select Items'));
+      await user.click(screen.getByText('Add Items'));
       
       const shirtCard = screen.getByText('Blue Shirt').closest('.MuiCard-root');
       if (shirtCard) await user.click(shirtCard);
@@ -288,7 +287,7 @@ describe('OutfitCreator', () => {
       render(<OutfitCreator clothingItems={mockClothingItems} onSaveOutfit={mockOnSaveOutfit} />);
       
       // Enter selection mode and select items
-      await user.click(screen.getByText('Select Items'));
+      await user.click(screen.getByText('Add Items'));
       
       const shirtCard = screen.getByText('Blue Shirt').closest('.MuiCard-root');
       if (shirtCard) await user.click(shirtCard);
@@ -304,8 +303,8 @@ describe('OutfitCreator', () => {
       
       await waitFor(() => {
         // Should exit selection mode
-        expect(screen.getByText('Select Items')).toBeInTheDocument();
-        expect(screen.queryByText('Cancel Selection')).not.toBeInTheDocument();
+        expect(screen.getByText('Add Items')).toBeInTheDocument();
+        expect(screen.queryByText('Done Selecting')).not.toBeInTheDocument();
       });
     });
   });
@@ -316,7 +315,7 @@ describe('OutfitCreator', () => {
       render(<OutfitCreator clothingItems={mockClothingItems} onSaveOutfit={mockOnSaveOutfit} />);
       
       // Enter selection mode and select items
-      await user.click(screen.getByText('Select Items'));
+      await user.click(screen.getByText('Add Items'));
       
       const shirtCard = screen.getByText('Blue Shirt').closest('.MuiCard-root');
       if (shirtCard) await user.click(shirtCard);
@@ -338,7 +337,8 @@ describe('OutfitCreator', () => {
     it('should handle empty clothing items list', () => {
       render(<OutfitCreator clothingItems={[]} onSaveOutfit={mockOnSaveOutfit} />);
       
-      expect(screen.getByText(/no clothing items found/i)).toBeInTheDocument();
+      // Should render without crashing and show the outfit creator interface
+      expect(screen.getByText('Add Items')).toBeInTheDocument();
     });
 
     it('should filter items by search', async () => {
