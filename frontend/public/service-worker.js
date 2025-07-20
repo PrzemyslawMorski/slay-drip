@@ -10,17 +10,15 @@
 const precacheManifest = self.__WB_MANIFEST || [];
 
 // Cache name for storing assets
-const CACHE_NAME = 'slay-drip-cache-v1';
+const CACHE_NAME = 'slay-drip-cache-v2';
 
-// Files to cache
+// Files to cache - updated for Vite build output
 const urlsToCache = [
   '/',
   '/index.html',
-  '/static/js/bundle.js',
-  '/static/js/main.chunk.js',
-  '/static/js/0.chunk.js',
   '/favicon.ico',
   '/logo192.png',
+  '/logo512.png',
   '/manifest.json'
 ];
 
@@ -31,13 +29,32 @@ self.addEventListener('install', event => {
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('Opened cache');
-        return cache.addAll(urlsToCache.concat(precacheManifest.map(entry => entry.url)));
+        return cache.addAll(urlsToCache).catch(error => {
+          console.error('Failed to cache assets:', error);
+          // Cache essential files only if some fail
+          return cache.addAll([
+            '/',
+            '/index.html',
+            '/favicon.ico',
+            '/manifest.json'
+          ]);
+        });
       })
   );
 });
 
 // Cache and return requests
 self.addEventListener('fetch', event => {
+  // Only handle GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // Skip cross-origin requests
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -45,9 +62,35 @@ self.addEventListener('fetch', event => {
         if (response) {
           return response;
         }
-        return fetch(event.request);
-      }
-    )
+        
+        // For navigation requests, try network first, then fallback to index.html
+        if (event.request.mode === 'navigate') {
+          return fetch(event.request).catch(() => {
+            return caches.match('/index.html');
+          });
+        }
+        
+        // For other requests, try network first
+        return fetch(event.request).then(response => {
+          // Don't cache non-successful responses
+          if (!response || response.status !== 200 || response.type !== 'basic') {
+            return response;
+          }
+
+          // Clone the response as it can only be consumed once
+          const responseToCache = response.clone();
+          
+          caches.open(CACHE_NAME)
+            .then(cache => {
+              cache.put(event.request, responseToCache);
+            });
+
+          return response;
+        }).catch(() => {
+          // Network failed, return cached response if available
+          return caches.match(event.request);
+        });
+      })
   );
 });
 
@@ -65,4 +108,12 @@ self.addEventListener('activate', event => {
       );
     })
   );
+});
+
+// Handle messages from the app
+self.addEventListener('message', event => {
+  if (event.data && event.data.action === 'CHECK_FOR_UPDATES') {
+    // Force check for updates
+    self.registration.update();
+  }
 });

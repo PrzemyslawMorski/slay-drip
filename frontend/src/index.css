@@ -28,6 +28,31 @@ body {
   overflow: hidden;
 }
 
+/* iOS PWA safe area support */
+:root {
+  --sat: 0px;
+  --sab: 0px;
+  --sal: 0px;
+  --sar: 0px;
+}
+
+/* iOS standalone mode specific styles */
+@media (display-mode: standalone) {
+  body {
+    /* Ensure proper handling in PWA mode */
+    background-color: #ffffff;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Add padding for iOS safe areas in standalone mode */
+  #root {
+    padding-top: var(--sat);
+    padding-bottom: var(--sab);
+    padding-left: var(--sal);
+    padding-right: var(--sar);
+  }
+}
+
 #root {
   width: 100%;
   height: 100%;

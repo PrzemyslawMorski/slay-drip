@@ -3,10 +3,20 @@ import { useState, useEffect, useCallback } from 'react';
 export function useLocalStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
+      // Check if localStorage is available (iOS Safari private mode fix)
+      if (typeof window === 'undefined' || !window.localStorage) {
+        return initialValue;
+      }
+      
+      // Test localStorage access
+      const testKey = '__localStorage_test__';
+      window.localStorage.setItem(testKey, 'test');
+      window.localStorage.removeItem(testKey);
+      
       const item = window.localStorage.getItem(key);
       return item ? JSON.parse(item) : initialValue;
     } catch (error) {
-      console.error('Error reading from localStorage:', error);
+      console.error('Error reading from localStorage (possibly private mode):', error);
       return initialValue;
     }
   });
