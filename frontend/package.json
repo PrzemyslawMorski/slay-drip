@@ -18,7 +18,9 @@
     "start": "vite",
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "echo 'No tests specified' && exit 0",
+    "lint": "echo 'No linting specified' && exit 0"
   },
   "devDependencies": {
     "@types/node": "^24.0.14",
