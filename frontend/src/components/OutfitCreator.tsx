@@ -71,7 +71,19 @@ const OutfitCreator: React.FC<OutfitCreatorProps> = ({ clothingItems, onSaveOutf
       setSaveError(null);
     } catch (error) {
       console.error('Error saving outfit:', error);
-      setSaveError('Failed to save outfit. Please try again.');
+      let errorMessage = 'Failed to save outfit. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('quota exceeded')) {
+          errorMessage = 'Storage quota exceeded. Please delete some items or clear browser data and try again.';
+        } else if (error.message.includes('localStorage')) {
+          errorMessage = 'Storage access denied. Please check if you\'re in private mode and try again.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setSaveError(errorMessage);
     }
   };
 

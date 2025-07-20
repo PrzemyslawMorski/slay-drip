@@ -291,6 +291,7 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
           accept="image/*"
           style={{ display: 'none' }}
           onChange={handleFileSelect}
+          aria-label="Select files to upload"
         />
       </Box>
       
