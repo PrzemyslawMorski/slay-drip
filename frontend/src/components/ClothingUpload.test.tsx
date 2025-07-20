@@ -196,7 +196,7 @@ describe('ClothingUpload', () => {
       
       // Save all items
       await waitFor(() => {
-        const saveButton = screen.getByText(/Save.*Items/)');
+        const saveButton = screen.getByText(/Save.*Items/);
         return user.click(saveButton);
       });
       
@@ -224,7 +224,7 @@ describe('ClothingUpload', () => {
       
       // Try to save without filling required fields
       await waitFor(() => {
-        const saveButton = screen.getByText(/Save.*Items/)');
+        const saveButton = screen.getByText(/Save.*Items/);
         return user.click(saveButton);
       });
       
@@ -263,7 +263,7 @@ describe('ClothingUpload', () => {
       
       // Try to save
       await waitFor(() => {
-        const saveButton = screen.getByText(/Save.*Items/)');
+        const saveButton = screen.getByText(/Save.*Items/);
         return user.click(saveButton);
       });
       
@@ -299,7 +299,7 @@ describe('ClothingUpload', () => {
       await user.click(screen.getByText('Save'));
       
       await waitFor(() => {
-        const saveButton = screen.getByText(/Save.*Items/)');
+        const saveButton = screen.getByText(/Save.*Items/);
         return user.click(saveButton);
       });
       
@@ -334,7 +334,7 @@ describe('ClothingUpload', () => {
       
       // Save items
       await waitFor(() => {
-        const saveButton = screen.getByText(/Save.*Items/)');
+        const saveButton = screen.getByText(/Save.*Items/);
         return user.click(saveButton);
       });
       

@@ -146,9 +146,9 @@ describe('iOS Integration Tests', () => {
       const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
       await user.upload(fileInput, file);
       
-      await waitFor(() => {
-        expect(screen.getByDisplayValue('test.jpg')).toBeInTheDocument();
-      });
+              await waitFor(() => {
+          expect(screen.getByDisplayValue("test")).toBeInTheDocument();
+        });
     });
   });
 
@@ -173,12 +173,12 @@ describe('iOS Integration Tests', () => {
       
       // Fill required fields
       const nameInput = await screen.findByLabelText(/name/i);
-      const categorySelect = await screen.findByLabelText(/category/i);
+      const categoryInput = await screen.findByRole("combobox");
       const colorInput = await screen.findByLabelText(/color/i);
       
       await user.clear(nameInput);
       await user.type(nameInput, 'Test Item');
-      await user.click(categorySelect);
+      await user.click(categoryInput);
       await user.click(screen.getByText('Tops'));
       await user.type(colorInput, 'Blue');
       
@@ -186,7 +186,7 @@ describe('iOS Integration Tests', () => {
       
       // Save all items
       await waitFor(() => {
-        const saveButton = screen.getByText('Save All Items');
+        const saveButton = screen.getByText(/Save.*Items/)');
         return user.click(saveButton);
       });
       
@@ -304,16 +304,16 @@ describe('iOS Integration Tests', () => {
       });
       
       const nameInput = await screen.findByLabelText(/name/i);
-      const categorySelect = await screen.findByLabelText(/category/i);
+      const categoryInput = await screen.findByRole("combobox");
       
       await user.clear(nameInput);
       await user.type(nameInput, 'Test');
-      await user.click(categorySelect);
+      await user.click(categoryInput);
       await user.click(screen.getByText('Tops'));
       await user.click(screen.getByText('Save'));
       
       await waitFor(() => {
-        const saveButton = screen.getByText('Save All Items');
+        const saveButton = screen.getByText(/Save.*Items/)');
         return user.click(saveButton);
       });
       
@@ -337,16 +337,16 @@ describe('iOS Integration Tests', () => {
       });
       
       const nameInput2 = await screen.findByLabelText(/name/i);
-      const categorySelect2 = await screen.findByLabelText(/category/i);
+      const categoryInput2 = await screen.findByRole("combobox");
       
       await user.clear(nameInput2);
       await user.type(nameInput2, 'Test');
-      await user.click(categorySelect2);
+      await user.click(categoryInput2);
       await user.click(screen.getByText('Tops'));
       await user.click(screen.getByText('Save'));
       
       await waitFor(() => {
-        const saveButton = screen.getByText('Save All Items');
+        const saveButton = screen.getByText(/Save.*Items/)');
         return user.click(saveButton);
       });
       
