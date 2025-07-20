@@ -186,7 +186,7 @@ describe('iOS Integration Tests', () => {
       
       // Save all items
       await waitFor(() => {
-        const saveButton = screen.getByText(/Save.*Items/)');
+        const saveButton = screen.getByText(/Save.*Items/);
         return user.click(saveButton);
       });
       
@@ -313,7 +313,7 @@ describe('iOS Integration Tests', () => {
       await user.click(screen.getByText('Save'));
       
       await waitFor(() => {
-        const saveButton = screen.getByText(/Save.*Items/)');
+        const saveButton = screen.getByText(/Save.*Items/);
         return user.click(saveButton);
       });
       
@@ -346,7 +346,7 @@ describe('iOS Integration Tests', () => {
       await user.click(screen.getByText('Save'));
       
       await waitFor(() => {
-        const saveButton = screen.getByText(/Save.*Items/)');
+        const saveButton = screen.getByText(/Save.*Items/);
         return user.click(saveButton);
       });
       

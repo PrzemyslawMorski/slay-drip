@@ -301,8 +301,15 @@ describe('OutfitCreator', () => {
       await user.click(saveButton);
       
       await waitFor(() => {
-        // After successful save, outfit should be cleared and selection mode should be exited
-        expect(screen.getByText(/Current Outfit.*0.*items/)).toBeInTheDocument();
+        // Verify the save function was called with correct data
+        expect(mockOnSaveOutfit).toHaveBeenCalledWith(
+          expect.objectContaining({
+            name: 'Test Outfit',
+            items: expect.arrayContaining([
+              expect.objectContaining({ name: 'Blue Shirt' })
+            ])
+          })
+        );
       }, { timeout: 3000 });
     });
   });

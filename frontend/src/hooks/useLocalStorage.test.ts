@@ -33,6 +33,15 @@ describe('useLocalStorage', () => {
   beforeEach(() => {
     localStorageMock.clear();
     vi.clearAllMocks();
+    
+    // Reset localStorage mock to default behavior before each test
+    localStorageMock.getItem.mockImplementation((key) => localStorageMock[key] || null);
+    localStorageMock.setItem.mockImplementation((key, value) => {
+      localStorageMock[key] = value;
+    });
+    localStorageMock.removeItem.mockImplementation((key) => {
+      delete localStorageMock[key];
+    });
   });
 
   afterEach(() => {
@@ -85,9 +94,6 @@ describe('useLocalStorage', () => {
   });
 
   it('should handle localStorage access denied in private mode', () => {
-    localStorageMock.clear();
-    vi.clearAllMocks();
-    
     // Mock access denied error - suppress console.error for this test
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     localStorageMock.setItem.mockImplementation(() => {
@@ -95,9 +101,9 @@ describe('useLocalStorage', () => {
       throw error;
     });
 
-    const { result } = renderHook(() => useLocalStorage('test-key', ''));
+    const { result } = renderHook(() => useLocalStorage('test-key-private', ''));
     
-    // The hook should handle the error gracefully and not crash
+    // The hook should handle the error gracefully and maintain state
     act(() => {
       result.current[1]('some value');
     });
@@ -119,15 +125,7 @@ describe('useLocalStorage', () => {
   });
 
   it('should work with function updates', () => {
-    localStorageMock.clear();
-    vi.clearAllMocks();
-    
-    // Reset setItem to normal behavior
-    localStorageMock.setItem.mockImplementation((key, value) => {
-      localStorageMock[key] = value;
-    });
-    
-    const { result } = renderHook(() => useLocalStorage('test-key', 0));
+    const { result } = renderHook(() => useLocalStorage('test-key-func', 0));
     
     act(() => {
       result.current[1](prev => prev + 1);
@@ -137,14 +135,6 @@ describe('useLocalStorage', () => {
   });
 
   it('should handle complex objects', () => {
-    localStorageMock.clear();
-    vi.clearAllMocks();
-    
-    // Reset setItem to normal behavior
-    localStorageMock.setItem.mockImplementation((key, value) => {
-      localStorageMock[key] = value;
-    });
-    
     const complexObject = {
       clothingItems: [
         { id: '1', name: 'Test Item', category: 'tops', color: 'blue', tags: ['casual'] }
