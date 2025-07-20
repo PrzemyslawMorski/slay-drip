@@ -231,7 +231,7 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
           
           <Grid container spacing={2} sx={{ mb: 3 }}>
             {pendingItems.map((item, index) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+                             <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
                 <Card>
                   <Box sx={{ position: 'relative' }}>
                     <img

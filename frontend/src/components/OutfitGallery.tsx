@@ -147,10 +147,10 @@ const OutfitGallery: React.FC<OutfitGalleryProps> = ({
             )}
           </Box>
 
-          <Grid container spacing={2}>
-            {Object.entries(categorizedItems).map(([category, items]) =>
-              items.length > 0 && (
-                <Grid item xs={12} sm={6} md={4} key={category}>
+                     <Grid container spacing={2}>
+             {Object.entries(categorizedItems).map(([category, items]) =>
+               items.length > 0 && (
+                                   <Grid item xs={12} sm={6} md={4} key={category}>
                   <Typography variant="subtitle2" sx={{ mb: 1, textTransform: 'capitalize' }}>
                     {category} ({items.length})
                   </Typography>
@@ -222,9 +222,9 @@ const OutfitGallery: React.FC<OutfitGalleryProps> = ({
       </Box>
 
       {/* Outfits Grid */}
-      <Grid container spacing={3}>
-        {filteredOutfits.map((outfit) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={outfit.id}>
+             <Grid container spacing={3}>
+         {filteredOutfits.map((outfit) => (
+                       <Grid item xs={12} sm={6} md={4} lg={3} key={outfit.id}>
             <Card sx={{ position: 'relative' }}>
               <Box sx={{ position: 'relative' }}>
                 {createOutfitThumbnail(outfit)}

@@ -124,10 +124,10 @@ const OutfitCreator: React.FC<OutfitCreatorProps> = ({ clothingItems, onSaveOutf
         </Box>
 
         {selectedItems.length > 0 ? (
-          <Grid container spacing={2}>
-            {Object.entries(categorizedItems).map(([category, items]) =>
-              items.length > 0 && (
-                <Grid item xs={12} sm={6} md={4} lg={2.4} key={category}>
+                     <Grid container spacing={2}>
+             {Object.entries(categorizedItems).map(([category, items]) =>
+               items.length > 0 && (
+                                   <Grid item xs={12} sm={6} md={4} lg={2.4} key={category}>
                   <Box>
                     <Typography variant="subtitle2" sx={{ mb: 1, textTransform: 'capitalize' }}>
                       {category} ({items.length})

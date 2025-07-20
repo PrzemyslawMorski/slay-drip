@@ -118,9 +118,9 @@ const WardrobeView: React.FC<WardrobeViewProps> = ({
       </Tabs>
 
       {/* Items Grid */}
-      <Grid container spacing={2}>
-        {filteredItems.map((item) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={item.id}>
+             <Grid container spacing={2}>
+         {filteredItems.map((item) => (
+                       <Grid item xs={12} sm={6} md={4} lg={3} key={item.id}>
             <Card 
               sx={{ 
                 cursor: selectionMode ? 'pointer' : 'default',
