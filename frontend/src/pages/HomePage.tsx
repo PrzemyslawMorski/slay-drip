@@ -1,11 +1,31 @@
 import React from 'react';
-import { Typography } from '@mui/material';
+import WardrobeView from '../components/WardrobeView';
+import { WardrobeState } from '../types';
+import { useLocalStorage } from '../hooks/useLocalStorage';
 
-const HomePage = () => {
+const HomePage: React.FC = () => {
+  const [wardrobeState, setWardrobeState] = useLocalStorage<WardrobeState>('wardrobeState', {
+    clothingItems: [],
+    outfits: [],
+  });
+
+  const handleItemDelete = (itemId: string) => {
+    setWardrobeState(prev => ({
+      ...prev,
+      clothingItems: prev.clothingItems.filter(item => item.id !== itemId),
+      // Also remove item from any outfits
+      outfits: prev.outfits.map(outfit => ({
+        ...outfit,
+        items: outfit.items.filter(item => item.id !== itemId),
+      })),
+    }));
+  };
+
   return (
-    <Typography variant="h4" component="h1" gutterBottom>
-      Welcome to Slay Drip Bebciorrrrr
-    </Typography>
+    <WardrobeView
+      items={wardrobeState.clothingItems}
+      onItemDelete={handleItemDelete}
+    />
   );
 };
 
