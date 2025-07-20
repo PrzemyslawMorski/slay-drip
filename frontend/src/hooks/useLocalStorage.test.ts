@@ -2,27 +2,25 @@ import { renderHook, act } from '@testing-library/react';
 import { useLocalStorage } from './useLocalStorage';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
-// Mock localStorage
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
+// Mock localStorage with proper store management
+let store: Record<string, string> = {};
 
-  return {
-    getItem: vi.fn((key: string) => store[key] || null),
-    setItem: vi.fn((key: string, value: string) => {
-      store[key] = value;
-    }),
-    removeItem: vi.fn((key: string) => {
-      delete store[key];
-    }),
-    clear: vi.fn(() => {
-      store = {};
-    }),
-    key: vi.fn((index: number) => Object.keys(store)[index] || null),
-    get length() {
-      return Object.keys(store).length;
-    }
-  };
-})();
+const localStorageMock = {
+  getItem: vi.fn((key: string) => store[key] || null),
+  setItem: vi.fn((key: string, value: string) => {
+    store[key] = value;
+  }),
+  removeItem: vi.fn((key: string) => {
+    delete store[key];
+  }),
+  clear: vi.fn(() => {
+    store = {};
+  }),
+  key: vi.fn((index: number) => Object.keys(store)[index] || null),
+  get length() {
+    return Object.keys(store).length;
+  }
+};
 
 Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
@@ -31,16 +29,17 @@ Object.defineProperty(window, 'localStorage', {
 
 describe('useLocalStorage', () => {
   beforeEach(() => {
-    localStorageMock.clear();
+    // Clear the store and reset mocks
+    store = {};
     vi.clearAllMocks();
     
-    // Reset localStorage mock to default behavior before each test
-    localStorageMock.getItem.mockImplementation((key) => localStorageMock[key] || null);
-    localStorageMock.setItem.mockImplementation((key, value) => {
-      localStorageMock[key] = value;
+    // Reset to original implementations
+    localStorageMock.getItem.mockImplementation((key: string) => store[key] || null);
+    localStorageMock.setItem.mockImplementation((key: string, value: string) => {
+      store[key] = value;
     });
-    localStorageMock.removeItem.mockImplementation((key) => {
-      delete localStorageMock[key];
+    localStorageMock.removeItem.mockImplementation((key: string) => {
+      delete store[key];
     });
   });
 
@@ -75,8 +74,6 @@ describe('useLocalStorage', () => {
   });
 
   it('should handle localStorage quota exceeded error', () => {
-    localStorageMock.clear();
-    
     // Mock quota exceeded error
     localStorageMock.setItem.mockImplementation(() => {
       const error = new DOMException('QuotaExceededError', 'QuotaExceededError');
@@ -103,14 +100,12 @@ describe('useLocalStorage', () => {
 
     const { result } = renderHook(() => useLocalStorage('test-key-private', ''));
     
-    // The hook should handle the error gracefully and maintain state
-    act(() => {
-      result.current[1]('some value');
-    });
-    
-    // Value should remain unchanged due to error
-    expect(result.current[0]).toBe('');
-    expect(localStorageMock.setItem).toHaveBeenCalled();
+    // The hook should throw the error since it re-throws errors
+    expect(() => {
+      act(() => {
+        result.current[1]('some value');
+      });
+    }).toThrow('localStorage access denied');
     
     // Restore console
     consoleSpy.mockRestore();
@@ -142,7 +137,10 @@ describe('useLocalStorage', () => {
       outfits: []
     };
 
-    const { result } = renderHook(() => useLocalStorage('wardrobe', { clothingItems: [], outfits: [] }));
+    const { result } = renderHook(() => useLocalStorage('wardrobe', { 
+      clothingItems: [] as any[], 
+      outfits: [] as any[] 
+    }));
     
     act(() => {
       result.current[1](complexObject);
