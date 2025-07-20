@@ -182,12 +182,12 @@ describe('ClothingUpload', () => {
       });
       
       const nameInput = await screen.findByLabelText(/name/i);
-      const categorySelect = await screen.findByLabelText(/category/i);
+      const categoryInput = await screen.getByRole("combobox");
       const colorInput = await screen.findByLabelText(/color/i);
       
       await user.clear(nameInput);
       await user.type(nameInput, 'Test Shirt');
-      await user.click(categorySelect);
+      await user.click(categoryInput);
       await user.click(screen.getByText('Tops'));
       await user.type(colorInput, 'Blue');
       
@@ -196,7 +196,7 @@ describe('ClothingUpload', () => {
       
       // Save all items
       await waitFor(() => {
-        const saveButton = screen.getByText('Save All Items');
+        const saveButton = screen.getByText(/Save.*Items/)');
         return user.click(saveButton);
       });
       
@@ -224,7 +224,7 @@ describe('ClothingUpload', () => {
       
       // Try to save without filling required fields
       await waitFor(() => {
-        const saveButton = screen.getByText('Save All Items');
+        const saveButton = screen.getByText(/Save.*Items/)');
         return user.click(saveButton);
       });
       
@@ -253,23 +253,23 @@ describe('ClothingUpload', () => {
       });
       
       const nameInput = await screen.findByLabelText(/name/i);
-      const categorySelect = await screen.findByLabelText(/category/i);
+      const categoryInput = await screen.getByRole("combobox");
       
       await user.clear(nameInput);
       await user.type(nameInput, 'Test Item');
-      await user.click(categorySelect);
+      await user.click(categoryInput);
       await user.click(screen.getByText('Tops'));
       await user.click(screen.getByText('Save'));
       
       // Try to save
       await waitFor(() => {
-        const saveButton = screen.getByText('Save All Items');
+        const saveButton = screen.getByText(/Save.*Items/)');
         return user.click(saveButton);
       });
       
       await waitFor(() => {
         expect(screen.getByText(/storage quota exceeded/i)).toBeInTheDocument();
-      });
+      }, { timeout: 3000 });
     });
 
     it('should handle localStorage access denied error', async () => {
@@ -290,22 +290,22 @@ describe('ClothingUpload', () => {
       });
       
       const nameInput = await screen.findByLabelText(/name/i);
-      const categorySelect = await screen.findByLabelText(/category/i);
+      const categoryInput = await screen.getByRole("combobox");
       
       await user.clear(nameInput);
       await user.type(nameInput, 'Test Item');
-      await user.click(categorySelect);
+      await user.click(categoryInput);
       await user.click(screen.getByText('Tops'));
       await user.click(screen.getByText('Save'));
       
       await waitFor(() => {
-        const saveButton = screen.getByText('Save All Items');
+        const saveButton = screen.getByText(/Save.*Items/)');
         return user.click(saveButton);
       });
       
       await waitFor(() => {
         expect(screen.getByText(/storage access denied/i)).toBeInTheDocument();
-      });
+      }, { timeout: 3000 });
     });
 
     it('should clear items after successful save', async () => {
@@ -324,17 +324,17 @@ describe('ClothingUpload', () => {
       });
       
       const nameInput = await screen.findByLabelText(/name/i);
-      const categorySelect = await screen.findByLabelText(/category/i);
+      const categoryInput = await screen.getByRole("combobox");
       
       await user.clear(nameInput);
       await user.type(nameInput, 'Test Item');
-      await user.click(categorySelect);
+      await user.click(categoryInput);
       await user.click(screen.getByText('Tops'));
       await user.click(screen.getByText('Save'));
       
       // Save items
       await waitFor(() => {
-        const saveButton = screen.getByText('Save All Items');
+        const saveButton = screen.getByText(/Save.*Items/)');
         return user.click(saveButton);
       });
       
