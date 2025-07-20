@@ -252,6 +252,9 @@ const OutfitCreator: React.FC<OutfitCreatorProps> = ({ clothingItems, onSaveOutf
         onClose={() => setIsDialogOpen(false)} 
         maxWidth="sm" 
         fullWidth
+        keepMounted={false}
+        disableEnforceFocus={true}
+        disableAutoFocus={true}
         PaperProps={{
           sx: {
             mx: { xs: 1, sm: 2 },
@@ -269,7 +272,13 @@ const OutfitCreator: React.FC<OutfitCreatorProps> = ({ clothingItems, onSaveOutf
               fullWidth
               required
               placeholder="e.g. Work Meeting, Date Night, Casual Friday"
-              inputProps={{ style: { fontSize: '16px' } }}
+              inputProps={{ 
+                style: { fontSize: '16px' },
+                autoComplete: 'off',
+                autoCorrect: 'off',
+                autoCapitalize: 'off',
+                spellCheck: 'false'
+              }}
             />
 
             <TextField
@@ -281,7 +290,13 @@ const OutfitCreator: React.FC<OutfitCreatorProps> = ({ clothingItems, onSaveOutf
               fullWidth
               placeholder="e.g. formal, summer, favorite"
               helperText="Add tags to help organize and find your outfits later"
-              inputProps={{ style: { fontSize: '16px' } }}
+              inputProps={{ 
+                style: { fontSize: '16px' },
+                autoComplete: 'off',
+                autoCorrect: 'off',
+                autoCapitalize: 'off',
+                spellCheck: 'false'
+              }}
             />
 
             <Box>
