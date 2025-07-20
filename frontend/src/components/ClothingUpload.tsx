@@ -108,12 +108,19 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
 
   const handleSave = async () => {
     try {
+      // Validate required fields
+      const invalidItems = pendingItems.filter(item => !item.name.trim() || !item.category);
+      if (invalidItems.length > 0) {
+        setSaveError('Please fill in all required fields (name and category) for all items.');
+        return;
+      }
+
       const clothingItems: ClothingItem[] = pendingItems.map(item => ({
         id: crypto.randomUUID(),
-        name: item.name,
+        name: item.name.trim(),
         category: item.category,
-        color: item.color,
-        brand: item.brand,
+        color: item.color.trim(),
+        brand: item.brand.trim(),
         image: item.preview,
         tags: item.tags,
         dateAdded: new Date().toISOString(),
@@ -125,7 +132,19 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
       setSaveError(null);
     } catch (error) {
       console.error('Error saving items:', error);
-      setSaveError('Failed to save items. Please try again.');
+      let errorMessage = 'Failed to save items. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('quota exceeded')) {
+          errorMessage = 'Storage quota exceeded. Please delete some items or clear browser data and try again.';
+        } else if (error.message.includes('localStorage')) {
+          errorMessage = 'Storage access denied. Please check if you\'re in private mode and try again.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setSaveError(errorMessage);
     }
   };
 
@@ -139,6 +158,9 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
         onClose={() => setEditingIndex(null)} 
         maxWidth="sm" 
         fullWidth
+        keepMounted={false}
+        disableEnforceFocus={true}
+        disableAutoFocus={true}
         PaperProps={{
           sx: {
             mx: { xs: 1, sm: 2 },
@@ -154,7 +176,13 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
               value={item.name}
               onChange={(e) => updateItem(editingIndex, { name: e.target.value })}
               fullWidth
-              inputProps={{ style: { fontSize: '16px' } }}
+              inputProps={{ 
+                style: { fontSize: '16px' },
+                autoComplete: 'off',
+                autoCorrect: 'off',
+                autoCapitalize: 'off',
+                spellCheck: 'false'
+              }}
             />
             
             <FormControl fullWidth>
@@ -180,7 +208,13 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
               value={item.color}
               onChange={(e) => updateItem(editingIndex, { color: e.target.value })}
               fullWidth
-              inputProps={{ style: { fontSize: '16px' } }}
+              inputProps={{ 
+                style: { fontSize: '16px' },
+                autoComplete: 'off',
+                autoCorrect: 'off',
+                autoCapitalize: 'off',
+                spellCheck: 'false'
+              }}
             />
 
             <TextField
@@ -188,7 +222,13 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
               value={item.brand}
               onChange={(e) => updateItem(editingIndex, { brand: e.target.value })}
               fullWidth
-              inputProps={{ style: { fontSize: '16px' } }}
+              inputProps={{ 
+                style: { fontSize: '16px' },
+                autoComplete: 'off',
+                autoCorrect: 'off',
+                autoCapitalize: 'off',
+                spellCheck: 'false'
+              }}
             />
 
             <TextField
@@ -198,8 +238,13 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
                 tags: e.target.value.split(',').map(tag => tag.trim()).filter(tag => tag) 
               })}
               fullWidth
-              helperText="e.g. casual, summer, favorite"
-              inputProps={{ style: { fontSize: '16px' } }}
+              inputProps={{ 
+                style: { fontSize: '16px' },
+                autoComplete: 'off',
+                autoCorrect: 'off',
+                autoCapitalize: 'off',
+                spellCheck: 'false'
+              }}
             />
           </Box>
         </DialogContent>
@@ -246,6 +291,7 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
           accept="image/*"
           style={{ display: 'none' }}
           onChange={handleFileSelect}
+          aria-label="Select files to upload"
         />
       </Box>
       

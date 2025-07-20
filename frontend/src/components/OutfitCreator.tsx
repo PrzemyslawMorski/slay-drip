@@ -71,7 +71,19 @@ const OutfitCreator: React.FC<OutfitCreatorProps> = ({ clothingItems, onSaveOutf
       setSaveError(null);
     } catch (error) {
       console.error('Error saving outfit:', error);
-      setSaveError('Failed to save outfit. Please try again.');
+      let errorMessage = 'Failed to save outfit. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('quota exceeded')) {
+          errorMessage = 'Storage quota exceeded. Please delete some items or clear browser data and try again.';
+        } else if (error.message.includes('localStorage')) {
+          errorMessage = 'Storage access denied. Please check if you\'re in private mode and try again.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      setSaveError(errorMessage);
     }
   };
 
@@ -252,6 +264,9 @@ const OutfitCreator: React.FC<OutfitCreatorProps> = ({ clothingItems, onSaveOutf
         onClose={() => setIsDialogOpen(false)} 
         maxWidth="sm" 
         fullWidth
+        keepMounted={false}
+        disableEnforceFocus={true}
+        disableAutoFocus={true}
         PaperProps={{
           sx: {
             mx: { xs: 1, sm: 2 },
@@ -269,7 +284,13 @@ const OutfitCreator: React.FC<OutfitCreatorProps> = ({ clothingItems, onSaveOutf
               fullWidth
               required
               placeholder="e.g. Work Meeting, Date Night, Casual Friday"
-              inputProps={{ style: { fontSize: '16px' } }}
+              inputProps={{ 
+                style: { fontSize: '16px' },
+                autoComplete: 'off',
+                autoCorrect: 'off',
+                autoCapitalize: 'off',
+                spellCheck: 'false'
+              }}
             />
 
             <TextField
@@ -281,7 +302,13 @@ const OutfitCreator: React.FC<OutfitCreatorProps> = ({ clothingItems, onSaveOutf
               fullWidth
               placeholder="e.g. formal, summer, favorite"
               helperText="Add tags to help organize and find your outfits later"
-              inputProps={{ style: { fontSize: '16px' } }}
+              inputProps={{ 
+                style: { fontSize: '16px' },
+                autoComplete: 'off',
+                autoCorrect: 'off',
+                autoCapitalize: 'off',
+                spellCheck: 'false'
+              }}
             />
 
             <Box>
