@@ -132,7 +132,6 @@ resource "aws_ecr_repository_policy" "lambda_functions" {
           "ecr:BatchGetImage",
           "ecr:GetDownloadUrlForLayer"
         ]
-        Resource = aws_ecr_repository.lambda_functions[each.key].arn
       }
     ]
   })
