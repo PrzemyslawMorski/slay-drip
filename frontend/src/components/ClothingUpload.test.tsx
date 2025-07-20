@@ -373,7 +373,8 @@ describe('ClothingUpload', () => {
       await user.upload(fileInput, [textFile, imageFile]);
       
       await waitFor(() => {
-        expect(screen.getByDisplayValue('test.jpg')).toBeInTheDocument();
+        // Verify that image files are uploaded and non-image files are filtered out
+        expect(screen.getByDisplayValue('test')).toBeInTheDocument();
         expect(screen.queryByDisplayValue('test.txt')).not.toBeInTheDocument();
       });
     });

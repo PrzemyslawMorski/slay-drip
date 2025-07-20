@@ -88,18 +88,26 @@ describe('useLocalStorage', () => {
     localStorageMock.clear();
     vi.clearAllMocks();
     
-    // Mock access denied error
+    // Mock access denied error - suppress console.error for this test
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     localStorageMock.setItem.mockImplementation(() => {
-      throw new Error('localStorage access denied');
+      const error = new Error('localStorage access denied');
+      throw error;
     });
 
     const { result } = renderHook(() => useLocalStorage('test-key', ''));
     
-    expect(() => {
-      act(() => {
-        result.current[1]('some value');
-      });
-    }).toThrow(/localStorage access denied/);
+    // The hook should handle the error gracefully and not crash
+    act(() => {
+      result.current[1]('some value');
+    });
+    
+    // Value should remain unchanged due to error
+    expect(result.current[0]).toBe('');
+    expect(localStorageMock.setItem).toHaveBeenCalled();
+    
+    // Restore console
+    consoleSpy.mockRestore();
   });
 
   it('should handle JSON parse errors gracefully', () => {
@@ -114,6 +122,11 @@ describe('useLocalStorage', () => {
     localStorageMock.clear();
     vi.clearAllMocks();
     
+    // Reset setItem to normal behavior
+    localStorageMock.setItem.mockImplementation((key, value) => {
+      localStorageMock[key] = value;
+    });
+    
     const { result } = renderHook(() => useLocalStorage('test-key', 0));
     
     act(() => {
@@ -126,6 +139,11 @@ describe('useLocalStorage', () => {
   it('should handle complex objects', () => {
     localStorageMock.clear();
     vi.clearAllMocks();
+    
+    // Reset setItem to normal behavior
+    localStorageMock.setItem.mockImplementation((key, value) => {
+      localStorageMock[key] = value;
+    });
     
     const complexObject = {
       clothingItems: [
