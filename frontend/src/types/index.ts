@@ -1,7 +1,7 @@
 export interface ClothingItem {
   id: string;
   name: string;
-  category: 'tops' | 'bottoms' | 'shoes' | 'accessories' | 'outerwear';
+  category: 'tops' | 'bottoms' | 'dress' | 'shoes' | 'accessories' | 'bag' | 'hat' | 'outerwear';
   color: string;
   brand?: string;
   image: string; // Base64 encoded image or URL

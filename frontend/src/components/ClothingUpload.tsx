@@ -18,6 +18,8 @@ import {
   DialogContent,
   DialogActions,
   LinearProgress,
+  Alert,
+  Snackbar,
 } from '@mui/material';
 import { Delete, CloudUpload, Edit } from '@mui/icons-material';
 import { ClothingItem } from '../types';
@@ -40,6 +42,8 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
   const [pendingItems, setPendingItems] = useState<PendingItem[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -61,18 +65,22 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
     const newItems: PendingItem[] = [];
 
     for (const file of files) {
-      const preview = await fileToBase64(file);
-      const name = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
-      
-      newItems.push({
-        file,
-        preview,
-        name,
-        category: 'tops', // Default category
-        color: '',
-        brand: '',
-        tags: [],
-      });
+      try {
+        const preview = await fileToBase64(file);
+        const name = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+        
+        newItems.push({
+          file,
+          preview,
+          name,
+          category: 'tops', // Default category
+          color: '',
+          brand: '',
+          tags: [],
+        });
+      } catch (error) {
+        console.error('Error processing file:', file.name, error);
+      }
     }
 
     setPendingItems(prev => [...prev, ...newItems]);
@@ -99,19 +107,26 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
   };
 
   const handleSave = async () => {
-    const clothingItems: ClothingItem[] = pendingItems.map(item => ({
-      id: crypto.randomUUID(),
-      name: item.name,
-      category: item.category,
-      color: item.color,
-      brand: item.brand,
-      image: item.preview,
-      tags: item.tags,
-      dateAdded: new Date().toISOString(),
-    }));
+    try {
+      const clothingItems: ClothingItem[] = pendingItems.map(item => ({
+        id: crypto.randomUUID(),
+        name: item.name,
+        category: item.category,
+        color: item.color,
+        brand: item.brand,
+        image: item.preview,
+        tags: item.tags,
+        dateAdded: new Date().toISOString(),
+      }));
 
-    onSave(clothingItems);
-    setPendingItems([]);
+      await onSave(clothingItems);
+      setPendingItems([]);
+      setSaveSuccess(true);
+      setSaveError(null);
+    } catch (error) {
+      console.error('Error saving items:', error);
+      setSaveError('Failed to save items. Please try again.');
+    }
   };
 
   const EditDialog = () => {
@@ -119,7 +134,18 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
     const item = pendingItems[editingIndex];
 
     return (
-      <Dialog open={true} onClose={() => setEditingIndex(null)} maxWidth="sm" fullWidth>
+      <Dialog 
+        open={true} 
+        onClose={() => setEditingIndex(null)} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            mx: { xs: 1, sm: 2 },
+            width: { xs: 'calc(100% - 16px)', sm: 'auto' }
+          }
+        }}
+      >
         <DialogTitle>Edit Item Details</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
@@ -128,6 +154,7 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
               value={item.name}
               onChange={(e) => updateItem(editingIndex, { name: e.target.value })}
               fullWidth
+              inputProps={{ style: { fontSize: '16px' } }}
             />
             
             <FormControl fullWidth>
@@ -135,11 +162,15 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
               <Select
                 value={item.category}
                 onChange={(e) => updateItem(editingIndex, { category: e.target.value as ClothingItem['category'] })}
+                sx={{ '& .MuiSelect-select': { fontSize: '16px' } }}
               >
                 <MenuItem value="tops">Tops</MenuItem>
                 <MenuItem value="bottoms">Bottoms</MenuItem>
+                <MenuItem value="dress">Dress</MenuItem>
                 <MenuItem value="shoes">Shoes</MenuItem>
                 <MenuItem value="accessories">Accessories</MenuItem>
+                <MenuItem value="bag">Bag</MenuItem>
+                <MenuItem value="hat">Hat</MenuItem>
                 <MenuItem value="outerwear">Outerwear</MenuItem>
               </Select>
             </FormControl>
@@ -149,6 +180,7 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
               value={item.color}
               onChange={(e) => updateItem(editingIndex, { color: e.target.value })}
               fullWidth
+              inputProps={{ style: { fontSize: '16px' } }}
             />
 
             <TextField
@@ -156,6 +188,7 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
               value={item.brand}
               onChange={(e) => updateItem(editingIndex, { brand: e.target.value })}
               fullWidth
+              inputProps={{ style: { fontSize: '16px' } }}
             />
 
             <TextField
@@ -166,6 +199,7 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
               })}
               fullWidth
               helperText="e.g. casual, summer, favorite"
+              inputProps={{ style: { fontSize: '16px' } }}
             />
           </Box>
         </DialogContent>
@@ -179,15 +213,16 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
 
   return (
     <Box>
-      <Typography variant="h5" gutterBottom>
+      <Typography variant="h5" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
         Upload Clothing Items
       </Typography>
+      
       {/* Upload Area */}
       <Box
         sx={{
           border: '2px dashed #ccc',
           borderRadius: 2,
-          p: 4,
+          p: { xs: 2, sm: 4 },
           textAlign: 'center',
           mb: 3,
           cursor: 'pointer',
@@ -197,8 +232,8 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
         onDragOver={(e) => e.preventDefault()}
         onClick={() => document.getElementById('file-input')?.click()}
       >
-        <CloudUpload sx={{ fontSize: 48, color: '#999', mb: 2 }} />
-        <Typography variant="h6" gutterBottom>
+        <CloudUpload sx={{ fontSize: { xs: 36, sm: 48 }, color: '#999', mb: 2 }} />
+        <Typography variant="h6" gutterBottom sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
           Drag & drop images here or click to select
         </Typography>
         <Typography variant="body2" color="textSecondary">
@@ -213,12 +248,14 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
           onChange={handleFileSelect}
         />
       </Box>
+      
       {processing && (
         <Box sx={{ mb: 3 }}>
           <Typography variant="body2" gutterBottom>Processing images...</Typography>
           <LinearProgress />
         </Box>
       )}
+      
       {/* Pending Items Grid */}
       {pendingItems.length > 0 && (
         <>
@@ -226,49 +263,66 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
             Items to Upload ({pendingItems.length})
           </Typography>
           
-          <Grid container spacing={2} sx={{ mb: 3 }}>
+          <Grid container spacing={{ xs: 1, sm: 2 }} sx={{ mb: 3 }}>
             {pendingItems.map((item, index) => (
-                             <Grid
-                               key={index}
-                               size={{
-                                 xs: 12,
-                                 sm: 6,
-                                 md: 4,
-                                 lg: 3
-                               }}>
-                <Card>
+              <Grid
+                key={index}
+                size={{
+                  xs: 6,
+                  sm: 4,
+                  md: 3,
+                  lg: 2.4
+                }}>
+                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   <Box sx={{ position: 'relative' }}>
                     <img
                       src={item.preview}
                       alt={item.name}
                       style={{
                         width: '100%',
-                        height: 200,
+                        height: 150,
                         objectFit: 'cover',
                       }}
                     />
                     <IconButton
-                      sx={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(255,255,255,0.8)' }}
+                      sx={{ 
+                        position: 'absolute', 
+                        top: 4, 
+                        right: 4, 
+                        backgroundColor: 'rgba(255,255,255,0.9)',
+                        '& .MuiSvgIcon-root': {
+                          fontSize: { xs: '1rem', sm: '1.25rem' }
+                        }
+                      }}
                       onClick={() => removeItem(index)}
                       size="small"
                     >
                       <Delete />
                     </IconButton>
                   </Box>
-                  <CardContent>
-                    <Typography variant="subtitle2" noWrap>
+                  <CardContent sx={{ flexGrow: 1, p: { xs: 1, sm: 2 } }}>
+                    <Typography 
+                      variant="subtitle2" 
+                      noWrap
+                      sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+                    >
                       {item.name}
                     </Typography>
                     <Chip 
                       label={item.category} 
                       size="small" 
-                      sx={{ mt: 1, mb: 1 }} 
+                      sx={{ 
+                        mt: 1, 
+                        mb: 1,
+                        fontSize: { xs: '0.6rem', sm: '0.75rem' }
+                      }} 
                     />
                     <Box>
                       <Button
                         size="small"
                         startIcon={<Edit />}
                         onClick={() => setEditingIndex(index)}
+                        sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}
                       >
                         Edit Details
                       </Button>
@@ -279,7 +333,7 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
             ))}
           </Grid>
 
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
             <Button
               variant="outlined"
               onClick={() => setPendingItems([])}
@@ -296,7 +350,29 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
           </Box>
         </>
       )}
+      
       <EditDialog />
+      
+      {/* Success/Error Messages */}
+      <Snackbar
+        open={saveSuccess}
+        autoHideDuration={3000}
+        onClose={() => setSaveSuccess(false)}
+      >
+        <Alert severity="success" onClose={() => setSaveSuccess(false)}>
+          Items saved successfully!
+        </Alert>
+      </Snackbar>
+      
+      <Snackbar
+        open={!!saveError}
+        autoHideDuration={5000}
+        onClose={() => setSaveError(null)}
+      >
+        <Alert severity="error" onClose={() => setSaveError(null)}>
+          {saveError}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
