@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 import { Delete, CloudUpload, Edit } from '@mui/icons-material';
 import { ClothingItem } from '../types';
+import imageCompression from 'browser-image-compression';
 
 interface PendingItem {
   file: File;
@@ -66,11 +67,20 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
 
     for (const file of files) {
       try {
-        const preview = await fileToBase64(file);
-        const name = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+        // Compress the image before further processing
+        const compressedFile = await imageCompression(file, {
+          maxSizeMB: 1.8,
+          maxWidthOrHeight: 2048,
+          useWebWorker: true,
+          fileType: 'image/jpeg',
+          initialQuality: 0.9,
+        });
+
+        const preview = await fileToBase64(compressedFile);
+        const name = compressedFile.name.replace(/\.[^/.]+$/, ""); // Remove extension
         
         newItems.push({
-          file,
+          file: compressedFile,
           preview,
           name,
           category: 'tops', // Default category
