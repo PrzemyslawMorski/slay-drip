@@ -134,7 +134,8 @@ jobs:
           aws sts get-caller-identity
           echo "✅ AWS credentials are valid"
           echo "🔍 Checking AWS region..."
-          aws configure get region
+          echo "AWS_REGION: $AWS_REGION"
+          echo "AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION"
           echo "✅ AWS region is configured"
 
       - name: Setup Terraform
@@ -248,7 +249,8 @@ jobs:
           aws sts get-caller-identity
           echo "✅ AWS credentials are valid"
           echo "🔍 Checking AWS region..."
-          aws configure get region
+          echo "AWS_REGION: $AWS_REGION"
+          echo "AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION"
           echo "✅ AWS region is configured"
 
       - name: Setup Terraform
@@ -362,7 +364,8 @@ jobs:
           aws sts get-caller-identity
           echo "✅ AWS credentials are valid"
           echo "🔍 Checking AWS region..."
-          aws configure get region
+          echo "AWS_REGION: $AWS_REGION"
+          echo "AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION"
           echo "✅ AWS region is configured"
 
       - name: Setup Terraform
