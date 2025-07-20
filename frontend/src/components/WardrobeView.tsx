@@ -80,7 +80,6 @@ const WardrobeView: React.FC<WardrobeViewProps> = ({
       <Typography variant="h5" gutterBottom>
         Your Wardrobe ({items.length} items)
       </Typography>
-
       {/* Search */}
       <TextField
         placeholder="Search by name, brand, color, or tags..."
@@ -96,7 +95,6 @@ const WardrobeView: React.FC<WardrobeViewProps> = ({
           ),
         }}
       />
-
       {/* Category Tabs */}
       <Tabs
         value={selectedCategory}
@@ -116,108 +114,113 @@ const WardrobeView: React.FC<WardrobeViewProps> = ({
           />
         ))}
       </Tabs>
-
       {/* Items Grid */}
-             <Grid container spacing={2}>
-         {filteredItems.map((item) => (
-                       <Grid item xs={12} sm={6} md={4} lg={3} key={item.id}>
-            <Card 
-              sx={{ 
-                cursor: selectionMode ? 'pointer' : 'default',
-                border: isItemSelected(item) ? '2px solid #1976d2' : '1px solid #e0e0e0',
-                position: 'relative',
-              }}
-              onClick={() => handleItemSelect(item)}
-            >
-              {selectionMode && (
-                <Checkbox
-                  checked={isItemSelected(item)}
-                  sx={{
-                    position: 'absolute',
-                    top: 8,
-                    left: 8,
-                    zIndex: 1,
-                    backgroundColor: 'rgba(255,255,255,0.8)',
-                    borderRadius: '50%',
-                  }}
-                />
-              )}
-              
-              <CardMedia
-                component="img"
-                height="200"
-                image={item.image}
-                alt={item.name}
-                sx={{ objectFit: 'cover' }}
-              />
-              
-              <CardContent>
-                <Typography variant="subtitle1" noWrap title={item.name}>
-                  {item.name}
-                </Typography>
-                
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, mb: 1 }}>
-                  <Chip
-                    label={item.category}
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                  />
-                  {item.color && (
-                    <Chip
-                      label={item.color}
-                      size="small"
-                      sx={{
-                        backgroundColor: item.color.toLowerCase(),
-                        color: getContrastColor(item.color),
-                      }}
-                    />
-                  )}
-                </Box>
+      <Grid container spacing={2}>
+  {filteredItems.map((item) => (
+                <Grid
+                  key={item.id}
+                  size={{
+                    xs: 12,
+                    sm: 6,
+                    md: 4,
+                    lg: 3
+                  }}>
+     <Card 
+       sx={{ 
+         cursor: selectionMode ? 'pointer' : 'default',
+         border: isItemSelected(item) ? '2px solid #1976d2' : '1px solid #e0e0e0',
+         position: 'relative',
+       }}
+       onClick={() => handleItemSelect(item)}
+     >
+       {selectionMode && (
+         <Checkbox
+           checked={isItemSelected(item)}
+           sx={{
+             position: 'absolute',
+             top: 8,
+             left: 8,
+             zIndex: 1,
+             backgroundColor: 'rgba(255,255,255,0.8)',
+             borderRadius: '50%',
+           }}
+         />
+       )}
+       
+       <CardMedia
+         component="img"
+         height="200"
+         image={item.image}
+         alt={item.name}
+         sx={{ objectFit: 'cover' }}
+       />
+       
+       <CardContent>
+         <Typography variant="subtitle1" noWrap title={item.name}>
+           {item.name}
+         </Typography>
+         
+         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, mb: 1 }}>
+           <Chip
+             label={item.category}
+             size="small"
+             color="primary"
+             variant="outlined"
+           />
+           {item.color && (
+             <Chip
+               label={item.color}
+               size="small"
+               sx={{
+                 backgroundColor: item.color.toLowerCase(),
+                 color: getContrastColor(item.color),
+               }}
+             />
+           )}
+         </Box>
 
-                {item.brand && (
-                  <Typography variant="body2" color="textSecondary">
-                    {item.brand}
-                  </Typography>
-                )}
+         {item.brand && (
+           <Typography variant="body2" color="textSecondary">
+             {item.brand}
+           </Typography>
+         )}
 
-                {item.tags.length > 0 && (
-                  <Box sx={{ mt: 1 }}>
-                    {item.tags.slice(0, 3).map(tag => (
-                      <Chip
-                        key={tag}
-                        label={tag}
-                        size="small"
-                        variant="outlined"
-                        sx={{ mr: 0.5, mb: 0.5 }}
-                      />
-                    ))}
-                    {item.tags.length > 3 && (
-                      <Typography variant="caption" color="textSecondary">
-                        +{item.tags.length - 3} more
-                      </Typography>
-                    )}
-                  </Box>
-                )}
+         {item.tags.length > 0 && (
+           <Box sx={{ mt: 1 }}>
+             {item.tags.slice(0, 3).map(tag => (
+               <Chip
+                 key={tag}
+                 label={tag}
+                 size="small"
+                 variant="outlined"
+                 sx={{ mr: 0.5, mb: 0.5 }}
+               />
+             ))}
+             {item.tags.length > 3 && (
+               <Typography variant="caption" color="textSecondary">
+                 +{item.tags.length - 3} more
+               </Typography>
+             )}
+           </Box>
+         )}
 
-                {!selectionMode && onItemDelete && (
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onItemDelete(item.id);
-                    }}
-                    sx={{ mt: 1 }}
-                  >
-                    <Delete fontSize="small" />
-                  </IconButton>
-                )}
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
+         {!selectionMode && onItemDelete && (
+           <IconButton
+             size="small"
+             onClick={(e) => {
+               e.stopPropagation();
+               onItemDelete(item.id);
+             }}
+             sx={{ mt: 1 }}
+           >
+             <Delete fontSize="small" />
+           </IconButton>
+         )}
+       </CardContent>
+     </Card>
+   </Grid>
+ ))}
+</Grid>
       {filteredItems.length === 0 && (
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant="h6" color="textSecondary">

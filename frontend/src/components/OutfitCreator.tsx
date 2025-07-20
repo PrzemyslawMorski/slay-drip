@@ -88,7 +88,6 @@ const OutfitCreator: React.FC<OutfitCreatorProps> = ({ clothingItems, onSaveOutf
       <Typography variant="h5" gutterBottom>
         Create Outfit
       </Typography>
-
       {/* Outfit Builder Section */}
       <Paper sx={{ p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -127,7 +126,14 @@ const OutfitCreator: React.FC<OutfitCreatorProps> = ({ clothingItems, onSaveOutf
                      <Grid container spacing={2}>
              {Object.entries(categorizedItems).map(([category, items]) =>
                items.length > 0 && (
-                                   <Grid item xs={12} sm={6} md={4} lg={2.4} key={category}>
+                                   <Grid
+                                     key={category}
+                                     size={{
+                                       xs: 12,
+                                       sm: 6,
+                                       md: 4,
+                                       lg: 2.4
+                                     }}>
                   <Box>
                     <Typography variant="subtitle2" sx={{ mb: 1, textTransform: 'capitalize' }}>
                       {category} ({items.length})
@@ -180,9 +186,7 @@ const OutfitCreator: React.FC<OutfitCreatorProps> = ({ clothingItems, onSaveOutf
           </Box>
         )}
       </Paper>
-
       <Divider sx={{ my: 3 }} />
-
       {/* Wardrobe Selection */}
       <WardrobeView
         items={clothingItems}
@@ -190,7 +194,6 @@ const OutfitCreator: React.FC<OutfitCreatorProps> = ({ clothingItems, onSaveOutf
         selectedItems={selectedItems}
         selectionMode={selectionMode}
       />
-
       {/* Save Outfit Dialog */}
       <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Save Outfit</DialogTitle>

@@ -182,7 +182,6 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
       <Typography variant="h5" gutterBottom>
         Upload Clothing Items
       </Typography>
-
       {/* Upload Area */}
       <Box
         sx={{
@@ -214,14 +213,12 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
           onChange={handleFileSelect}
         />
       </Box>
-
       {processing && (
         <Box sx={{ mb: 3 }}>
           <Typography variant="body2" gutterBottom>Processing images...</Typography>
           <LinearProgress />
         </Box>
       )}
-
       {/* Pending Items Grid */}
       {pendingItems.length > 0 && (
         <>
@@ -231,7 +228,14 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
           
           <Grid container spacing={2} sx={{ mb: 3 }}>
             {pendingItems.map((item, index) => (
-                             <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+                             <Grid
+                               key={index}
+                               size={{
+                                 xs: 12,
+                                 sm: 6,
+                                 md: 4,
+                                 lg: 3
+                               }}>
                 <Card>
                   <Box sx={{ position: 'relative' }}>
                     <img
@@ -292,7 +296,6 @@ const ClothingUpload: React.FC<ClothingUploadProps> = ({ onSave }) => {
           </Box>
         </>
       )}
-
       <EditDialog />
     </Box>
   );

@@ -132,7 +132,6 @@ const OutfitGallery: React.FC<OutfitGalleryProps> = ({
             </IconButton>
           </Box>
         </DialogTitle>
-        
         <DialogContent>
           <Box sx={{ mb: 2 }}>
             <Typography variant="body2" color="textSecondary">
@@ -150,7 +149,13 @@ const OutfitGallery: React.FC<OutfitGalleryProps> = ({
                      <Grid container spacing={2}>
              {Object.entries(categorizedItems).map(([category, items]) =>
                items.length > 0 && (
-                                   <Grid item xs={12} sm={6} md={4} key={category}>
+                                   <Grid
+                                     key={category}
+                                     size={{
+                                       xs: 12,
+                                       sm: 6,
+                                       md: 4
+                                     }}>
                   <Typography variant="subtitle2" sx={{ mb: 1, textTransform: 'capitalize' }}>
                     {category} ({items.length})
                   </Typography>
@@ -182,7 +187,6 @@ const OutfitGallery: React.FC<OutfitGalleryProps> = ({
             )}
           </Grid>
         </DialogContent>
-
         <DialogActions>
           <Button onClick={() => setSelectedOutfit(null)}>Close</Button>
         </DialogActions>
@@ -195,7 +199,6 @@ const OutfitGallery: React.FC<OutfitGalleryProps> = ({
       <Typography variant="h5" gutterBottom>
         Your Outfits ({outfits.length})
       </Typography>
-
       {/* Search and Filters */}
       <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
         <TextField
@@ -220,86 +223,91 @@ const OutfitGallery: React.FC<OutfitGalleryProps> = ({
           Favorites
         </Button>
       </Box>
-
       {/* Outfits Grid */}
-             <Grid container spacing={3}>
-         {filteredOutfits.map((outfit) => (
-                       <Grid item xs={12} sm={6} md={4} lg={3} key={outfit.id}>
-            <Card sx={{ position: 'relative' }}>
-              <Box sx={{ position: 'relative' }}>
-                {createOutfitThumbnail(outfit)}
-                <IconButton
-                  sx={{
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    backgroundColor: 'rgba(255,255,255,0.8)',
-                  }}
-                  onClick={() => toggleFavorite(outfit)}
-                  size="small"
-                >
-                  {outfit.favorite ? (
-                    <Favorite color="error" fontSize="small" />
-                  ) : (
-                    <FavoriteBorder fontSize="small" />
-                  )}
-                </IconButton>
-              </Box>
+      <Grid container spacing={3}>
+  {filteredOutfits.map((outfit) => (
+                <Grid
+                  key={outfit.id}
+                  size={{
+                    xs: 12,
+                    sm: 6,
+                    md: 4,
+                    lg: 3
+                  }}>
+     <Card sx={{ position: 'relative' }}>
+       <Box sx={{ position: 'relative' }}>
+         {createOutfitThumbnail(outfit)}
+         <IconButton
+           sx={{
+             position: 'absolute',
+             top: 8,
+             right: 8,
+             backgroundColor: 'rgba(255,255,255,0.8)',
+           }}
+           onClick={() => toggleFavorite(outfit)}
+           size="small"
+         >
+           {outfit.favorite ? (
+             <Favorite color="error" fontSize="small" />
+           ) : (
+             <FavoriteBorder fontSize="small" />
+           )}
+         </IconButton>
+       </Box>
 
-              <CardContent>
-                <Typography variant="h6" noWrap title={outfit.name}>
-                  {outfit.name}
-                </Typography>
-                
-                <Typography variant="body2" color="textSecondary">
-                  {outfit.items.length} items
-                </Typography>
+       <CardContent>
+         <Typography variant="h6" noWrap title={outfit.name}>
+           {outfit.name}
+         </Typography>
+         
+         <Typography variant="body2" color="textSecondary">
+           {outfit.items.length} items
+         </Typography>
 
-                <Typography variant="caption" color="textSecondary" display="block">
-                  {new Date(outfit.dateCreated).toLocaleDateString()}
-                </Typography>
+         <Typography variant="caption" color="textSecondary" display="block">
+           {new Date(outfit.dateCreated).toLocaleDateString()}
+         </Typography>
 
-                {outfit.tags.length > 0 && (
-                  <Box sx={{ mt: 1 }}>
-                    {outfit.tags.slice(0, 2).map(tag => (
-                      <Chip
-                        key={tag}
-                        label={tag}
-                        size="small"
-                        variant="outlined"
-                        sx={{ mr: 0.5, mb: 0.5 }}
-                      />
-                    ))}
-                    {outfit.tags.length > 2 && (
-                      <Typography variant="caption" color="textSecondary">
-                        +{outfit.tags.length - 2} more
-                      </Typography>
-                    )}
-                  </Box>
-                )}
-              </CardContent>
+         {outfit.tags.length > 0 && (
+           <Box sx={{ mt: 1 }}>
+             {outfit.tags.slice(0, 2).map(tag => (
+               <Chip
+                 key={tag}
+                 label={tag}
+                 size="small"
+                 variant="outlined"
+                 sx={{ mr: 0.5, mb: 0.5 }}
+               />
+             ))}
+             {outfit.tags.length > 2 && (
+               <Typography variant="caption" color="textSecondary">
+                 +{outfit.tags.length - 2} more
+               </Typography>
+             )}
+           </Box>
+         )}
+       </CardContent>
 
-              <CardActions sx={{ justifyContent: 'space-between' }}>
-                <Button
-                  size="small"
-                  startIcon={<Visibility />}
-                  onClick={() => setSelectedOutfit(outfit)}
-                >
-                  View
-                </Button>
-                <IconButton
-                  size="small"
-                  onClick={() => onOutfitDelete(outfit.id)}
-                  color="error"
-                >
-                  <Delete fontSize="small" />
-                </IconButton>
-              </CardActions>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
+       <CardActions sx={{ justifyContent: 'space-between' }}>
+         <Button
+           size="small"
+           startIcon={<Visibility />}
+           onClick={() => setSelectedOutfit(outfit)}
+         >
+           View
+         </Button>
+         <IconButton
+           size="small"
+           onClick={() => onOutfitDelete(outfit.id)}
+           color="error"
+         >
+           <Delete fontSize="small" />
+         </IconButton>
+       </CardActions>
+     </Card>
+   </Grid>
+ ))}
+</Grid>
       {filteredOutfits.length === 0 && (
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant="h6" color="textSecondary">
@@ -313,7 +321,6 @@ const OutfitGallery: React.FC<OutfitGalleryProps> = ({
           </Typography>
         </Box>
       )}
-
       <OutfitDetailDialog />
     </Box>
   );
