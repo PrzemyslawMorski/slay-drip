@@ -40,8 +40,11 @@ const WardrobeView: React.FC<WardrobeViewProps> = ({
     { value: 'all', label: 'All' },
     { value: 'tops', label: 'Tops' },
     { value: 'bottoms', label: 'Bottoms' },
+    { value: 'dress', label: 'Dresses' },
     { value: 'shoes', label: 'Shoes' },
     { value: 'accessories', label: 'Accessories' },
+    { value: 'bag', label: 'Bags' },
+    { value: 'hat', label: 'Hats' },
     { value: 'outerwear', label: 'Outerwear' },
   ];
 
@@ -77,7 +80,7 @@ const WardrobeView: React.FC<WardrobeViewProps> = ({
 
   return (
     <Box>
-      <Typography variant="h5" gutterBottom>
+      <Typography variant="h5" gutterBottom sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
         Your Wardrobe ({items.length} items)
       </Typography>
       {/* Search */}
@@ -86,7 +89,12 @@ const WardrobeView: React.FC<WardrobeViewProps> = ({
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         fullWidth
-        sx={{ mb: 3 }}
+        sx={{ 
+          mb: 3,
+          '& .MuiOutlinedInput-root': {
+            fontSize: '16px', // Prevent zoom on iOS
+          }
+        }}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -102,6 +110,7 @@ const WardrobeView: React.FC<WardrobeViewProps> = ({
         sx={{ mb: 3 }}
         variant="scrollable"
         scrollButtons="auto"
+        allowScrollButtonsMobile
       >
         {categories.map(category => (
           <Tab
@@ -111,116 +120,158 @@ const WardrobeView: React.FC<WardrobeViewProps> = ({
               : `(${items.filter(item => item.category === category.value).length})`
             }`}
             value={category.value}
+            sx={{
+              fontSize: { xs: '0.8rem', sm: '0.875rem' },
+              minWidth: { xs: 80, sm: 120 }
+            }}
           />
         ))}
       </Tabs>
       {/* Items Grid */}
-      <Grid container spacing={2}>
-  {filteredItems.map((item) => (
-                <Grid
-                  key={item.id}
-                  size={{
-                    xs: 12,
-                    sm: 6,
-                    md: 4,
-                    lg: 3
-                  }}>
-     <Card 
-       sx={{ 
-         cursor: selectionMode ? 'pointer' : 'default',
-         border: isItemSelected(item) ? '2px solid #1976d2' : '1px solid #e0e0e0',
-         position: 'relative',
-       }}
-       onClick={() => handleItemSelect(item)}
-     >
-       {selectionMode && (
-         <Checkbox
-           checked={isItemSelected(item)}
-           sx={{
-             position: 'absolute',
-             top: 8,
-             left: 8,
-             zIndex: 1,
-             backgroundColor: 'rgba(255,255,255,0.8)',
-             borderRadius: '50%',
-           }}
-         />
-       )}
-       
-       <CardMedia
-         component="img"
-         height="200"
-         image={item.image}
-         alt={item.name}
-         sx={{ objectFit: 'cover' }}
-       />
-       
-       <CardContent>
-         <Typography variant="subtitle1" noWrap title={item.name}>
-           {item.name}
-         </Typography>
-         
-         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, mb: 1 }}>
-           <Chip
-             label={item.category}
-             size="small"
-             color="primary"
-             variant="outlined"
-           />
-           {item.color && (
-             <Chip
-               label={item.color}
-               size="small"
-               sx={{
-                 backgroundColor: item.color.toLowerCase(),
-                 color: getContrastColor(item.color),
-               }}
-             />
-           )}
-         </Box>
+      <Grid container spacing={{ xs: 1, sm: 2, md: 2 }}>
+        {filteredItems.map((item) => (
+          <Grid
+            key={item.id}
+            size={{
+              xs: 6,
+              sm: 4,
+              md: 3,
+              lg: 2.4
+            }}>
+            <Card 
+              sx={{ 
+                cursor: selectionMode ? 'pointer' : 'default',
+                border: isItemSelected(item) ? '2px solid #1976d2' : '1px solid #e0e0e0',
+                position: 'relative',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                '&:hover': {
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.12)',
+                  transform: 'translateY(-2px)',
+                  transition: 'all 0.2s ease-in-out'
+                }
+              }}
+              onClick={() => handleItemSelect(item)}
+            >
+              {selectionMode && (
+                <Checkbox
+                  checked={isItemSelected(item)}
+                  sx={{
+                    position: 'absolute',
+                    top: 8,
+                    left: 8,
+                    zIndex: 1,
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                    borderRadius: '50%',
+                    '& .MuiSvgIcon-root': {
+                      fontSize: { xs: '1.2rem', sm: '1.5rem' }
+                    }
+                  }}
+                />
+              )}
+              
+              <CardMedia
+                component="img"
+                height="200"
+                image={item.image}
+                alt={item.name}
+                sx={{ 
+                  objectFit: 'cover',
+                  height: { xs: 150, sm: 200 }
+                }}
+              />
+              
+              <CardContent sx={{ flexGrow: 1, p: { xs: 1, sm: 2 } }}>
+                <Typography 
+                  variant="subtitle2" 
+                  noWrap 
+                  title={item.name}
+                  sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+                >
+                  {item.name}
+                </Typography>
+                
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 1, mb: 1, flexWrap: 'wrap' }}>
+                  <Chip
+                    label={item.category}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' } }}
+                  />
+                  {item.color && (
+                    <Chip
+                      label={item.color}
+                      size="small"
+                      sx={{
+                        backgroundColor: item.color.toLowerCase(),
+                        color: getContrastColor(item.color),
+                        fontSize: { xs: '0.6rem', sm: '0.75rem' }
+                      }}
+                    />
+                  )}
+                </Box>
 
-         {item.brand && (
-           <Typography variant="body2" color="textSecondary">
-             {item.brand}
-           </Typography>
-         )}
+                {item.brand && (
+                  <Typography 
+                    variant="body2" 
+                    color="textSecondary"
+                    sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' } }}
+                  >
+                    {item.brand}
+                  </Typography>
+                )}
 
-         {item.tags.length > 0 && (
-           <Box sx={{ mt: 1 }}>
-             {item.tags.slice(0, 3).map(tag => (
-               <Chip
-                 key={tag}
-                 label={tag}
-                 size="small"
-                 variant="outlined"
-                 sx={{ mr: 0.5, mb: 0.5 }}
-               />
-             ))}
-             {item.tags.length > 3 && (
-               <Typography variant="caption" color="textSecondary">
-                 +{item.tags.length - 3} more
-               </Typography>
-             )}
-           </Box>
-         )}
+                {item.tags.length > 0 && (
+                  <Box sx={{ mt: 1 }}>
+                    {item.tags.slice(0, 2).map(tag => (
+                      <Chip
+                        key={tag}
+                        label={tag}
+                        size="small"
+                        variant="outlined"
+                        sx={{ 
+                          mr: 0.5, 
+                          mb: 0.5,
+                          fontSize: { xs: '0.6rem', sm: '0.75rem' }
+                        }}
+                      />
+                    ))}
+                    {item.tags.length > 2 && (
+                      <Typography 
+                        variant="caption" 
+                        color="textSecondary"
+                        sx={{ fontSize: { xs: '0.6rem', sm: '0.75rem' } }}
+                      >
+                        +{item.tags.length - 2} more
+                      </Typography>
+                    )}
+                  </Box>
+                )}
 
-         {!selectionMode && onItemDelete && (
-           <IconButton
-             size="small"
-             onClick={(e) => {
-               e.stopPropagation();
-               onItemDelete(item.id);
-             }}
-             sx={{ mt: 1 }}
-           >
-             <Delete fontSize="small" />
-           </IconButton>
-         )}
-       </CardContent>
-     </Card>
-   </Grid>
- ))}
-</Grid>
+                {!selectionMode && onItemDelete && (
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onItemDelete(item.id);
+                    }}
+                    sx={{ 
+                      mt: 1,
+                      '& .MuiSvgIcon-root': {
+                        fontSize: { xs: '1rem', sm: '1.25rem' }
+                      }
+                    }}
+                  >
+                    <Delete fontSize="small" />
+                  </IconButton>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
       {filteredItems.length === 0 && (
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant="h6" color="textSecondary">
