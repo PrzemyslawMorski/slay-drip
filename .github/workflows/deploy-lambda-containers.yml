@@ -23,8 +23,8 @@ permissions:
   contents: read
 
 env:
-  AWS_REGION: ${{ env.AWS_REGION || 'eu-central-1' }}
-  ECR_REPOSITORY_PREFIX: ${{ env.ECR_REPOSITORY_PREFIX || 'slay-drip' }}
+  AWS_REGION: ${{ 'eu-central-1' }}
+  ECR_REPOSITORY_PREFIX: slay-drip
 
 jobs:
   build-and-push:
@@ -51,16 +51,6 @@ jobs:
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-
-    - name: Fetch API key
-      id: api
-      run: |
-        KEY_ID=$(aws apigateway get-api-keys --query "items[?name=='slay-drip-api-key-${{ github.event.inputs.environment || 'development' }}'].id" --output text)
-        if [ "$KEY_ID" != "None" ] && [ -n "$KEY_ID" ]; then
-          API_KEY=$(aws apigateway get-api-key --api-key "$KEY_ID" --include-value --query 'value' --output text)
-          echo "::add-mask::$API_KEY"
-          echo "key=$API_KEY" >> "$GITHUB_OUTPUT"
-        fi
 
     - name: Build and push Lambda functions
       working-directory: ./backend/lambda
@@ -95,22 +85,13 @@ jobs:
           # Update Lambda function with new image
           REPO_NAME="${ECR_REPOSITORY_PREFIX}-${func}-${{ github.event.inputs.environment || 'development' }}"
           IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO_NAME}:latest"
-
+          
           # Check if Lambda function exists before updating
           if aws lambda get-function --function-name "slay-drip-${func}-${{ github.event.inputs.environment || 'development' }}" --region ${AWS_REGION} 2>/dev/null; then
             aws lambda update-function-code \
               --function-name "slay-drip-${func}-${{ github.event.inputs.environment || 'development' }}" \
               --image-uri ${IMAGE_URI} \
               --region ${AWS_REGION}
-
-            if [ -n "${{ steps.api.outputs.key }}" ]; then
-              CURR=$(aws lambda get-function-configuration --function-name "slay-drip-${func}-${{ github.event.inputs.environment || 'development' }}" --region ${AWS_REGION} --query 'Environment.Variables' --output json)
-              UPDATED=$(echo "$CURR" | jq --arg key "${{ steps.api.outputs.key }}" '. + {API_KEY:$key}')
-              aws lambda update-function-configuration \
-                --function-name "slay-drip-${func}-${{ github.event.inputs.environment || 'development' }}" \
-                --region ${AWS_REGION} \
-                --environment "Variables=$(echo $UPDATED | jq -c '.')"
-            fi
             echo "✅ Updated $func"
           else
             echo "⚠️  Lambda function slay-drip-${func}-${{ github.event.inputs.environment || 'development' }} does not exist. Skipping update."

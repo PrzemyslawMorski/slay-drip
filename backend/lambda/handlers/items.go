@@ -1,29 +1,26 @@
 package handlers
 
 import (
-        "context"
-        "encoding/json"
-        "fmt"
-        "net/http"
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
 
-        "pmorski-slay/main/models"
+	"pmorski-slay/main/models"
 
-        "github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/events"
 )
 
 type ItemsHandler struct {
-        db models.DB
+	db *models.DynamoDBClient
 }
 
-func NewItemsHandler(db models.DB) *ItemsHandler {
-        return &ItemsHandler{db: db}
+func NewItemsHandler(db *models.DynamoDBClient) *ItemsHandler {
+	return &ItemsHandler{db: db}
 }
 
 func (h *ItemsHandler) GetItems(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-        if resp := requireAPIKey(request); resp != nil {
-                return *resp, nil
-        }
-        items, err := h.db.GetAllItems(ctx)
+	items, err := h.db.GetAllItems(ctx)
 	if err != nil {
 		return createErrorResponse(http.StatusInternalServerError, "Failed to retrieve items", "DATABASE_ERROR", err.Error()), nil
 	}
@@ -37,10 +34,7 @@ func (h *ItemsHandler) GetItems(ctx context.Context, request events.APIGatewayPr
 }
 
 func (h *ItemsHandler) GetItemByID(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-        if resp := requireAPIKey(request); resp != nil {
-                return *resp, nil
-        }
-        id := request.PathParameters["id"]
+	id := request.PathParameters["id"]
 	if id == "" {
 		return createErrorResponse(http.StatusBadRequest, "Item ID is required", "MISSING_ID", "Please provide a valid item ID"), nil
 	}
@@ -63,10 +57,7 @@ func (h *ItemsHandler) GetItemByID(ctx context.Context, request events.APIGatewa
 }
 
 func (h *ItemsHandler) CreateItem(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-        if resp := requireAPIKey(request); resp != nil {
-                return *resp, nil
-        }
-        var item models.Item
+	var item models.Item
 	if err := json.Unmarshal([]byte(request.Body), &item); err != nil {
 		return createErrorResponse(http.StatusBadRequest, "Invalid request data", "VALIDATION_ERROR", err.Error()), nil
 	}
