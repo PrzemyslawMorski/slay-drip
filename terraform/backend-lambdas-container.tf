@@ -549,4 +549,5 @@ output "ecr_repositories" {
 output "api_gateway_key" {
   description = "API key used for requests"
   value       = aws_api_gateway_api_key.main.value
+  sensitive   = true
 }
