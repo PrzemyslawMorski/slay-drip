@@ -489,38 +489,6 @@ resource "aws_api_gateway_stage" "main" {
   }
 }
 
-# API Key for throttling
-resource "aws_api_gateway_api_key" "main" {
-  name   = "${var.app_name}-api-key-${var.environment}"
-  enabled = true
-}
-
-# Usage plan enforcing 1k requests per day
-resource "aws_api_gateway_usage_plan" "main" {
-  name = "${var.app_name}-usage-${var.environment}"
-
-  api_stages {
-    api_id = aws_api_gateway_rest_api.main.id
-    stage  = aws_api_gateway_stage.main.stage_name
-  }
-
-  quota_settings {
-    limit  = 1000
-    period = "DAY"
-  }
-
-  tags = {
-    Name        = "${var.app_name}-usage-${var.environment}"
-    Environment = var.environment
-  }
-}
-
-resource "aws_api_gateway_usage_plan_key" "main" {
-  key_id        = aws_api_gateway_api_key.main.id
-  key_type      = "API_KEY"
-  usage_plan_id = aws_api_gateway_usage_plan.main.id
-}
-
 # Outputs
 output "api_gateway_url" {
   description = "API Gateway URL"
@@ -544,9 +512,4 @@ output "ecr_repositories" {
   value = {
     for k, v in aws_ecr_repository.lambda_functions : k => v.repository_url
   }
-}
-
-output "api_gateway_key" {
-  description = "API key used for requests"
-  value       = aws_api_gateway_api_key.main.value
-}
+} 
