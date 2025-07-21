@@ -17,6 +17,7 @@
 .env.test
 .env.production
 .env.staging
+!frontend/.env.example
 
 # Secrets and Credentials
 secrets/

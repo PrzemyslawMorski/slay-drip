@@ -4,7 +4,8 @@
 ENVIRONMENT=${1:-"staging"}
 
 # Configuration
-AWS_REGION="eu-central-1"
+# Allow AWS_REGION to be overridden by the caller's environment
+AWS_REGION="${AWS_REGION:-eu-central-1}"
 
 # Function names (matching the directories in functions/)
 FUNCTIONS=(

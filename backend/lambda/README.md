@@ -78,7 +78,7 @@ The Lambda functions are now built as Docker container images and deployed to Am
 
 The following environment variables can be set:
 
-- `AWS_REGION`: AWS region (default: us-east-1)
+- `AWS_REGION`: AWS region (default: eu-central-1)
 - `ECR_REPOSITORY_PREFIX`: ECR repository prefix (default: slay-drip)
 - `AWS_ACCOUNT_ID`: AWS account ID (auto-detected if not set)
 
@@ -119,7 +119,7 @@ The project includes a GitHub Actions workflow that automatically:
    # Update all functions
    aws lambda update-function-code \
      --function-name slay-drip-get-items-dev \
-     --image-uri <account-id>.dkr.ecr.us-east-1.amazonaws.com/slay-drip-get-items-dev:latest
+    --image-uri <account-id>.dkr.ecr.eu-central-1.amazonaws.com/slay-drip-get-items-dev:latest
    ```
 
 ## Infrastructure
@@ -159,8 +159,8 @@ The API Gateway is configured with:
 
 2. **ECR Login Issues:**
    ```bash
-   aws ecr get-login-password --region us-east-1 | \
-     docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
+   aws ecr get-login-password --region eu-central-1 | \
+     docker login --username AWS --password-stdin <account-id>.dkr.ecr.eu-central-1.amazonaws.com
    ```
 
 3. **Lambda Function Not Found:**
