@@ -28,7 +28,8 @@ permissions:
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION || 'eu-central-1' }}
-  NODE_VERSION: ${{ vars.NODE_VERSION || '24' }}
+  # Use LTS as default to avoid setup failures when org-level variable is missing
+  NODE_VERSION: ${{ vars.NODE_VERSION || '20' }}
 
 jobs:
   test:
@@ -61,6 +62,8 @@ jobs:
   build:
     name: Build Frontend
     runs-on: ubuntu-latest
+    # Resolve environment so we can grab the correct API resources & secrets
+    environment: ${{ github.ref == 'refs/heads/main' && 'staging' || 'development' }}
     needs: [test]
     defaults:
       run:
@@ -80,27 +83,56 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+      # --- new: assume AWS role via OIDC so we can query infra ---
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          terraform_version: "1.5.0"
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
 
+      # --- new: determine which infra workspace to query (dev vs staging) ---
+      - name: Determine Environment
+        id: env
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          else
+            echo "environment=development" >> $GITHUB_OUTPUT
+          fi
+
+      # --- replace Terraform based lookup with AWS-CLI to avoid upstream TF backend auth issues ---
       - name: Fetch API settings
         id: api
         run: |
-          cd terraform
-          terraform init
-          terraform workspace select development || terraform workspace new development
-          url=$(terraform output -raw api_gateway_url)
-          key=$(terraform output -raw api_gateway_key 2>/dev/null || echo '')
-          echo "::add-mask::$url"
-          echo "::add-mask::$key"
+          ENV="${{ steps.env.outputs.environment }}"
+          echo "Resolving API resources for $ENV"
+
+          # Get the Rest API ID by name
+          REST_ID=$(aws apigateway get-rest-apis --query "items[?name=='slay-drip-api-${ENV}'].id" --output text)
+          if [ "$REST_ID" == "None" ] || [ -z "$REST_ID" ]; then
+            echo "❌ Could not locate API Gateway for environment $ENV" >&2
+            exit 1
+          fi
+
+          # Build invoke URL (stage name matches ENV)
+          URL="https://${REST_ID}.execute-api.${{ env.AWS_REGION }}.amazonaws.com/${ENV}/api/v1"
+
+          # Retrieve (or create if absent) API key
+          KEY_ID=$(aws apigateway get-api-keys --query "items[?name=='slay-drip-api-key-${ENV}'].id" --output text)
+          if [ "$KEY_ID" != "None" ] && [ -n "$KEY_ID" ]; then
+            KEY=$(aws apigateway get-api-key --api-key "$KEY_ID" --include-value --query 'value' --output text)
+          else
+            echo "❌ API key not found for environment $ENV" >&2
+            KEY=""
+          fi
+
+          echo "::add-mask::$URL"
+          echo "::add-mask::$KEY"
+
           {
-            echo "url=$url"
-            echo "key=$key"
+            echo "url=$URL"
+            echo "key=$KEY"
           } >> "$GITHUB_OUTPUT"
-        env:
-          TF_VAR_environment: development
 
       - name: Build application
         run: npm run build
