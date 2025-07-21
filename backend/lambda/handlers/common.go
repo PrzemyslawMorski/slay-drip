@@ -1,11 +1,13 @@
 package handlers
 
 import (
-	"encoding/json"
+        "encoding/json"
+        "net/http"
+        "os"
 
-	"pmorski-slay/main/models"
+        "pmorski-slay/main/models"
 
-	"github.com/aws/aws-lambda-go/events"
+        "github.com/aws/aws-lambda-go/events"
 )
 
 func createSuccessResponse(statusCode int, data interface{}) events.APIGatewayProxyResponse {
@@ -40,4 +42,18 @@ func createErrorResponse(statusCode int, message, code, details string) events.A
 		},
 		Body: string(body),
 	}
+}
+
+func requireAPIKey(req events.APIGatewayProxyRequest) *events.APIGatewayProxyResponse {
+        expected := os.Getenv("API_KEY")
+        if expected == "" {
+                return nil
+        }
+
+        provided := req.Headers["x-api-key"]
+        if provided != expected {
+                resp := createErrorResponse(http.StatusUnauthorized, "missing or invalid API key", "UNAUTHORIZED", "")
+                return &resp
+        }
+        return nil
 }
