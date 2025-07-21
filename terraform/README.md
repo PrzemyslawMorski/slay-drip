@@ -81,6 +81,9 @@ terraform init
 - **CloudFront Distribution** - CDN and HTTPS
 - **Route 53** - DNS management (if configured)
 
+### API Gateway
+- **Usage Plan** - Enforces a quota of 1,000 requests per day via API key
+
 ### GitHub Actions OIDC
 - **OIDC Provider** - Trust relationship with GitHub
 - **IAM Role** - Environment-specific roles with minimal permissions
@@ -187,7 +190,7 @@ The scripts automatically set:
 1. **Plan changes**: `.\plan.ps1 -Environment development`
 2. **Review plan**: Check the output for expected changes
 3. **Apply changes**: `.\apply.ps1 -Environment development`
-4. **Verify deployment**: Check the outputs for URLs
+4. **Verify deployment**: Check the outputs for URLs and the generated API key
 
 ### Production Deployment
 1. **Plan changes**: `.\plan.ps1 -Environment production`
