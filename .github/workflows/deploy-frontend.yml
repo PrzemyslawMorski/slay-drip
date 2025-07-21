@@ -28,8 +28,7 @@ permissions:
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION || 'eu-central-1' }}
-  # Use LTS as default to avoid setup failures when org-level variable is missing
-  NODE_VERSION: ${{ vars.NODE_VERSION || '20' }}
+  NODE_VERSION: ${{ vars.NODE_VERSION || '24' }}
 
 jobs:
   test:
