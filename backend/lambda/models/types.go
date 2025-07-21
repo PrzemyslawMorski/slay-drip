@@ -1,8 +1,7 @@
 package models
 
 import (
-        "context"
-        "time"
+	"time"
 )
 
 // Item represents a clothing item in the wardrobe
@@ -64,28 +63,7 @@ type SuccessResponse struct {
 
 // HealthResponse represents health check response
 type HealthResponse struct {
-        Status    string    `json:"status"`
-        Timestamp time.Time `json:"timestamp"`
-        Version   string    `json:"version"`
-}
-
-// DB defines the persistence layer used by handlers
-type DB interface {
-        // Item operations
-        GetAllItems(ctx context.Context) ([]Item, error)
-        GetItemByID(ctx context.Context, id string) (*Item, error)
-        CreateItem(ctx context.Context, item *Item) error
-        UpdateItem(ctx context.Context, item *Item) error
-        DeleteItem(ctx context.Context, id string) error
-        ItemExists(ctx context.Context, id string) (bool, error)
-
-        // Outfit operations
-        GetAllOutfits(ctx context.Context) ([]Outfit, error)
-        GetOutfitByID(ctx context.Context, id string) (*Outfit, error)
-        CreateOutfit(ctx context.Context, outfit *Outfit) error
-        UpdateOutfit(ctx context.Context, outfit *Outfit) error
-        DeleteOutfit(ctx context.Context, id string) error
-        OutfitExists(ctx context.Context, id string) (bool, error)
-
-        InitializeSampleData(ctx context.Context) error
+	Status    string    `json:"status"`
+	Timestamp time.Time `json:"timestamp"`
+	Version   string    `json:"version"`
 }

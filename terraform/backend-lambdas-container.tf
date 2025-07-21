@@ -241,7 +241,6 @@ resource "aws_lambda_function" "backend_functions" {
     variables = {
       ENVIRONMENT        = var.environment
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.backend_table.name
-      API_KEY            = aws_api_gateway_api_key.main.value
     }
   }
 
@@ -550,5 +549,4 @@ output "ecr_repositories" {
 output "api_gateway_key" {
   description = "API key used for requests"
   value       = aws_api_gateway_api_key.main.value
-  sensitive   = true
 }

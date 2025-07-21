@@ -1,29 +1,26 @@
 package handlers
 
 import (
-        "context"
-        "encoding/json"
-        "fmt"
-        "net/http"
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
 
-        "pmorski-slay/main/models"
+	"pmorski-slay/main/models"
 
-        "github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-lambda-go/events"
 )
 
 type OutfitsHandler struct {
-        db models.DB
+	db *models.DynamoDBClient
 }
 
-func NewOutfitsHandler(db models.DB) *OutfitsHandler {
-        return &OutfitsHandler{db: db}
+func NewOutfitsHandler(db *models.DynamoDBClient) *OutfitsHandler {
+	return &OutfitsHandler{db: db}
 }
 
 func (h *OutfitsHandler) GetOutfits(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-        if resp := requireAPIKey(request); resp != nil {
-                return *resp, nil
-        }
-        outfits, err := h.db.GetAllOutfits(ctx)
+	outfits, err := h.db.GetAllOutfits(ctx)
 	if err != nil {
 		return createErrorResponse(http.StatusInternalServerError, "Failed to retrieve outfits", "DATABASE_ERROR", err.Error()), nil
 	}
@@ -37,10 +34,7 @@ func (h *OutfitsHandler) GetOutfits(ctx context.Context, request events.APIGatew
 }
 
 func (h *OutfitsHandler) GetOutfitByID(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-        if resp := requireAPIKey(request); resp != nil {
-                return *resp, nil
-        }
-        id := request.PathParameters["id"]
+	id := request.PathParameters["id"]
 	if id == "" {
 		return createErrorResponse(http.StatusBadRequest, "Outfit ID is required", "MISSING_ID", "Please provide a valid outfit ID"), nil
 	}
@@ -63,10 +57,7 @@ func (h *OutfitsHandler) GetOutfitByID(ctx context.Context, request events.APIGa
 }
 
 func (h *OutfitsHandler) CreateOutfit(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-        if resp := requireAPIKey(request); resp != nil {
-                return *resp, nil
-        }
-        var outfit models.Outfit
+	var outfit models.Outfit
 	if err := json.Unmarshal([]byte(request.Body), &outfit); err != nil {
 		return createErrorResponse(http.StatusBadRequest, "Invalid request data", "VALIDATION_ERROR", err.Error()), nil
 	}

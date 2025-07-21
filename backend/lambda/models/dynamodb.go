@@ -12,12 +12,9 @@ import (
 )
 
 type DynamoDBClient struct {
-        client    *dynamodb.Client
-        tableName string
+	client    *dynamodb.Client
+	tableName string
 }
-
-// ensure DynamoDBClient implements DB
-var _ DB = (*DynamoDBClient)(nil)
 
 func NewDynamoDBClient(client *dynamodb.Client, tableName string) *DynamoDBClient {
 	return &DynamoDBClient{
