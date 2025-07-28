@@ -1,5 +1,14 @@
 # Slay Drip - Go Backend Development Rules
 
+## MemoryBank - Project Knowledge Repository
+**ESSENTIAL FOR GEMINI**: Always consult the `MemoryBank/` folder for comprehensive project documentation, recent changes, and implementation details. This folder contains:
+- `project-overview.md` - Complete project architecture and technology stack
+- `recent-changes.md` - Latest implementations and modifications
+- `automated-testing-framework.md` - Comprehensive testing documentation
+- `testing-implementation-summary.md` - Testing achievements and capabilities
+
+**GEMINI MUST** refer to MemoryBank documents before making significant changes to understand current project state and maintain consistency with existing implementations.
+
 ## Project Layout
 
 - Use the [golang-standards/project-layout](https://github.com/golang-standards/project-layout) as the base for structuring your Go projects. This layout is widely adopted in the Go community and provides a scalable, maintainable structure for both small and large codebases.

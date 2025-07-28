@@ -1,5 +1,7 @@
 # Wardrobe App - Automated Testing with Playwright
 
+> **📝 Complete Documentation**: See [`MemoryBank/automated-testing-framework.md`](../../MemoryBank/automated-testing-framework.md) for the comprehensive testing guide and [`MemoryBank/testing-implementation-summary.md`](../../MemoryBank/testing-implementation-summary.md) for implementation achievements.
+
 This directory contains comprehensive automated tests for the Wardrobe App using Playwright. The test suite provides black-box automation covering functionality testing, UI assertions across various browsers and screen sizes, and visual regression testing.
 
 ## 🧪 Test Structure
