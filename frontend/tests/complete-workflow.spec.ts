@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { AppNavigationPage, ClothingUploadPage, OutfitCreatorPage, OutfitsGalleryPage } from './helpers/page-objects';
 import { sampleClothingItems, testOutfits } from './helpers/test-data';
+import { simpleCleanup } from './helpers/test-isolation';
 
 test.describe('Complete Wardrobe App Workflow', () => {
+  // Configure for parallel execution
+  test.describe.configure({ mode: 'parallel' });
   let navigation: AppNavigationPage;
   let uploadPage: ClothingUploadPage;
   let outfitCreator: OutfitCreatorPage;

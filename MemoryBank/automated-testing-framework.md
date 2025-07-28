@@ -33,7 +33,7 @@ npx playwright install
 #### Basic Test Execution
 
 ```bash
-# Run all tests (headless)
+# Run all tests (headless, optimized parallel execution)
 npm test
 
 # Run tests with browser UI visible
@@ -46,22 +46,38 @@ npm run test:ui
 npm run test:debug
 ```
 
-#### Platform-Specific Testing
+#### Parallel Execution Options (⚡ Performance Optimized)
 
 ```bash
-# Test mobile responsive design
+# Force 4 workers for maximum parallel execution
+npm run test:parallel
+
+# Use 100% of CPU cores (aggressive parallelization)
+npm run test:max-parallel
+
+# Fast single-browser testing (4 workers)
+npm run test:fast
+
+# Quick smoke tests with parallel execution
+npm run test:smoke
+```
+
+#### Platform-Specific Testing (All optimized with 3 workers)
+
+```bash
+# Test mobile responsive design (3 workers)
 npm run test:mobile
 
-# Test tablet responsive design  
+# Test tablet responsive design (3 workers)
 npm run test:tablet
 
-# Test desktop browsers
+# Test desktop browsers (3 workers)
 npm run test:desktop
 
-# Test across all major browsers
+# Test across all major browsers (3 workers)
 npm run test:cross-browser
 
-# Test responsive breakpoints
+# Test responsive breakpoints (3 workers)
 npm run test:responsive
 ```
 

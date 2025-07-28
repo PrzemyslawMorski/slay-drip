@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { AppNavigationPage, ClothingUploadPage, OutfitCreatorPage, OutfitsGalleryPage } from './helpers/page-objects';
 import { sampleClothingItems, testOutfits } from './helpers/test-data';
+import { simpleCleanup } from './helpers/test-isolation';
 
 test.describe('Outfit Creation Flow', () => {
+  // Configure for parallel execution
+  test.describe.configure({ mode: 'parallel' });
   let navigation: AppNavigationPage;
   let uploadPage: ClothingUploadPage;
   let outfitCreator: OutfitCreatorPage;
@@ -16,31 +19,17 @@ test.describe('Outfit Creation Flow', () => {
     
     await page.goto('/');
     
-    // Clear any existing data
-    try {
-      await page.evaluate(() => {
-        localStorage.clear();
-        indexedDB.deleteDatabase('wardrobeState');
-      });
-    } catch (error) {
-      console.log('LocalStorage clearing failed, continuing with test:', error);
-    }
+    // Use improved cleanup for parallel execution
+    await simpleCleanup(page);
   });
 
   test.afterEach(async ({ page }) => {
     // Clean up after each test
-    try {
-      await page.evaluate(() => {
-        localStorage.clear();
-        indexedDB.deleteDatabase('wardrobeState');
-      });
-    } catch (error) {
-      console.log('LocalStorage cleanup failed:', error);
-    }
+    await simpleCleanup(page);
   });
 
   test.describe('Initial State', () => {
-    test('should display empty outfit creator correctly', async ({ page }) => {
+    test('should display empty outfit creator correctly @smoke', async ({ page }) => {
       await navigation.navigateToCreateOutfit();
       
       // Verify page title and empty state

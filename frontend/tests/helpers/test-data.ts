@@ -87,3 +87,15 @@ export const createTestImageFile = (name: string = 'test-image.jpg'): File => {
 };
 
 export const waitFor = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Utility for generating unique test identifiers for parallel execution
+export const generateTestId = (): string => {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 8);
+  return `test_${timestamp}_${random}`;
+};
+
+// Utility for creating isolated test database names
+export const generateTestDatabaseName = (): string => {
+  return `wardrobeState_${generateTestId()}`;
+};

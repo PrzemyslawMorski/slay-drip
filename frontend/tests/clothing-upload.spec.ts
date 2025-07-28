@@ -1,8 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { AppNavigationPage, ClothingUploadPage } from './helpers/page-objects';
 import { sampleClothingItems } from './helpers/test-data';
+import { simpleCleanup } from './helpers/test-isolation';
 
 test.describe('Clothing Upload Flow', () => {
+  // Configure for parallel execution
+  test.describe.configure({ mode: 'parallel' });
   let navigation: AppNavigationPage;
   let uploadPage: ClothingUploadPage;
 
@@ -12,33 +15,19 @@ test.describe('Clothing Upload Flow', () => {
     
     await page.goto('/');
     
-    // Clear any existing data by clearing localStorage (try-catch for security issues)
-    try {
-      await page.evaluate(() => {
-        localStorage.clear();
-        indexedDB.deleteDatabase('wardrobeState');
-      });
-    } catch (error) {
-      console.log('LocalStorage clearing failed, continuing with test:', error);
-    }
+    // Use improved cleanup for parallel execution
+    await simpleCleanup(page);
     
     await navigation.navigateToUpload();
   });
 
   test.afterEach(async ({ page }) => {
     // Clean up after each test
-    try {
-      await page.evaluate(() => {
-        localStorage.clear();
-        indexedDB.deleteDatabase('wardrobeState');
-      });
-    } catch (error) {
-      console.log('LocalStorage cleanup failed:', error);
-    }
+    await simpleCleanup(page);
   });
 
   test.describe('Upload Interface', () => {
-    test('should display upload interface correctly', async ({ page }) => {
+    test('should display upload interface correctly @smoke', async ({ page }) => {
       // Verify page title and upload area
       await expect(page.getByText('Upload Clothing Items')).toBeVisible();
       await expect(uploadPage.uploadDropZone).toBeVisible();
