@@ -3,7 +3,7 @@
 
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet("development", "staging", "production")]
+    [ValidateSet("development", "production")]
     [string]$Environment
 )
 

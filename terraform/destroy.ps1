@@ -2,8 +2,8 @@
 # Automatically sets the environment variable for destroying resources
 
 param(
-    [Parameter(Mandatory=$true)]
-    [ValidateSet("development", "staging", "production")]
+    [Parameter(Mandatory = $true)]
+    [ValidateSet("development", "production")]
     [string]$Environment
 )
 
@@ -57,7 +57,8 @@ if ($LASTEXITCODE -eq 0) {
     # Clean up plan file
     Remove-Item "$Environment.destroy.tfplan" -Force
     Write-Host "🗑️  Destroy plan file cleaned up" -ForegroundColor Gray
-} else {
+}
+else {
     Write-Host "❌ Destroy failed!" -ForegroundColor Red
     exit 1
 } 

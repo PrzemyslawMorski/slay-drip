@@ -2,8 +2,8 @@
 # Automatically sets the environment variable for applying
 
 param(
-    [Parameter(Mandatory=$true)]
-    [ValidateSet("development", "staging", "production")]
+    [Parameter(Mandatory = $true)]
+    [ValidateSet("development", "production")]
     [string]$Environment
 )
 
@@ -61,7 +61,8 @@ if ($LASTEXITCODE -eq 0) {
     # Clean up plan file
     Remove-Item $planFile -Force
     Write-Host "🗑️  Plan file cleaned up" -ForegroundColor Gray
-} else {
+}
+else {
     Write-Host "❌ Apply failed!" -ForegroundColor Red
     exit 1
 } 
