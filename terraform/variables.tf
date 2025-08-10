@@ -12,9 +12,9 @@ variable "app_name" {
 }
 
 variable "environment" {
-  description = "The environment to deploy to."
+  description = "The environment to deploy to. Use 'dev' for development (auto-deploys from main) or 'live' for production (manual deployment only)."
   type        = string
-  default     = "development"
+  default     = "dev"
 }
 
 variable "github_repository" {

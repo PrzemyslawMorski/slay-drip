@@ -350,8 +350,8 @@ resource "aws_iam_role_policy" "github_actions" {
       }
       ],
       # Additional permissions based on environment
-      var.environment == "production" ? [
-        # Production-specific permissions (if needed)
+      var.environment == "live" ? [
+        # Live environment permissions (production-like)
         {
           Effect = "Allow"
           Action = [
@@ -363,9 +363,9 @@ resource "aws_iam_role_policy" "github_actions" {
           Resource = "*"
         }
       ] : [],
-      # Development/Staging permissions
-      var.environment != "production" ? [
-        # Additional debugging permissions for non-production
+      # Development environment permissions
+      var.environment == "dev" ? [
+        # Additional debugging permissions for development
         {
           Effect = "Allow"
           Action = [

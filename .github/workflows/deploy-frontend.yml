@@ -2,7 +2,7 @@ name: Deploy Frontend to S3
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - "frontend/**"
       - ".github/workflows/deploy-frontend.yml"
@@ -15,12 +15,11 @@ on:
       environment:
         description: "Environment to deploy to"
         required: true
-        default: "development"
+        default: "dev"
         type: choice
         options:
-          - development
-          - staging
-          - production
+          - dev
+          - live
 
 permissions:
   id-token: write
@@ -93,12 +92,12 @@ jobs:
           path: frontend/build/
           retention-days: 1
 
-  deploy-development:
+  deploy-dev:
     name: Deploy to Development
     runs-on: ubuntu-latest
     needs: [build]
-    environment: development
-    if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'development')
+    environment: dev
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev')
 
     steps:
       - name: Checkout code
@@ -107,14 +106,14 @@ jobs:
       - name: Validate AWS credentials
         run: |
           if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
-            echo "❌ Error: AWS_ROLE_ARN is not set in the development environment!"
+            echo "❌ Error: AWS_ROLE_ARN is not set in the dev environment!"
             echo "Please configure the AWS_ROLE_ARN secret in your environment settings."
-            echo "Go to Settings > Environments > development > Add secret"
+            echo "Go to Settings > Environments > dev > Add secret"
             echo "Name: AWS_ROLE_ARN"
             echo "Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME"
             exit 1
           fi
-          echo "✅ AWS_ROLE_ARN is configured in development environment"
+          echo "✅ AWS_ROLE_ARN is configured in dev environment"
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -147,9 +146,9 @@ jobs:
         run: |
           cd terraform
           terraform init
-          terraform workspace select development || terraform workspace new development
+          terraform workspace select dev || terraform workspace new dev
         env:
-          TF_VAR_environment: development
+          TF_VAR_environment: dev
 
       - name: Get S3 bucket name
         id: get-bucket
@@ -158,7 +157,7 @@ jobs:
           BUCKET_NAME=$(terraform output -raw frontend_bucket_name)
           echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
         env:
-          TF_VAR_environment: development
+          TF_VAR_environment: dev
 
       - name: Deploy to S3
         run: |
@@ -187,7 +186,7 @@ jobs:
               --paths "/*"
           fi
         env:
-          TF_VAR_environment: development
+          TF_VAR_environment: dev
 
       - name: Get deployment URL
         run: |
@@ -200,7 +199,7 @@ jobs:
             echo "🌐 Frontend deployed to S3: http://$BUCKET_NAME.s3-website-${{ env.AWS_REGION }}.amazonaws.com"
           fi
         env:
-          TF_VAR_environment: development
+          TF_VAR_environment: dev
 
       - name: Print OIDC info
         run: |
@@ -208,12 +207,12 @@ jobs:
           echo "GITHUB_REF: $GITHUB_REF"
           echo "GITHUB_ACTOR: $GITHUB_ACTOR"
 
-  deploy-staging:
-    name: Deploy to Staging
+  deploy-live:
+    name: Deploy to Live
     runs-on: ubuntu-latest
     needs: [build]
-    environment: staging
-    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    environment: live
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'live'
 
     steps:
       - name: Checkout code
@@ -222,14 +221,14 @@ jobs:
       - name: Validate AWS credentials
         run: |
           if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
-            echo "❌ Error: AWS_ROLE_ARN is not set in the staging environment!"
+            echo "❌ Error: AWS_ROLE_ARN is not set in the live environment!"
             echo "Please configure the AWS_ROLE_ARN secret in your environment settings."
-            echo "Go to Settings > Environments > staging > Add secret"
+            echo "Go to Settings > Environments > live > Add secret"
             echo "Name: AWS_ROLE_ARN"
             echo "Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME"
             exit 1
           fi
-          echo "✅ AWS_ROLE_ARN is configured in staging environment"
+          echo "✅ AWS_ROLE_ARN is configured in live environment"
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -262,9 +261,9 @@ jobs:
         run: |
           cd terraform
           terraform init
-          terraform workspace select staging || terraform workspace new staging
+          terraform workspace select live || terraform workspace new live
         env:
-          TF_VAR_environment: staging
+          TF_VAR_environment: live
 
       - name: Get S3 bucket name
         id: get-bucket
@@ -273,7 +272,7 @@ jobs:
           BUCKET_NAME=$(terraform output -raw frontend_bucket_name)
           echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
         env:
-          TF_VAR_environment: staging
+          TF_VAR_environment: live
 
       - name: Deploy to S3
         run: |
@@ -302,7 +301,7 @@ jobs:
               --paths "/*"
           fi
         env:
-          TF_VAR_environment: staging
+          TF_VAR_environment: live
 
       - name: Get deployment URL
         run: |
@@ -315,122 +314,7 @@ jobs:
             echo "🌐 Frontend deployed to S3: http://$BUCKET_NAME.s3-website-${{ env.AWS_REGION }}.amazonaws.com"
           fi
         env:
-          TF_VAR_environment: staging
-
-      - name: Print OIDC info
-        run: |
-          echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
-          echo "GITHUB_REF: $GITHUB_REF"
-          echo "GITHUB_ACTOR: $GITHUB_ACTOR"
-
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: [build]
-    environment: production
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Validate AWS credentials
-        run: |
-          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
-            echo "❌ Error: AWS_ROLE_ARN is not set in the production environment!"
-            echo "Please configure the AWS_ROLE_ARN secret in your environment settings."
-            echo "Go to Settings > Environments > production > Add secret"
-            echo "Name: AWS_ROLE_ARN"
-            echo "Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME"
-            exit 1
-          fi
-          echo "✅ AWS_ROLE_ARN is configured in production environment"
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-build
-          path: frontend/build/
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Verify AWS credentials
-        run: |
-          echo "🔍 Verifying AWS credentials..."
-          aws sts get-caller-identity
-          echo "✅ AWS credentials are valid"
-          echo "🔍 Checking AWS region..."
-          echo "AWS_REGION: $AWS_REGION"
-          echo "AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION"
-          echo "✅ AWS region is configured"
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.5.0"
-
-      - name: Initialize Terraform and select workspace
-        run: |
-          cd terraform
-          terraform init
-          terraform workspace select production || terraform workspace new production
-        env:
-          TF_VAR_environment: production
-
-      - name: Get S3 bucket name
-        id: get-bucket
-        run: |
-          cd terraform
-          BUCKET_NAME=$(terraform output -raw frontend_bucket_name)
-          echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
-        env:
-          TF_VAR_environment: production
-
-      - name: Deploy to S3
-        run: |
-          aws s3 sync frontend/build/ s3://${{ steps.get-bucket.outputs.bucket_name }}/ --delete
-
-          # Set proper cache headers for PWA assets
-          if [ -f "frontend/build/service-worker.js" ]; then
-            aws s3 cp frontend/build/service-worker.js s3://${{ steps.get-bucket.outputs.bucket_name }}/service-worker.js \
-              --cache-control "no-cache, no-store, must-revalidate" \
-              --content-type "application/javascript"
-          fi
-
-          if [ -f "frontend/build/manifest.json" ]; then
-            aws s3 cp frontend/build/manifest.json s3://${{ steps.get-bucket.outputs.bucket_name }}/manifest.json \
-              --cache-control "max-age=3600" \
-              --content-type "application/json"
-          fi
-
-      - name: Invalidate CloudFront cache
-        run: |
-          cd terraform
-          DISTRIBUTION_ID=$(terraform output -raw frontend_cloudfront_distribution_id 2>/dev/null || echo "")
-          if [ -n "$DISTRIBUTION_ID" ]; then
-            aws cloudfront create-invalidation \
-              --distribution-id $DISTRIBUTION_ID \
-              --paths "/*"
-          fi
-        env:
-          TF_VAR_environment: production
-
-      - name: Get deployment URL
-        run: |
-          cd terraform
-          CLOUDFRONT_URL=$(terraform output -raw frontend_cloudfront_url 2>/dev/null || echo "")
-          if [ -n "$CLOUDFRONT_URL" ]; then
-            echo "🌐 Frontend deployed to: $CLOUDFRONT_URL"
-          else
-            BUCKET_NAME=$(terraform output -raw frontend_bucket_name)
-            echo "🌐 Frontend deployed to S3: http://$BUCKET_NAME.s3-website-${{ env.AWS_REGION }}.amazonaws.com"
-          fi
-        env:
-          TF_VAR_environment: production
+          TF_VAR_environment: live
 
       - name: Print OIDC info
         run: |
@@ -441,7 +325,7 @@ jobs:
   notify:
     name: Notify Deployment Status
     runs-on: ubuntu-latest
-    needs: [deploy-development, deploy-staging, deploy-production]
+    needs: [deploy-dev, deploy-live]
     if: always()
 
     steps:
@@ -455,20 +339,14 @@ jobs:
           echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [ "${{ needs.deploy-development.result }}" == "success" ]; then
+          if [ "${{ needs.deploy-dev.result }}" == "success" ]; then
             echo "✅ **Development deployment:** Success" >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ needs.deploy-development.result }}" == "failure" ]; then
+          elif [ "${{ needs.deploy-dev.result }}" == "failure" ]; then
             echo "❌ **Development deployment:** Failed" >> $GITHUB_STEP_SUMMARY
           fi
 
-          if [ "${{ needs.deploy-staging.result }}" == "success" ]; then
-            echo "✅ **Staging deployment:** Success" >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ needs.deploy-staging.result }}" == "failure" ]; then
-            echo "❌ **Staging deployment:** Failed" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          if [ "${{ needs.deploy-production.result }}" == "success" ]; then
-            echo "✅ **Production deployment:** Success" >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ needs.deploy-production.result }}" == "failure" ]; then
-            echo "❌ **Production deployment:** Failed" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.deploy-live.result }}" == "success" ]; then
+            echo "✅ **Live deployment:** Success" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ needs.deploy-live.result }}" == "failure" ]; then
+            echo "❌ **Live deployment:** Failed" >> $GITHUB_STEP_SUMMARY
           fi

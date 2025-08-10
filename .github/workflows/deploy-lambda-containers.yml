@@ -11,12 +11,11 @@ on:
       environment:
         description: "Environment to deploy to"
         required: true
-        default: "development"
+        default: "dev"
         type: choice
         options:
-          - production
-          - staging
-          - development
+          - dev
+          - live
 
 permissions:
   id-token: write
@@ -29,7 +28,7 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging' || 'development') }}
+    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'dev' || 'dev') }}
 
     permissions:
       id-token: write
@@ -56,7 +55,7 @@ jobs:
       working-directory: ./backend/lambda
       run: |
         # Use the shell build script
-        ENVIRONMENT="${{ github.event.inputs.environment || 'development' }}"
+        ENVIRONMENT="${{ github.event.inputs.environment || 'dev' }}"
         echo "Building Lambda functions for environment: $ENVIRONMENT"
         
         # Make script executable and run it
@@ -83,25 +82,25 @@ jobs:
           AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           
           # Update Lambda function with new image
-          REPO_NAME="${ECR_REPOSITORY_PREFIX}-${func}-${{ github.event.inputs.environment || 'development' }}"
+          REPO_NAME="${ECR_REPOSITORY_PREFIX}-${func}-${{ github.event.inputs.environment || 'dev' }}"
           IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO_NAME}:latest"
           
           # Check if Lambda function exists before updating
-          if aws lambda get-function --function-name "slay-drip-${func}-${{ github.event.inputs.environment || 'development' }}" --region ${AWS_REGION} 2>/dev/null; then
+          if aws lambda get-function --function-name "slay-drip-${func}-${{ github.event.inputs.environment || 'dev' }}" --region ${AWS_REGION} 2>/dev/null; then
             aws lambda update-function-code \
-              --function-name "slay-drip-${func}-${{ github.event.inputs.environment || 'development' }}" \
+              --function-name "slay-drip-${func}-${{ github.event.inputs.environment || 'dev' }}" \
               --image-uri ${IMAGE_URI} \
               --region ${AWS_REGION}
             echo "✅ Updated $func"
           else
-            echo "⚠️  Lambda function slay-drip-${func}-${{ github.event.inputs.environment || 'development' }} does not exist. Skipping update."
+            echo "⚠️  Lambda function slay-drip-${func}-${{ github.event.inputs.environment || 'dev' }} does not exist. Skipping update."
             echo "   Deploy infrastructure first using Terraform."
           fi
         done
 
   test-deployment:
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging' || 'development') }}
+    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'dev' || 'dev') }}
     needs: build-and-push
     
     steps:
@@ -117,9 +116,9 @@ jobs:
     - name: Get API Gateway URL
       id: get-api-url
       run: |
-        API_URL=$(aws apigateway get-rest-apis --query "items[?name=='slay-drip-api-${{ github.event.inputs.environment || 'development' }}'].id" --output text)
+        API_URL=$(aws apigateway get-rest-apis --query "items[?name=='slay-drip-api-${{ github.event.inputs.environment || 'dev' }}'].id" --output text)
         if [ "$API_URL" != "None" ] && [ -n "$API_URL" ]; then
-          echo "api_url=https://${API_URL}.execute-api.${{ env.AWS_REGION }}.amazonaws.com/${{ github.event.inputs.environment || 'development' }}/api/v1" >> $GITHUB_OUTPUT
+          echo "api_url=https://${API_URL}.execute-api.${{ env.AWS_REGION }}.amazonaws.com/${{ github.event.inputs.environment || 'dev' }}/api/v1" >> $GITHUB_OUTPUT
         else
           echo "⚠️  API Gateway not found. Infrastructure may not be deployed yet."
           exit 0
