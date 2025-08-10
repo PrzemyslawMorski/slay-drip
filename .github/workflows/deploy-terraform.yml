@@ -1,34 +1,30 @@
-name: Deploy Terraform Infrastructure
+name: Deploy Infrastructure with Terraform
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - "terraform/**"
       - ".github/workflows/deploy-terraform.yml"
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - "terraform/**"
   workflow_dispatch:
     inputs:
       environment:
         description: "Environment to deploy to"
         required: true
-        default: "development"
+        default: "dev"
         type: choice
         options:
-          - development
-          - staging
-          - production
+          - dev
+          - live
       action:
-        description: "Action to perform"
+        description: "Terraform action to perform"
         required: true
         default: "plan"
         type: choice
         options:
           - plan
           - apply
+          - destroy
 
 permissions:
   id-token: write
@@ -36,244 +32,90 @@ permissions:
 
 env:
   AWS_REGION: ${{ 'eu-central-1' }}
-  TF_VERSION: "1.5.0"
+  TF_VERSION: "1.7.0"
 
 jobs:
-  terraform-validation:
-    name: Terraform Validation
+  terraform:
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging') || 'development' }}
+    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'dev' || 'dev') }}
+
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Validate AWS credentials
-        run: |
-          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
-            echo "❌ Error: AWS_ROLE_ARN is not set in the ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging') || 'development' }} environment!"
-            echo "Please configure the AWS_ROLE_ARN secret in your environment settings."
-            echo "Go to Settings > Environments > ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging') || 'development' }} > Add secret"
-            echo "Name: AWS_ROLE_ARN"
-            echo "Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME"
-            exit 1
-          fi
-          echo "✅ AWS_ROLE_ARN is configured in ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging') || 'development' }} environment"
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ${{ env.AWS_REGION }}
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+    - name: Terraform Init
+      working-directory: ./terraform
+      run: |
+        terraform init \
+          -backend-config="bucket=slay-drip-terraform-state-${{ github.event.inputs.environment || 'dev' }}" \
+          -backend-config="key=terraform.tfstate" \
+          -backend-config="region=${{ env.AWS_REGION }}"
 
-      - name: Determine Environment
-        id: env
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            echo "environment=staging" >> $GITHUB_OUTPUT
-          else
-            echo "environment=development" >> $GITHUB_OUTPUT
-          fi
+    - name: Terraform Format Check
+      working-directory: ./terraform
+      run: terraform fmt -check
 
-      - name: Terraform Validation
-        run: |
-          cd terraform
+    - name: Terraform Validate
+      working-directory: ./terraform
+      run: terraform validate
+
+    - name: Terraform Plan
+      working-directory: ./terraform
+      run: |
+        terraform plan \
+          -var="environment=${{ github.event.inputs.environment || 'dev' }}" \
+          -var="github_repository=${{ github.repository }}" \
+          -out=tfplan
+      env:
+        TF_VAR_environment: ${{ github.event.inputs.environment || 'dev' }}
+        TF_VAR_github_repository: ${{ github.repository }}
+
+    - name: Terraform Apply
+      if: github.event.inputs.action == 'apply' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+      working-directory: ./terraform
+      run: |
+        terraform apply -auto-approve tfplan
+      env:
+        TF_VAR_environment: ${{ github.event.inputs.environment || 'dev' }}
+        TF_VAR_github_repository: ${{ github.repository }}
+
+    - name: Terraform Destroy
+      if: github.event.inputs.action == 'destroy'
+      working-directory: ./terraform
+      run: |
+        terraform destroy -auto-approve \
+          -var="environment=${{ github.event.inputs.environment || 'dev' }}" \
+          -var="github_repository=${{ github.repository }}"
+      env:
+        TF_VAR_environment: ${{ github.event.inputs.environment || 'dev' }}
+        TF_VAR_github_repository: ${{ github.repository }}
+
+    - name: Comment PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const plan = fs.readFileSync('./terraform/tfplan', 'utf8');
           
-          # Initialize Terraform
-          terraform init
-          
-          # Select workspace based on environment
-          terraform workspace select ${{ steps.env.outputs.environment }} || terraform workspace new ${{ steps.env.outputs.environment }}
-          
-          # Basic Terraform configuration validation
-          echo "🔍 Validating Terraform configuration..."
-          if terraform validate; then
-            echo "✅ Terraform configuration is valid"
-          else
-            echo "❌ Terraform validation failed"
-            exit 1
-          fi
-          
-          # Additional validation checks (only for non-PR events)
-          if [ "${{ github.event_name }}" != "pull_request" ]; then
-            echo "🔍 Running additional validation checks..."
-            
-            # Check for required outputs
-            if ! terraform output -json > /dev/null 2>&1; then
-              echo "⚠️  Warning: No outputs defined"
-            fi
-            
-            # Check for state consistency
-            if terraform plan -detailed-exitcode > /dev/null 2>&1; then
-              echo "✅ Infrastructure state is consistent"
-            else
-              echo "⚠️  Infrastructure drift detected"
-            fi
-          fi
-          
-          echo "✅ Validation completed successfully"
-
-  plan:
-    name: Terraform Plan
-    runs-on: ubuntu-latest
-    needs: [terraform-validation]
-    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging') || 'development' }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Determine Environment
-        id: env
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            echo "environment=staging" >> $GITHUB_OUTPUT
-          else
-            echo "environment=development" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Validate AWS credentials
-        run: |
-          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
-            echo "❌ Error: AWS_ROLE_ARN is not set in the ${{ steps.env.outputs.environment }} environment!"
-            echo "Please configure the AWS_ROLE_ARN secret in your environment settings."
-            echo "Go to Settings > Environments > ${{ steps.env.outputs.environment }} > Add secret"
-            echo "Name: AWS_ROLE_ARN"
-            echo "Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME"
-            exit 1
-          fi
-          echo "✅ AWS_ROLE_ARN is configured in ${{ steps.env.outputs.environment }} environment"
-
-      - name: Initialize and Plan
-        run: |
-          cd terraform
-          
-          # Initialize Terraform
-          terraform init
-          
-          # Select workspace
-          terraform workspace select ${{ steps.env.outputs.environment }} || terraform workspace new ${{ steps.env.outputs.environment }}
-          
-          # Run plan with environment variable
-          terraform plan -var="environment=${{ steps.env.outputs.environment }}" -out=${{ steps.env.outputs.environment }}.tfplan
-          
-          # Save plan for apply job
-          echo "PLAN_FILE=${{ steps.env.outputs.environment }}.tfplan" >> $GITHUB_ENV
-
-      - name: Upload Terraform Plan
-        uses: actions/upload-artifact@v4
-        with:
-          name: terraform-plan-${{ steps.env.outputs.environment }}
-          path: terraform/${{ steps.env.outputs.environment }}.tfplan
-          retention-days: 1
-
-  apply:
-    name: Terraform Apply
-    runs-on: ubuntu-latest
-    needs: [terraform-validation, plan]
-    if: |
-      github.event_name != 'pull_request' &&
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' || github.event_name == 'push')
-    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'staging') || 'development' }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Determine Environment
-        id: env
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            echo "environment=staging" >> $GITHUB_OUTPUT
-          else
-            echo "environment=development" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Download Terraform Plan
-        uses: actions/download-artifact@v4
-        with:
-          name: terraform-plan-${{ steps.env.outputs.environment }}
-          path: terraform/
-
-      - name: Apply Terraform Changes
-        run: |
-          cd terraform
-          
-          # Initialize Terraform
-          terraform init
-          
-          # Select workspace
-          terraform workspace select ${{ steps.env.outputs.environment }} || terraform workspace new ${{ steps.env.outputs.environment }}
-          
-          # Apply the plan
-          terraform apply ${{ steps.env.outputs.environment }}.tfplan
-
-  notify:
-    name: Terraform Deployment Summary
-    runs-on: ubuntu-latest
-    needs: [terraform-validation, plan, apply]
-    if: always()
-
-    steps:
-      - name: Deployment Summary
-        run: |
-          echo "## 🏗️ Terraform Deployment Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Repository:** ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-      
-          if [ "${{ needs.terraform-validation.result }}" == "success" ]; then
-            echo "✅ **Terraform Validation:** PASSED" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Terraform Validation:** FAILED" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          if [ "${{ needs.plan.result }}" == "success" ]; then
-            echo "✅ **Terraform Plan:** PASSED" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Terraform Plan:** FAILED" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          if [ "${{ needs.apply.result }}" == "success" ]; then
-            echo "✅ **Terraform Apply:** SUCCESS" >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ needs.apply.result }}" == "skipped" ]; then
-            echo "⏭️  **Terraform Apply:** SKIPPED (PR or plan-only)" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ **Terraform Apply:** FAILED" >> $GITHUB_STEP_SUMMARY
-          fi 
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## Terraform Plan for ${{ github.event.inputs.environment || 'dev' }} Environment\n\n\`\`\`hcl\n${plan}\n\`\`\``
+          }); 
