@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 
+	"pmorski-slay/main/config"
 	"pmorski-slay/main/handlers"
 	"pmorski-slay/main/models"
 )
@@ -17,19 +18,28 @@ import (
 var itemsHandler *handlers.ItemsHandler
 
 func init() {
-	cfg, err := config.LoadDefaultConfig(context.TODO())
+	// Load environment configuration
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Fatalf("unable to load configuration: %v", err)
+	}
+
+	// Log environment information
+	log.Printf("Initializing Lambda function for environment: %s", cfg.Environment)
+	log.Printf("DynamoDB table: %s", cfg.GetTableName())
+	log.Printf("Log level: %s", cfg.GetLogLevel())
+	log.Printf("Debug enabled: %t", cfg.ShouldEnableDebug())
+
+	// Load AWS SDK configuration
+	awsCfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		log.Fatalf("unable to load SDK config: %v", err)
 	}
 
-	client := dynamodb.NewFromConfig(cfg)
+	client := dynamodb.NewFromConfig(awsCfg)
 
-	// Get table name from environment variable with fallback
-	tableName := os.Getenv("DYNAMODB_TABLE_NAME")
-	if tableName == "" {
-		log.Fatal("DYNAMODB_TABLE_NAME environment variable is required")
-	}
-
+	// Use configuration for table name
+	tableName := cfg.GetTableName()
 	db := models.NewDynamoDBClient(client, tableName)
 	itemsHandler = handlers.NewItemsHandler(db)
 }

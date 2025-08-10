@@ -1,0 +1,127 @@
+name: Frontend Deploy Pipeline
+
+on:
+  workflow_run:
+    workflows: ["Frontend Build Pipeline"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deploy environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+          
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build-${{ github.sha }}
+          path: frontend/dist/
+          
+      - name: Get Terraform outputs
+        working-directory: ./terraform
+        run: |
+          # Initialize Terraform if needed
+          if [ ! -d ".terraform" ]; then
+            terraform init
+          fi
+          
+          # Get outputs
+          FRONTEND_BUCKET=$(terraform output -raw frontend_bucket_name)
+          CLOUDFRONT_DISTRIBUTION_ID=$(terraform output -raw frontend_cloudfront_distribution_id)
+          
+          echo "FRONTEND_BUCKET=$FRONTEND_BUCKET" >> $GITHUB_ENV
+          echo "CLOUDFRONT_DISTRIBUTION_ID=$CLOUDFRONT_DISTRIBUTION_ID" >> $GITHUB_ENV
+          
+      - name: Deploy to S3
+        run: |
+          if [ -z "$FRONTEND_BUCKET" ]; then
+            echo "Error: Frontend bucket name not found"
+            exit 1
+          fi
+          
+          echo "Deploying to S3 bucket: $FRONTEND_BUCKET"
+          
+          # Sync files to S3
+          aws s3 sync frontend/dist/ s3://$FRONTEND_BUCKET/ \
+            --delete \
+            --cache-control "max-age=31536000" \
+            --exclude "*.html" \
+            --exclude "service-worker.js"
+          
+          # Upload HTML files with no-cache
+          aws s3 sync frontend/dist/ s3://$FRONTEND_BUCKET/ \
+            --include "*.html" \
+            --cache-control "no-cache, no-store, must-revalidate"
+          
+          # Upload service worker with no-cache
+          if [ -f "frontend/dist/service-worker.js" ]; then
+            aws s3 cp frontend/dist/service-worker.js s3://$FRONTEND_BUCKET/ \
+              --cache-control "no-cache, no-store, must-revalidate"
+          fi
+          
+          echo "Deployment to S3 completed successfully"
+          
+      - name: Invalidate CloudFront
+        if: env.CLOUDFRONT_DISTRIBUTION_ID != ''
+        run: |
+          echo "Invalidating CloudFront distribution: $CLOUDFRONT_DISTRIBUTION_ID"
+          
+          # Create invalidation
+          INVALIDATION_ID=$(aws cloudfront create-invalidation \
+            --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
+            --paths "/*" \
+            --query 'Invalidation.Id' \
+            --output text)
+          
+          echo "CloudFront invalidation created: $INVALIDATION_ID"
+          
+          # Wait for invalidation to complete
+          echo "Waiting for CloudFront invalidation to complete..."
+          aws cloudfront wait invalidation-completed \
+            --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
+            --id $INVALIDATION_ID
+          
+          echo "CloudFront invalidation completed successfully"
+          
+      - name: Deploy summary
+        run: |
+          echo "## Frontend Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ github.event.inputs.environment || 'production' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **S3 Bucket**: $FRONTEND_BUCKET" >> $GITHUB_STEP_SUMMARY
+          if [ ! -z "$CLOUDFRONT_DISTRIBUTION_ID" ]; then
+            echo "- **CloudFront Distribution**: $CLOUDFRONT_DISTRIBUTION_ID" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "- **Deployment Status**: ✅ Success" >> $GITHUB_STEP_SUMMARY
+          
+          # Get CloudFront domain if available
+          if [ ! -z "$CLOUDFRONT_DISTRIBUTION_ID" ]; then
+            CLOUDFRONT_DOMAIN=$(aws cloudfront get-distribution \
+              --id $CLOUDFRONT_DISTRIBUTION_ID \
+              --query 'Distribution.DomainName' \
+              --output text)
+            echo "- **Live URL**: https://$CLOUDFRONT_DOMAIN" >> $GITHUB_STEP_SUMMARY
+          fi

@@ -1,0 +1,101 @@
+name: Frontend Build Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-build.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-build.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Build environment'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - production
+      api_gateway_url:
+        description: 'API Gateway URL (required for production)'
+        required: false
+        type: string
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+          
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+        
+      - name: Run tests
+        working-directory: ./frontend
+        run: npm test
+        
+      - name: Build for development
+        if: github.event.inputs.environment != 'production' && github.ref != 'refs/heads/main'
+        working-directory: ./frontend
+        run: |
+          chmod +x scripts/build-with-env.sh
+          ./scripts/build-with-env.sh --environment development --mode development
+          
+      - name: Build for production
+        if: github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main'
+        working-directory: ./frontend
+        run: |
+          chmod +x scripts/build-with-env.sh
+          
+          # Get API Gateway URL from Terraform outputs or use provided input
+          if [ "${{ github.event.inputs.api_gateway_url }}" != "" ]; then
+            API_URL="${{ github.event.inputs.api_gateway_url }}"
+          else
+            # Try to get from Terraform outputs if available
+            if [ -f "../terraform/terraform.tfstate" ]; then
+              API_URL=$(cd ../terraform && terraform output -raw api_gateway_url 2>/dev/null || echo "")
+            fi
+          fi
+          
+          if [ -z "$API_URL" ]; then
+            echo "Warning: No API Gateway URL provided, using placeholder"
+            API_URL="https://placeholder-api-gateway-url.execute-api.region.amazonaws.com/production"
+          fi
+          
+          ./scripts/build-with-env.sh --environment production --mode production --api-url "$API_URL"
+          
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build-${{ github.sha }}
+          path: frontend/dist/
+          retention-days: 30
+          
+      - name: Build summary
+        run: |
+          echo "## Frontend Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ github.event.inputs.environment || 'auto-detected' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Mode**: ${{ github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main' && 'production' || 'development' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Artifacts**: Available for download" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -d "frontend/dist" ]; then
+            echo "- **Build Size**: $(du -sh frontend/dist | cut -f1)" >> $GITHUB_STEP_SUMMARY
+          fi
