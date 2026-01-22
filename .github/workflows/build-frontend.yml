@@ -55,32 +55,31 @@ jobs:
       - name: Build for development
         if: github.event.inputs.environment != 'production' && github.ref != 'refs/heads/main'
         working-directory: ./frontend
-        run: |
-          chmod +x scripts/build-with-env.sh
-          ./scripts/build-with-env.sh --environment development --mode development
+        env:
+          VITE_ENVIRONMENT: development
+          VITE_API_BASE_URL: http://localhost:3000
+        run: npm run build:dev
           
       - name: Build for production
         if: github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main'
         working-directory: ./frontend
+        env:
+          VITE_ENVIRONMENT: production
+          VITE_API_BASE_URL: ${{ github.event.inputs.api_gateway_url || 'https://placeholder-api-gateway-url.execute-api.region.amazonaws.com/production' }}
         run: |
-          chmod +x scripts/build-with-env.sh
-          
           # Get API Gateway URL from Terraform outputs or use provided input
-          if [ "${{ github.event.inputs.api_gateway_url }}" != "" ]; then
-            API_URL="${{ github.event.inputs.api_gateway_url }}"
-          else
-            # Try to get from Terraform outputs if available
-            if [ -f "../terraform/terraform.tfstate" ]; then
-              API_URL=$(cd ../terraform && terraform output -raw api_gateway_url 2>/dev/null || echo "")
+          if [ -z "${{ github.event.inputs.api_gateway_url }}" ] && [ -f "../terraform/terraform.tfstate" ]; then
+            API_URL=$(cd ../terraform && terraform output -raw api_gateway_url 2>/dev/null || echo "")
+            if [ -n "$API_URL" ]; then
+              export VITE_API_BASE_URL="$API_URL"
             fi
           fi
           
-          if [ -z "$API_URL" ]; then
+          if [ -z "$VITE_API_BASE_URL" ] || [ "$VITE_API_BASE_URL" = "https://placeholder-api-gateway-url.execute-api.region.amazonaws.com/production" ]; then
             echo "Warning: No API Gateway URL provided, using placeholder"
-            API_URL="https://placeholder-api-gateway-url.execute-api.region.amazonaws.com/production"
           fi
           
-          ./scripts/build-with-env.sh --environment production --mode production --api-url "$API_URL"
+          npm run build:live
           
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

@@ -7,9 +7,14 @@ export interface EnvironmentConfig {
   dynamodbTableName: string;
 }
 
+// Get environment variables from Vite (injected at build time)
+const getEnvVar = (key: string, defaultValue: string): string => {
+  return import.meta.env[key] || defaultValue;
+};
+
 // Development environment configuration
 const devConfig: EnvironmentConfig = {
-  apiBaseUrl: 'http://localhost:3000',
+  apiBaseUrl: getEnvVar('VITE_API_BASE_URL', 'http://localhost:3000'),
   appTitle: 'Slay Drip - Development',
   environment: 'development',
   enableDebug: true,
@@ -18,7 +23,7 @@ const devConfig: EnvironmentConfig = {
 
 // Live environment configuration
 const liveConfig: EnvironmentConfig = {
-  apiBaseUrl: 'https://api.slaydrip.com', // Replace with actual live API URL
+  apiBaseUrl: getEnvVar('VITE_API_BASE_URL', 'https://api.slaydrip.com'),
   appTitle: 'Slay Drip',
   environment: 'production',
   enableDebug: false,
@@ -32,7 +37,7 @@ const getCurrentEnvironment = (): string => {
     return 'development';
   }
   
-  // Check for environment override
+  // Check for environment override from Vite
   if (import.meta.env.VITE_ENVIRONMENT) {
     return import.meta.env.VITE_ENVIRONMENT;
   }
