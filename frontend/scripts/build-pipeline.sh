@@ -91,8 +91,8 @@ check_prerequisites() {
     
     # Check Node.js version
     NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
-    if [[ "$NODE_VERSION" -lt 16 ]]; then
-        print_error "Node.js version 16 or higher is required (current: $(node --version))"
+    if [[ "$NODE_VERSION" -lt 24 ]]; then
+        print_error "Node.js version 24 or higher is required (current: $(node --version))"
         exit 1
     fi
     
