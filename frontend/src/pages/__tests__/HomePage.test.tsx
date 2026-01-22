@@ -1,5 +1,5 @@
 import React from 'react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, jest, beforeEach } from 'bun:test'
 import { render, screen } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
@@ -12,10 +12,10 @@ const mockWardrobeState = {
   outfits: [],
 }
 
-const mockSetWardrobeState = vi.fn()
+const mockSetWardrobeState = jest.fn()
 
-vi.mock('../../hooks/useIndexedDB', () => ({
-  useIndexedDB: vi.fn(() => [mockWardrobeState, mockSetWardrobeState]),
+jest.mock('../../hooks/useIndexedDB', () => ({
+  useIndexedDB: jest.fn(() => [mockWardrobeState, mockSetWardrobeState]),
 }))
 
 const theme = createTheme()
@@ -32,7 +32,7 @@ const renderWithProviders = (ui: React.ReactElement) => {
 
 describe('HomePage', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
     mockWardrobeState.clothingItems = []
     mockWardrobeState.outfits = []
   })

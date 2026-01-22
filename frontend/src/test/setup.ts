@@ -1,13 +1,13 @@
-import { expect, afterEach, vi } from 'vitest'
+import { expect, afterEach, jest } from 'bun:test'
 import { cleanup } from '@testing-library/react'
 import * as matchers from '@testing-library/jest-dom/matchers'
 import React from 'react'
 
-// Extend Vitest's expect with jest-dom matchers
+// Extend Bun's expect with jest-dom matchers
 expect.extend(matchers)
 
 // Mock MUI icons to prevent importing all icon files during tests
-vi.mock('@mui/icons-material', () => ({
+jest.mock('@mui/icons-material', () => ({
   Search: () => React.createElement('span', { 'data-testid': 'search-icon' }, 'Search'),
   Delete: () => React.createElement('span', { 'data-testid': 'delete-icon' }, 'Delete'),
   Favorite: () => React.createElement('span', { 'data-testid': 'favorite-icon' }, 'Favorite'),
@@ -22,15 +22,15 @@ afterEach(() => {
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: jest.fn().mockImplementation((query: string) => ({
     matches: false,
     media: query,
     onchange: null,
-    addListener: vi.fn(), // deprecated
-    removeListener: vi.fn(), // deprecated
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
+    addListener: jest.fn(), // deprecated
+    removeListener: jest.fn(), // deprecated
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
   })),
 })
 

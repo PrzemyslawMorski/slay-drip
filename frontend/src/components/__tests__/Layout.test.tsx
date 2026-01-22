@@ -1,22 +1,22 @@
 import React from 'react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, jest, beforeEach } from 'bun:test'
 import { render, screen } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import Layout from '../Layout'
 
 // Mock useNavigate and useLocation
-const mockNavigate = vi.fn()
+const mockNavigate = jest.fn()
 const mockLocation = { pathname: '/' }
 
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom')
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-    useLocation: () => mockLocation,
-  }
-})
+// Import actual react-router-dom to preserve other exports
+import * as ReactRouterDOM from 'react-router-dom'
+
+jest.mock('react-router-dom', () => ({
+  ...ReactRouterDOM,
+  useNavigate: () => mockNavigate,
+  useLocation: () => mockLocation,
+}))
 
 const theme = createTheme()
 
@@ -33,7 +33,7 @@ const renderWithProviders = (ui: React.ReactElement, initialPath = '/') => {
 
 describe('Layout', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
     mockLocation.pathname = '/'
   })
 

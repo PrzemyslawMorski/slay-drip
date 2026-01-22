@@ -9,16 +9,17 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
+    "types": ["bun-types", "@testing-library/jest-dom"],
     "paths": {
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"],
+  "include": ["src", "src/**/*"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

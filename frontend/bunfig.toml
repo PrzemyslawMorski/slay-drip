@@ -1,0 +1,23 @@
+# Bun configuration file
+# https://bun.sh/docs/cli/bunfig
+
+[install]
+# Use production dependencies by default
+production = false
+# Don't install optional dependencies
+optional = true
+# Install peer dependencies
+peer = true
+# Use exact versions
+exact = false
+# Lockfile location
+lockfile = "bun.lockb"
+
+[install.scopes]
+# Scope-specific configuration can be added here
+
+[test]
+# Test configuration
+preload = ["./happydom.ts", "./src/test/setup.ts"]
+# Use test environment
+env = { NODE_ENV = "test" }

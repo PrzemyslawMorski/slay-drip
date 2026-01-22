@@ -1,5 +1,5 @@
 import React from 'react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, jest, beforeEach } from 'bun:test'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import WardrobeView from '../WardrobeView'
@@ -48,11 +48,11 @@ const renderWithTheme = (ui: React.ReactElement) => {
 }
 
 describe('WardrobeView', () => {
-  const mockOnItemDelete = vi.fn()
-  const mockOnItemsSelect = vi.fn()
+  const mockOnItemDelete = jest.fn()
+  const mockOnItemsSelect = jest.fn()
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
   })
 
   it('renders the wardrobe title with item count', () => {
