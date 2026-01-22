@@ -49,5 +49,25 @@ export default defineConfig(({ command, mode }) => {
     optimizeDeps: {
       include: ['react', 'react-dom', '@mui/material', '@mui/icons-material'],
     },
+    
+    // Vitest configuration
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: './src/test/setup.ts',
+      css: true,
+      testTimeout: 10000,
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'json', 'html'],
+        exclude: [
+          'node_modules/',
+          'src/test/',
+          '**/*.d.ts',
+          '**/*.config.*',
+          '**/mockData',
+        ],
+      },
+    },
   }
 }) 

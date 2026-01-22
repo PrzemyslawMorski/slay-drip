@@ -27,13 +27,23 @@
     "preview": "vite preview",
     "preview:dev": "vite preview --mode development",
     "preview:live": "vite preview --mode production",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "lint": "echo 'No linting specified' && exit 0"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24.0.14",
     "@vitejs/plugin-react": "^4.6.0",
+    "@vitest/ui": "^4.0.17",
+    "jsdom": "^27.4.0",
     "typescript": "^5.8.3",
-    "vite": "^7.0.4"
+    "vite": "^7.0.4",
+    "vitest": "^4.0.17"
   }
 }
