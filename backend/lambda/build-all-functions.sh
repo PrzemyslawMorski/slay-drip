@@ -1,21 +1,34 @@
 #!/bin/bash
 
-# Build all Lambda functions for the specified environment
+# Build Lambda functions for the specified environment
 ENVIRONMENT=${1:-"dev"}
+FUNCTION_NAME=$2
 
 # Function to display usage
 usage() {
-    echo "Usage: $0 [environment]"
+    echo "Usage: $0 [environment] [function-name]"
     echo "  environment: dev or live (default: dev)"
+    echo "  function-name: optional, one of: get-items, get-item, create-item, get-outfits, get-outfit, create-outfit"
     echo ""
     echo "Examples:"
-    echo "  $0          # Build for dev environment"
-    echo "  $0 dev      # Build for dev environment"
-    echo "  $0 live     # Build for live environment"
+    echo "  $0                 # Build all functions for dev environment"
+    echo "  $0 dev             # Build all functions for dev environment"
+    echo "  $0 live            # Build all functions for live environment"
+    echo "  $0 dev get-items   # Build only the get-items function for dev"
+    echo "  $0 live create-outfit  # Build only the create-outfit function for live"
     echo ""
-    echo "Note: This script builds all Lambda functions and pushes them to ECR."
+    echo "Note: This script builds Lambda functions and pushes them to ECR."
+    echo "      If no function-name is provided, all functions are built."
     echo "      Make sure you have AWS credentials configured."
+    echo ""
+    echo "You can also run: $0 -h | --help | help"
 }
+
+# Support help flag/command
+if [[ "$ENVIRONMENT" == "-h" || "$ENVIRONMENT" == "--help" || "$ENVIRONMENT" == "help" ]]; then
+    usage
+    exit 0
+fi
 
 # Validate environment
 declare -A ENVIRONMENTS
@@ -29,6 +42,23 @@ if [[ ! "$ENVIRONMENT" =~ ^(dev|live)$ ]]; then
     echo "Valid environments: dev, live"
     echo ""
     usage
+    exit 1
+fi
+
+# Check if Docker is available and running
+if ! command -v docker &> /dev/null; then
+    echo "❌ Error: Docker is not installed or not in PATH"
+    echo "   Please install Docker Desktop from https://www.docker.com/products/docker-desktop"
+    exit 1
+fi
+
+if ! docker info &> /dev/null; then
+    echo "❌ Error: Docker daemon is not running"
+    echo ""
+    echo "Please start Docker Desktop and wait for it to be ready."
+    echo "On Windows, you can start it from the Start menu or system tray."
+    echo ""
+    echo "To verify Docker is running, try: docker info"
     exit 1
 fi
 
@@ -59,8 +89,24 @@ FUNCTIONS=(
     "create-outfit"
 )
 
+# Determine which functions to build
+if [[ -n "$FUNCTION_NAME" ]]; then
+    # Validate requested function name
+    if [[ ! " ${FUNCTIONS[*]} " =~ " ${FUNCTION_NAME} " ]]; then
+        echo "❌ Error: Invalid function name '$FUNCTION_NAME'"
+        echo ""
+        echo "Valid functions: ${FUNCTIONS[*]}"
+        echo ""
+        usage
+        exit 1
+    fi
+    FUNCTIONS_TO_BUILD=("$FUNCTION_NAME")
+else
+    FUNCTIONS_TO_BUILD=("${FUNCTIONS[@]}")
+fi
+
 # Build and push each function
-for func in "${FUNCTIONS[@]}"; do
+for func in "${FUNCTIONS_TO_BUILD[@]}"; do
     echo "🔨 Building $func..."
     
     # Repository name
@@ -100,11 +146,11 @@ for func in "${FUNCTIONS[@]}"; do
     echo ""
 done
 
-echo "🎉 All Lambda functions built and pushed successfully!"
+echo "🎉 Lambda functions built and pushed successfully!"
 echo ""
 echo "📋 Summary:"
 echo "   Environment: $ENVIRONMENT"
-echo "   Functions: ${FUNCTIONS[*]}"
+echo "   Functions: ${FUNCTIONS_TO_BUILD[*]}"
 echo "   ECR Region: $AWS_REGION"
 echo ""
 echo "🔗 Next steps:"

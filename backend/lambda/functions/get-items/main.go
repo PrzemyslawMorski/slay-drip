@@ -3,11 +3,10 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-sdk-go-v2/config"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 
 	"pmorski-slay/main/config"
@@ -31,7 +30,7 @@ func init() {
 	log.Printf("Debug enabled: %t", cfg.ShouldEnableDebug())
 
 	// Load AWS SDK configuration
-	awsCfg, err := config.LoadDefaultConfig(context.TODO())
+	awsCfg, err := awsconfig.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		log.Fatalf("unable to load SDK config: %v", err)
 	}
