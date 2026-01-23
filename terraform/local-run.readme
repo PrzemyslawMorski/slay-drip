@@ -1,0 +1,2 @@
+$env:AWS_PROFILE="pmorski-staging"
+terraform init/plan/apply/destroy

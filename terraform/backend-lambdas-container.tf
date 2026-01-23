@@ -545,8 +545,3 @@ output "ecr_repositories" {
     for k, v in aws_ecr_repository.lambda_functions : k => v.repository_url
   }
 }
-
-output "api_gateway_key" {
-  description = "API key used for requests"
-  value       = aws_api_gateway_api_key.main.value
-}
