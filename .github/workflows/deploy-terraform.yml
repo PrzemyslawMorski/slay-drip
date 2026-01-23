@@ -62,7 +62,7 @@ jobs:
       working-directory: ./terraform
       run: |
         terraform init \
-          -backend-config="bucket=slay-drip-terraform-state-${{ github.event.inputs.environment || 'dev' }}" \
+          -backend-config="bucket=slay-drip-tfstate" \
           -backend-config="key=terraform.tfstate" \
           -backend-config="region=${{ env.AWS_REGION }}"
 
