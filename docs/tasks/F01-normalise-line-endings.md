@@ -21,7 +21,7 @@ The repo stores LF but Windows checkouts show CRLF, so `git status` lists 73 fil
 
 - Add `.gitattributes` with `* text=auto eol=lf` (plus `*.png`, `*.ico` etc. as `binary`).
 - Run `git add --renormalize .` and commit once.
-- Document `core.autocrlf=input` (or rely on `.gitattributes`) in `AGENTS.md`.
+- Document `core.autocrlf=input` (or rely on `.gitattributes`) in `CLAUDE.md`.
 
 ## Acceptance criteria
 
