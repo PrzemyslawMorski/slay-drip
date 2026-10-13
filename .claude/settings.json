@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/*.env)",
+      "Read(**/.envrc)",
+      "Edit(**/.env)",
+      "Edit(**/.env.*)",
+      "Edit(**/*.env)",
+      "Edit(**/.envrc)",
+      "Write(**/.env)",
+      "Write(**/.env.*)",
+      "Write(**/*.env)",
+      "Write(**/.envrc)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write|MultiEdit|Grep|Glob|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-env-files.ps1\""
+          }
+        ]
+      }
+    ]
+  }
+}

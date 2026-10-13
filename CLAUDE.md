@@ -110,6 +110,7 @@ These come from `docs/requirements.md` and apply to every change, including test
 - **Transparency**: each recommendation states which signals it used.
 - **Accessibility**: UI meets WCAG 2.1 AA.
 - **Test data**: workshop sessions use only synthetic, freely licensed personas. Never introduce real personal data into the repo.
+- **Secrets**: agents must never read, search, print, edit or create `.env` files (`.env`, `.env.*`, `*.env`, `.envrc`). Blocked by `permissions.deny` and a PreToolUse hook in the user's Claude settings. Ask the user for values instead; do not work around the block through Bash.
 
 ## Quality bar for AI features
 
