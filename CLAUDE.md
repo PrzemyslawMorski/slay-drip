@@ -10,6 +10,7 @@ Single source of truth for agent and human guidance in this repo. `AGENTS.md` po
 - Primary persona: the considered dresser (18+) who wants speed, variety and fresh combinations from what they already own.
 - It must be a viable product for real EU users, not a demo. It is also the backbone of an 8-session AI Champions workshop; each session ships one vertical slice end to end.
 - MVP loop: capture wardrobe → build profile → ask for an occasion → get outfits → react / wear → better next time.
+- **v1 goal:** deliver the full MVP loop end to end for EU users, meeting the quality bar below (first outfits in ≤ 10 s at p95, per-attribute tagging accuracy, fairness parity across body types and skin tones). Each workshop session ships one working vertical slice toward it. Scope and milestones: `docs/requirements.md`.
 
 ## Where to look
 
@@ -91,7 +92,6 @@ Run the narrowest relevant tests after touching an area. Do not leave dev server
 ## When making changes
 
 - Keep changes scoped to the requested task.
-- Run the narrowest relevant tests (frontend `bun test --run`, backend `go test ./...`).
 - Add dependencies with `bun add` / `bun add -d` and commit lockfile changes.
 
 ## Hard rules (non-negotiable)
@@ -109,7 +109,6 @@ These come from `docs/requirements.md` and apply to every change, including test
 - **Transparency**: each recommendation states which signals it used.
 - **Accessibility**: UI meets WCAG 2.1 AA.
 - **Test data**: workshop sessions use only synthetic, freely licensed personas. Never introduce real personal data into the repo.
-- **Secrets and config**: never hardcode secrets; backend relies on AWS env vars and roles.
 
 ## Quality bar for AI features
 
