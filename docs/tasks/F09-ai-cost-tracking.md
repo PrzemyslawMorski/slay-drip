@@ -20,7 +20,7 @@ Cost decides freemium pricing and must be tracked from the first AI call.
 ## Scope
 
 - Wrap every model call in a client that records user id (hashed), feature, model, tokens/images, latency and estimated cost.
-- Emit as structured logs / CloudWatch metrics; monthly cost-per-active-user query.
+- Emit as structured logs (Scaleway Cockpit, or another EU-hosted metrics store); monthly cost-per-active-user query.
 - Cache tags and results where possible.
 
 ## Acceptance criteria

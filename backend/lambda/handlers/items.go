@@ -1,90 +1,89 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"pmorski-slay/main/models"
-
-	"github.com/aws/aws-lambda-go/events"
 )
 
 type ItemsHandler struct {
-	db *models.DynamoDBClient
+	store *models.Store
 }
 
-func NewItemsHandler(db *models.DynamoDBClient) *ItemsHandler {
-	return &ItemsHandler{db: db}
+func NewItemsHandler(store *models.Store) *ItemsHandler {
+	return &ItemsHandler{store: store}
 }
 
-func (h *ItemsHandler) GetItems(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	items, err := h.db.GetAllItems(ctx)
+func (h *ItemsHandler) GetItems(w http.ResponseWriter, r *http.Request) {
+	items, err := h.store.GetAllItems(r.Context())
 	if err != nil {
-		return createErrorResponse(http.StatusInternalServerError, "Failed to retrieve items", "DATABASE_ERROR", err.Error()), nil
+		writeError(w, http.StatusInternalServerError, "Failed to retrieve items", "DATABASE_ERROR", err.Error())
+		return
 	}
 
-	response := models.SuccessResponse{
+	writeJSON(w, http.StatusOK, models.SuccessResponse{
 		Message: "Items retrieved successfully",
 		Data:    items,
-	}
-
-	return createSuccessResponse(http.StatusOK, response), nil
+	})
 }
 
-func (h *ItemsHandler) GetItemByID(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	id := request.PathParameters["id"]
+func (h *ItemsHandler) GetItemByID(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
 	if id == "" {
-		return createErrorResponse(http.StatusBadRequest, "Item ID is required", "MISSING_ID", "Please provide a valid item ID"), nil
+		writeError(w, http.StatusBadRequest, "Item ID is required", "MISSING_ID", "Please provide a valid item ID")
+		return
 	}
 
-	item, err := h.db.GetItemByID(ctx, id)
+	item, err := h.store.GetItemByID(r.Context(), id)
 	if err != nil {
-		return createErrorResponse(http.StatusInternalServerError, "Failed to retrieve item", "DATABASE_ERROR", err.Error()), nil
+		writeError(w, http.StatusInternalServerError, "Failed to retrieve item", "DATABASE_ERROR", err.Error())
+		return
 	}
 
 	if item == nil {
-		return createErrorResponse(http.StatusNotFound, "Item not found", "NOT_FOUND", fmt.Sprintf("Item with ID %s could not be found", id)), nil
+		writeError(w, http.StatusNotFound, "Item not found", "NOT_FOUND", fmt.Sprintf("Item with ID %s could not be found", id))
+		return
 	}
 
-	response := models.SuccessResponse{
+	writeJSON(w, http.StatusOK, models.SuccessResponse{
 		Message: "Item retrieved successfully",
 		Data:    item,
-	}
-
-	return createSuccessResponse(http.StatusOK, response), nil
+	})
 }
 
-func (h *ItemsHandler) CreateItem(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func (h *ItemsHandler) CreateItem(w http.ResponseWriter, r *http.Request) {
 	var item models.Item
-	if err := json.Unmarshal([]byte(request.Body), &item); err != nil {
-		return createErrorResponse(http.StatusBadRequest, "Invalid request data", "VALIDATION_ERROR", err.Error()), nil
+	if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request data", "VALIDATION_ERROR", err.Error())
+		return
 	}
 
 	// Validate required fields
 	if item.ID == "" || item.Name == "" || item.Category == "" || item.ImageURL == "" {
-		return createErrorResponse(http.StatusBadRequest, "Missing required fields", "MISSING_FIELDS", "All fields (id, name, category, imageUrl) are required"), nil
+		writeError(w, http.StatusBadRequest, "Missing required fields", "MISSING_FIELDS", "All fields (id, name, category, imageUrl) are required")
+		return
 	}
 
 	// Check if item already exists
-	exists, err := h.db.ItemExists(ctx, item.ID)
+	exists, err := h.store.ItemExists(r.Context(), item.ID)
 	if err != nil {
-		return createErrorResponse(http.StatusInternalServerError, "Failed to check item existence", "DATABASE_ERROR", err.Error()), nil
+		writeError(w, http.StatusInternalServerError, "Failed to check item existence", "DATABASE_ERROR", err.Error())
+		return
 	}
 	if exists {
-		return createErrorResponse(http.StatusConflict, "Item already exists", "DUPLICATE_ID", fmt.Sprintf("Item with ID %s already exists", item.ID)), nil
+		writeError(w, http.StatusConflict, "Item already exists", "DUPLICATE_ID", fmt.Sprintf("Item with ID %s already exists", item.ID))
+		return
 	}
 
-	// Create item
-	if err := h.db.CreateItem(ctx, &item); err != nil {
-		return createErrorResponse(http.StatusInternalServerError, "Failed to create item", "DATABASE_ERROR", err.Error()), nil
+	if err := h.store.CreateItem(r.Context(), &item); err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to create item", "DATABASE_ERROR", err.Error())
+		return
 	}
 
-	response := models.SuccessResponse{
+	writeJSON(w, http.StatusCreated, models.SuccessResponse{
 		Message: "Item created successfully",
 		Data:    item,
-	}
-
-	return createSuccessResponse(http.StatusCreated, response), nil
+	})
 }

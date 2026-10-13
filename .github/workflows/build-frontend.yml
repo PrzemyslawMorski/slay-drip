@@ -21,8 +21,8 @@ on:
         options:
           - development
           - production
-      api_gateway_url:
-        description: 'API Gateway URL (required for production)'
+      api_base_url:
+        description: 'API base URL, e.g. the Scaleway Serverless Container endpoint + /api/v1 (required for production)'
         required: false
         type: string
 
@@ -61,18 +61,11 @@ jobs:
         working-directory: ./frontend
         env:
           VITE_ENVIRONMENT: production
-          VITE_API_BASE_URL: ${{ github.event.inputs.api_gateway_url || 'https://placeholder-api-gateway-url.execute-api.region.amazonaws.com/production' }}
+          VITE_API_BASE_URL: ${{ github.event.inputs.api_base_url || 'https://placeholder-api.containers.fr-par.scw.cloud/api/v1' }}
         run: |
-          # Get API Gateway URL from Terraform outputs or use provided input
-          if [ -z "${{ github.event.inputs.api_gateway_url }}" ] && [ -f "../terraform/terraform.tfstate" ]; then
-            API_URL=$(cd ../terraform && terraform output -raw api_gateway_url 2>/dev/null || echo "")
-            if [ -n "$API_URL" ]; then
-              export VITE_API_BASE_URL="$API_URL"
-            fi
-          fi
-          
-          if [ -z "$VITE_API_BASE_URL" ] || [ "$VITE_API_BASE_URL" = "https://placeholder-api-gateway-url.execute-api.region.amazonaws.com/production" ]; then
-            echo "Warning: No API Gateway URL provided, using placeholder"
+          # Use the provided input, or the placeholder if none was given
+          if [ -z "${{ github.event.inputs.api_base_url }}" ]; then
+            echo "Warning: No API base URL provided, using placeholder"
           fi
           
           bun run build:live

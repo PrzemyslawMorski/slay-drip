@@ -19,7 +19,7 @@ No AI provider is integrated. Vision, segmentation and text models must run in t
 
 ## Scope
 
-- Shortlist EU-region options (e.g. Amazon Bedrock in `eu-central-1`/EU cross-region profiles, Azure OpenAI EU, Vertex AI EU, self-hosted).
+- Shortlist EU-region options (Scaleway-hosted models in `fr-par` first; then self-hosted; EU-hosted third-party APIs as fallback).
 - Run tagging and segmentation on a small golden subset; compare accuracy, latency, cost.
 - Confirm DPA, data residency and retention terms per vendor.
 - Write an ADR in `docs/adr/`.

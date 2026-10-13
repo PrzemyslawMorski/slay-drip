@@ -16,17 +16,16 @@ const (
 
 // Config holds environment-specific configuration
 type Config struct {
-	Environment        Environment
-	DynamoDBTableName string
-	LogLevel          string
-	EnableDebug       bool
-	Region            string
+	Environment Environment
+	DatabaseURL string
+	LogLevel    string
+	EnableDebug bool
 }
 
 // GetEnvironment returns the current environment
 func GetEnvironment() Environment {
 	env := strings.ToLower(os.Getenv("ENVIRONMENT"))
-	
+
 	switch env {
 	case "live", "production":
 		return Production
@@ -41,17 +40,12 @@ func GetEnvironment() Environment {
 // LoadConfig loads configuration from environment variables
 func LoadConfig() (*Config, error) {
 	env := GetEnvironment()
-	
-	tableName := os.Getenv("DYNAMODB_TABLE_NAME")
-	if tableName == "" {
-		return nil, fmt.Errorf("DYNAMODB_TABLE_NAME environment variable is required")
+
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		return nil, fmt.Errorf("DATABASE_URL environment variable is required")
 	}
-	
-	region := os.Getenv("AWS_REGION")
-	if region == "" {
-		region = "us-east-1" // Default region
-	}
-	
+
 	logLevel := os.Getenv("LOG_LEVEL")
 	if logLevel == "" {
 		if env == Development {
@@ -60,15 +54,14 @@ func LoadConfig() (*Config, error) {
 			logLevel = "INFO"
 		}
 	}
-	
+
 	enableDebug := env == Development
-	
+
 	return &Config{
-		Environment:        env,
-		DynamoDBTableName: tableName,
-		LogLevel:          logLevel,
-		EnableDebug:       enableDebug,
-		Region:            region,
+		Environment: env,
+		DatabaseURL: databaseURL,
+		LogLevel:    logLevel,
+		EnableDebug: enableDebug,
 	}, nil
 }
 
@@ -82,9 +75,9 @@ func (c *Config) IsProduction() bool {
 	return c.Environment == Production
 }
 
-// GetTableName returns the DynamoDB table name for the current environment
-func (c *Config) GetTableName() string {
-	return c.DynamoDBTableName
+// GetDatabaseURL returns the PostgreSQL connection string for the current environment
+func (c *Config) GetDatabaseURL() string {
+	return c.DatabaseURL
 }
 
 // GetLogLevel returns the log level for the current environment

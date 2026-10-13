@@ -14,7 +14,7 @@ Foundation tasks (`F`) fix structural issues in the current code and should land
 | F01 | [Normalise line endings](F01-normalise-line-endings.md) | P0 | — | todo |
 | F02 | [Authentication and per-user data model](F02-auth-and-user-scoped-data.md) | P0 | — | todo |
 | F03 | [Unify the item/outfit model and wire the frontend to the API](F03-unify-item-model-and-wire-api.md) | P0 | F02, F04 | todo |
-| F04 | [Image storage in S3 with presigned uploads](F04-image-storage-s3.md) | P0 | F02 | todo |
+| F04 | [Image storage in Object Storage with presigned uploads](F04-image-storage-s3.md) | P0 | F02 | todo |
 | F05 | [Fail-closed EU config and API hardening](F05-eu-only-and-api-hardening.md) | P1 | — | todo |
 | F06 | [Pin CI tooling and add lint](F06-ci-hygiene.md) | P2 | — | todo |
 | F07 | [Rename to working name and externalise strings](F07-rename-and-i18n.md) | P2 | — | todo |

@@ -19,7 +19,7 @@ There is a manifest and service worker, but no camera capture and no device veri
 
 ## Scope
 
-- Verify install and offline shell on recent iOS Safari and Android Chrome via CloudFront HTTPS.
+- Verify install and offline shell on recent iOS Safari and Android Chrome via the HTTPS frontend URL on Scaleway Object Storage.
 - Remove the double-tap zoom prevention (WCAG 1.4.4).
 - Basic accessibility pass of the shell (landmarks, focus order, contrast).
 

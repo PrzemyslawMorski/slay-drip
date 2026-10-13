@@ -20,8 +20,8 @@ Not started.
 ## Scope
 
 - Export: JSON + images as a zip via presigned download.
-- Delete everything in one action: DynamoDB records, S3 objects (both buckets), identity-provider user, consents.
-- Define and document the backup erasure window (DynamoDB PITR, S3 versioning).
+- Delete everything in one action: database records, Object Storage objects (both buckets), identity-provider user, consents.
+- Define and document the backup erasure window (database backups, Object Storage versioning).
 
 ## Acceptance criteria
 

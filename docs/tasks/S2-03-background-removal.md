@@ -20,7 +20,7 @@ No image processing beyond compression.
 ## Scope
 
 - Produce a transparent cut-out derivative per item (EU-hosted model or library).
-- Store as a second S3 object; fall back to the original on failure.
+- Store as a second Object Storage object; fall back to the original on failure.
 
 ## Acceptance criteria
 

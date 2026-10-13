@@ -2,42 +2,37 @@ package handlers
 
 import (
 	"encoding/json"
+	"net/http"
 
 	"pmorski-slay/main/models"
-
-	"github.com/aws/aws-lambda-go/events"
 )
 
-func createSuccessResponse(statusCode int, data interface{}) events.APIGatewayProxyResponse {
-	body, _ := json.Marshal(data)
-	return events.APIGatewayProxyResponse{
-		StatusCode: statusCode,
-		Headers: map[string]string{
-			"Content-Type":                 "application/json",
-			"Access-Control-Allow-Origin":  "*",
-			"Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
-			"Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-		},
-		Body: string(body),
-	}
+// WithCORS answers preflight requests and adds CORS headers to every response.
+func WithCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
+		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
-func createErrorResponse(statusCode int, message, code, details string) events.APIGatewayProxyResponse {
-	errorResponse := models.ErrorResponse{
+func writeError(w http.ResponseWriter, statusCode int, message, code, details string) {
+	writeJSON(w, statusCode, models.ErrorResponse{
 		Error:   message,
 		Code:    code,
 		Details: details,
-	}
+	})
+}
 
-	body, _ := json.Marshal(errorResponse)
-	return events.APIGatewayProxyResponse{
-		StatusCode: statusCode,
-		Headers: map[string]string{
-			"Content-Type":                 "application/json",
-			"Access-Control-Allow-Origin":  "*",
-			"Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
-			"Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-		},
-		Body: string(body),
-	}
+func writeJSON(w http.ResponseWriter, statusCode int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	_ = json.NewEncoder(w).Encode(data)
 }

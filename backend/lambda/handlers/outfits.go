@@ -1,92 +1,91 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"pmorski-slay/main/models"
-
-	"github.com/aws/aws-lambda-go/events"
 )
 
 type OutfitsHandler struct {
-	db *models.DynamoDBClient
+	store *models.Store
 }
 
-func NewOutfitsHandler(db *models.DynamoDBClient) *OutfitsHandler {
-	return &OutfitsHandler{db: db}
+func NewOutfitsHandler(store *models.Store) *OutfitsHandler {
+	return &OutfitsHandler{store: store}
 }
 
-func (h *OutfitsHandler) GetOutfits(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	outfits, err := h.db.GetAllOutfits(ctx)
+func (h *OutfitsHandler) GetOutfits(w http.ResponseWriter, r *http.Request) {
+	outfits, err := h.store.GetAllOutfits(r.Context())
 	if err != nil {
-		return createErrorResponse(http.StatusInternalServerError, "Failed to retrieve outfits", "DATABASE_ERROR", err.Error()), nil
+		writeError(w, http.StatusInternalServerError, "Failed to retrieve outfits", "DATABASE_ERROR", err.Error())
+		return
 	}
 
-	response := models.SuccessResponse{
+	writeJSON(w, http.StatusOK, models.SuccessResponse{
 		Message: "Outfits retrieved successfully",
 		Data:    outfits,
-	}
-
-	return createSuccessResponse(http.StatusOK, response), nil
+	})
 }
 
-func (h *OutfitsHandler) GetOutfitByID(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	id := request.PathParameters["id"]
+func (h *OutfitsHandler) GetOutfitByID(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
 	if id == "" {
-		return createErrorResponse(http.StatusBadRequest, "Outfit ID is required", "MISSING_ID", "Please provide a valid outfit ID"), nil
+		writeError(w, http.StatusBadRequest, "Outfit ID is required", "MISSING_ID", "Please provide a valid outfit ID")
+		return
 	}
 
-	outfit, err := h.db.GetOutfitByID(ctx, id)
+	outfit, err := h.store.GetOutfitByID(r.Context(), id)
 	if err != nil {
-		return createErrorResponse(http.StatusInternalServerError, "Failed to retrieve outfit", "DATABASE_ERROR", err.Error()), nil
+		writeError(w, http.StatusInternalServerError, "Failed to retrieve outfit", "DATABASE_ERROR", err.Error())
+		return
 	}
 
 	if outfit == nil {
-		return createErrorResponse(http.StatusNotFound, "Outfit not found", "NOT_FOUND", fmt.Sprintf("Outfit with ID %s could not be found", id)), nil
+		writeError(w, http.StatusNotFound, "Outfit not found", "NOT_FOUND", fmt.Sprintf("Outfit with ID %s could not be found", id))
+		return
 	}
 
-	response := models.SuccessResponse{
+	writeJSON(w, http.StatusOK, models.SuccessResponse{
 		Message: "Outfit retrieved successfully",
 		Data:    outfit,
-	}
-
-	return createSuccessResponse(http.StatusOK, response), nil
+	})
 }
 
-func (h *OutfitsHandler) CreateOutfit(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+func (h *OutfitsHandler) CreateOutfit(w http.ResponseWriter, r *http.Request) {
 	var outfit models.Outfit
-	if err := json.Unmarshal([]byte(request.Body), &outfit); err != nil {
-		return createErrorResponse(http.StatusBadRequest, "Invalid request data", "VALIDATION_ERROR", err.Error()), nil
+	if err := json.NewDecoder(r.Body).Decode(&outfit); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid request data", "VALIDATION_ERROR", err.Error())
+		return
 	}
 
 	// Validate required fields
 	if outfit.ID == "" || outfit.Name == "" || len(outfit.ItemIDs) == 0 {
-		return createErrorResponse(http.StatusBadRequest, "Missing required fields", "MISSING_FIELDS", "All fields (id, name, itemIds) are required and itemIds cannot be empty"), nil
+		writeError(w, http.StatusBadRequest, "Missing required fields", "MISSING_FIELDS", "All fields (id, name, itemIds) are required and itemIds cannot be empty")
+		return
 	}
 
 	// Validate that all referenced items exist
 	for _, itemID := range outfit.ItemIDs {
-		exists, err := h.db.ItemExists(ctx, itemID)
+		exists, err := h.store.ItemExists(r.Context(), itemID)
 		if err != nil {
-			return createErrorResponse(http.StatusInternalServerError, "Failed to validate item reference", "DATABASE_ERROR", err.Error()), nil
+			writeError(w, http.StatusInternalServerError, "Failed to validate item reference", "DATABASE_ERROR", err.Error())
+			return
 		}
 		if !exists {
-			return createErrorResponse(http.StatusBadRequest, "Invalid item reference", "INVALID_ITEM_ID", fmt.Sprintf("Item with ID %s does not exist", itemID)), nil
+			writeError(w, http.StatusBadRequest, "Invalid item reference", "INVALID_ITEM_ID", fmt.Sprintf("Item with ID %s does not exist", itemID))
+			return
 		}
 	}
 
-	// Create outfit
-	if err := h.db.CreateOutfit(ctx, &outfit); err != nil {
-		return createErrorResponse(http.StatusInternalServerError, "Failed to create outfit", "DATABASE_ERROR", err.Error()), nil
+	if err := h.store.CreateOutfit(r.Context(), &outfit); err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to create outfit", "DATABASE_ERROR", err.Error())
+		return
 	}
 
-	response := models.SuccessResponse{
+	writeJSON(w, http.StatusCreated, models.SuccessResponse{
 		Message: "Outfit created successfully",
 		Data:    outfit,
-	}
-
-	return createSuccessResponse(http.StatusCreated, response), nil
+	})
 }

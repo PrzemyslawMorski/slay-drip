@@ -4,7 +4,6 @@ export interface EnvironmentConfig {
   appTitle: string;
   environment: string;
   enableDebug: boolean;
-  dynamodbTableName: string;
 }
 
 // Development environment configuration
@@ -13,16 +12,14 @@ const devConfig: EnvironmentConfig = {
   appTitle: 'Slay Drip - Development',
   environment: 'development',
   enableDebug: true,
-  dynamodbTableName: 'slay-drip-table-dev',
 };
 
 // Live environment configuration
 const liveConfig: EnvironmentConfig = {
-  apiBaseUrl: '__API_GATEWAY_URL__', // This will be replaced during build
+  apiBaseUrl: '__API_BASE_URL__', // This will be replaced during build
   appTitle: 'Slay Drip',
   environment: 'production',
   enableDebug: false,
-  dynamodbTableName: 'slay-drip-table-live',
 };
 
 // Determine current environment

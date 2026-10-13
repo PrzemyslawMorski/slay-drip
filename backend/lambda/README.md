@@ -1,277 +1,164 @@
-# Lambda Functions - Container Images
+# API Container - Scaleway Serverless Containers
 
-This directory contains the Lambda functions for the Slay Drip backend, now using container images deployed to Amazon ECR.
+This directory contains the Slay Drip REST API. It is a single Go HTTP server built as a container image, pushed to the **Scaleway Container Registry** and run on **Scaleway Serverless Containers**. Data is stored in a **Scaleway Serverless SQL Database** (PostgreSQL-compatible).
+
+The directory is still named `lambda/` from the earlier design; it no longer uses AWS Lambda.
 
 ## Overview
 
-The Lambda functions are now built as Docker container images and deployed to Amazon ECR (Elastic Container Registry). This approach provides several benefits:
-
-- **Consistency**: Eliminates GLIBC version issues across different environments
-- **Reproducibility**: Container images ensure the same runtime environment
-- **Scalability**: Easier to manage dependencies and runtime configurations
-- **Security**: Better isolation and security controls
+- **Single container:** one binary serves all routes. Serverless Containers route HTTP to one container per endpoint, so the routes live in Go rather than in one container per function.
+- **Scaleway-only:** no AWS services are used for the backend.
+- **EU region:** deploy to `fr-par` (Paris) by default. Keep all storage and inference in EU regions (see `CLAUDE.md`).
 
 ## Architecture
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   GitHub Code   │───▶│  Docker Build   │───▶│   ECR Registry  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                                        │
-                                                        ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   API Gateway   │◀───│  Lambda Runtime │◀───│  Container Image│
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────────┐
+│   GitHub Code   │───▶│  Docker Build   │───▶│  Scaleway Container │
+└─────────────────┘    └─────────────────┘    │  Registry (rg.*)    │
+                                              └──────────┬──────────┘
+                                                         ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────────┐
+│ Serverless SQL  │◀───│  API container  │◀───│ Serverless          │
+│ Database (PG)   │    │  (Go, port 8080)│    │ Containers (HTTPS)  │
+└─────────────────┘    └─────────────────┘    └─────────────────────┘
 ```
 
-## Functions
+## Endpoints
 
-| Function | Purpose | Endpoint |
-|----------|---------|----------|
-| `get-items` | Retrieve all items | `GET /api/v1/items` |
-| `get-item` | Retrieve specific item | `GET /api/v1/items/{id}` |
-| `create-item` | Create new item | `POST /api/v1/items` |
-| `get-outfits` | Retrieve all outfits | `GET /api/v1/outfits` |
-| `get-outfit` | Retrieve specific outfit | `GET /api/v1/outfits/{id}` |
-| `create-outfit` | Create new outfit | `POST /api/v1/outfits` |
+| Route | Purpose |
+|-------|---------|
+| `GET /api/v1/items` | Retrieve all items |
+| `GET /api/v1/items/{id}` | Retrieve specific item |
+| `POST /api/v1/items` | Create new item |
+| `GET /api/v1/outfits` | Retrieve all outfits |
+| `GET /api/v1/outfits/{id}` | Retrieve specific outfit |
+| `POST /api/v1/outfits` | Create new outfit |
 
 ## Local Development
 
 ### Prerequisites
 
 - Docker
-- AWS CLI (configured with appropriate credentials)
-- Go 1.24+
+- Go 1.25+
+- A PostgreSQL database for local runs (for example, a local Postgres container)
 
-### Building Locally
+### Running Locally
 
-1. **Build all functions and push to ECR:**
+1. **Start a local PostgreSQL:**
    ```bash
-   # Using bash script
-   ./build-docker.sh
-   
-   # Using PowerShell (Windows)
-   ./build-docker.ps1
+   docker run --rm -e POSTGRES_PASSWORD=dev -p 5432:5432 postgres:16
    ```
 
-2. **Build individual function:**
+2. **Run the API:**
    ```bash
-   # Build specific function
-   docker build \
-     --build-arg FUNCTION_NAME=get-items \
-     -f Dockerfile.template \
-     -t slay-drip-get-items:latest \
-     .
+   cd backend/lambda
+   export DATABASE_URL="postgres://postgres:dev@localhost:5432/postgres?sslmode=disable"
+   export ENVIRONMENT=dev
+   go run ./functions/api
    ```
 
-3. **Test locally with Docker:**
+3. **Test with curl:**
    ```bash
-   # Run function locally
-   docker run -p 9000:8080 slay-drip-get-items:latest
-   
-   # Test with curl
-   curl -XPOST "http://localhost:9000/2015-03-31/functions/function/invocations" \
-     -d '{"httpMethod": "GET", "path": "/api/v1/items"}'
+   curl http://localhost:8080/api/v1/items
    ```
+
+### Building the Container Locally
+
+```bash
+cd backend/lambda
+docker build -f Dockerfile.template -t slay-drip-api:local .
+docker run --rm -p 8080:8080 -e DATABASE_URL="..." slay-drip-api:local
+```
 
 ### Environment Variables
 
-The following environment variables can be set:
+- `DATABASE_URL` (required): PostgreSQL connection string for the Serverless SQL Database
+- `ENVIRONMENT`: `dev` (default) or `live`
+- `LOG_LEVEL`: optional override (defaults to `DEBUG` in dev, `INFO` in live)
+- `PORT`: listen port (default `8080`; Scaleway sets this for the container)
 
-- `AWS_REGION`: AWS region (default: us-east-1)
-- `ECR_REPOSITORY_PREFIX`: ECR repository prefix (default: slay-drip)
-- `AWS_ACCOUNT_ID`: AWS account ID (auto-detected if not set)
+For the build script:
+
+- `SCW_SECRET_KEY` (required): Scaleway IAM secret key with Container Registry access
+- `SCW_REGION` (optional): Scaleway region (default `fr-par`)
 
 ## Deployment
 
 ### Automated Deployment (GitHub Actions)
 
-The project includes a GitHub Actions workflow that automatically:
+`.github/workflows/deploy-lambda-containers.yml`:
 
-1. Builds Docker images for all functions
-2. Pushes images to ECR
-3. Deploys infrastructure using Terraform
-4. Updates Lambda functions with new images
-5. Tests the deployment
+1. Builds the API image and pushes it to `rg.fr-par.scw.cloud/slay-drip-<env>/api:latest`
+2. Triggers a redeploy of the Serverless Container so it pulls the new image
+3. Smoke-tests `GET /api/v1/items`
 
 **Trigger the workflow:**
-- Push to `main` branch (automatic)
-- Create a pull request (for testing)
+- Push to `main` touching `backend/lambda/**` (automatic, deploys `dev`)
+- Manual `workflow_dispatch` with `environment` set to `dev` or `live`
 
 ### Manual Deployment
 
-1. **Build and push images:**
+1. **Build and push the image:**
    ```bash
    cd backend/lambda
-   ./build-docker.sh
+   SCW_SECRET_KEY=... ./build-all-functions.sh dev
    ```
 
-2. **Deploy infrastructure:**
+2. **Deploy infrastructure (creates the registry namespace, container and database):**
    ```bash
    cd terraform
    terraform init
-   terraform plan -var="app_name=slay-drip" -var="environment=dev"
-   terraform apply
+   terraform plan -var="environment=dev"
+   terraform apply -var="environment=dev"
    ```
 
-3. **Update Lambda functions:**
+3. **Redeploy the container to pick up the new image:**
    ```bash
-   # Update all functions
-   aws lambda update-function-code \
-     --function-name slay-drip-get-items-dev \
-     --image-uri <account-id>.dkr.ecr.us-east-1.amazonaws.com/slay-drip-get-items-dev:latest
+   curl -X POST \
+     -H "X-Auth-Token: $SCW_SECRET_KEY" \
+     "https://api.scaleway.com/containers/v1beta1/regions/fr-par/containers/<container-id>/deploy"
    ```
 
 ## Infrastructure
 
-### ECR Repositories
+Defined in `terraform/backend-lambdas-container.tf`:
 
-Each function gets its own ECR repository:
-- `slay-drip-get-items-{environment}`
-- `slay-drip-get-item-{environment}`
-- `slay-drip-create-item-{environment}`
-- `slay-drip-get-outfits-{environment}`
-- `slay-drip-get-outfit-{environment}`
-- `slay-drip-create-outfit-{environment}`
+- **Container Registry namespace:** `slay-drip-<env>` (private)
+- **Serverless Containers namespace and container:** `slay-drip-api-<env>`, port 8080, scale-to-zero
+- **Serverless SQL Database:** `slay-drip-<env>`, holds the `items` and `outfits` tables
+- **Secrets:** `DATABASE_URL` is passed to the container as a secret environment variable
 
-### IAM Permissions
-
-The Lambda execution role includes:
-- Basic Lambda execution permissions
-- DynamoDB access permissions
-- ECR image access permissions
-
-### API Gateway
-
-The API Gateway is configured with:
-- Regional endpoint
-- CORS enabled
-- Lambda proxy integration
-- Automatic deployment on changes
+The `items` and `outfits` tables are created on startup by `models/postgres.go` (`CREATE TABLE IF NOT EXISTS`).
 
 ## Troubleshooting
 
-### Common Issues
-
-1. **GLIBC Version Errors:**
-   - This is resolved by using container images
-   - Ensure you're using the provided Dockerfile.template
-
-2. **ECR Login Issues:**
-   ```bash
-   aws ecr get-login-password --region us-east-1 | \
-     docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
-   ```
-
-3. **Lambda Function Not Found:**
-   - Check that the function name matches the ECR repository
-   - Verify the image URI is correct
-   - Ensure the Lambda function exists in Terraform
-
-4. **Permission Denied:**
-   - Check IAM roles and policies
-   - Verify ECR repository permissions
-   - Ensure Lambda execution role has proper permissions
-
-### Debugging
-
-1. **Check Lambda logs:**
-   ```bash
-   aws logs describe-log-groups --log-group-name-prefix "/aws/lambda/slay-drip"
-   ```
-
-2. **Test function locally:**
-   ```bash
-   docker run -e AWS_LAMBDA_RUNTIME_API=localhost:9000 \
-     -p 9000:8080 slay-drip-get-items:latest
-   ```
-
-3. **Check ECR images:**
-   ```bash
-   aws ecr describe-images --repository-name slay-drip-get-items-dev
-   ```
-
-## Migration from ZIP Deployment
-
-If you're migrating from ZIP-based deployment:
-
-1. **Backup current functions:**
-   ```bash
-   aws lambda get-function --function-name slay-drip-get-items-dev
-   ```
-
-2. **Update Terraform configuration:**
-   - Use `backend-lambdas-container.tf` instead of `backend-lambdas.tf`
-   - Remove S3 bucket dependencies
-   - Add ECR repository resources
-
-3. **Deploy new infrastructure:**
-   ```bash
-   terraform apply -var="app_name=slay-drip" -var="environment=dev"
-   ```
-
-4. **Update function code:**
-   ```bash
-   ./build-docker.sh
-   ```
-
-## Best Practices
-
-1. **Image Optimization:**
-   - Use multi-stage builds
-   - Minimize image size
-   - Use specific base images
-
-2. **Security:**
-   - Scan images for vulnerabilities
-   - Use least privilege IAM roles
-   - Keep base images updated
-
-3. **Monitoring:**
-   - Set up CloudWatch alarms
-   - Monitor function duration and errors
-   - Track ECR image usage
-
-4. **CI/CD:**
-   - Use semantic versioning for images
-   - Implement automated testing
-   - Rollback capabilities
+1. **`DATABASE_URL environment variable is required`:** the container was started without the database secret. Check the container's secret environment variables in the Scaleway console.
+2. **`failed to reach database`:** confirm the Serverless SQL Database is in the same region as the container, and that the connection string credentials are current.
+3. **Image pull errors:** confirm the image was pushed to `rg.<region>.scw.cloud/slay-drip-<env>/api:latest` and that the container's registry namespace matches.
+4. **Container returns 5xx on every route:** check the container logs in Scaleway Cockpit (Scaleway's logging and monitoring product).
 
 ## File Structure
 
 ```
 backend/lambda/
-├── Dockerfile.template          # Multi-stage Docker build template
-├── build-docker.sh             # Bash build script
-├── build-docker.ps1            # PowerShell build script
-├── build-local.sh              # Local build (no Docker)
-├── build-local.ps1             # Local build PowerShell
-├── functions/                  # Lambda function source code
-│   ├── get-items/
-│   ├── get-item/
-│   ├── create-item/
-│   ├── get-outfits/
-│   ├── get-outfit/
-│   └── create-outfit/
-├── handlers/                   # Shared handler code
-├── models/                     # Shared data models
-├── go.mod                      # Go module definition
-├── go.sum                      # Go module checksums
-└── README.md                   # This file
+├── Dockerfile.template            # Multi-stage container build (Go -> alpine)
+├── build-all-functions.sh         # Builds and pushes the API image to Scaleway
+├── functions/
+│   └── api/main.go                # API entrypoint: routes, startup, migrations
+├── handlers/                      # HTTP handlers and CORS middleware
+├── models/                        # Data models and PostgreSQL store
+├── config/                        # Environment configuration
+├── go.mod                         # Go module definition
+├── go.sum                         # Go module checksums
+└── README.md                      # This file
 ```
 
 ## Contributing
 
-1. Make changes to function code in `functions/` directory
-2. Update shared code in `handlers/` and `models/` directories
-3. Test locally using Docker
-4. Push changes to trigger automated deployment
-5. Verify deployment in AWS Console
-
-## Support
-
-For issues or questions:
-1. Check the troubleshooting section above
-2. Review CloudWatch logs
-3. Test functions locally with Docker
-4. Check GitHub Actions workflow logs 
+1. Add or change routes in `functions/api/main.go`, and handler logic in `handlers/`
+2. Put persistence changes in `models/postgres.go` (update the schema constant as well)
+3. Run `gofmt -w .` and `go test ./...` from `backend/lambda/`
+4. Test locally with Docker
+5. Push to `main` to trigger the deployment workflow
+6. Verify the deployment in the Scaleway console

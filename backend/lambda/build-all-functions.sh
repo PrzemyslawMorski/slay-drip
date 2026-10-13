@@ -1,25 +1,21 @@
 #!/bin/bash
 
-# Build Lambda functions for the specified environment
+# Build the API container image for the specified environment and push it to the
+# Scaleway Container Registry (rg.<region>.scw.cloud).
 ENVIRONMENT=${1:-"dev"}
-FUNCTION_NAME=$2
 
 # Function to display usage
 usage() {
-    echo "Usage: $0 [environment] [function-name]"
+    echo "Usage: $0 [environment]"
     echo "  environment: dev or live (default: dev)"
-    echo "  function-name: optional, one of: get-items, get-item, create-item, get-outfits, get-outfit, create-outfit"
     echo ""
     echo "Examples:"
-    echo "  $0                 # Build all functions for dev environment"
-    echo "  $0 dev             # Build all functions for dev environment"
-    echo "  $0 live            # Build all functions for live environment"
-    echo "  $0 dev get-items   # Build only the get-items function for dev"
-    echo "  $0 live create-outfit  # Build only the create-outfit function for live"
+    echo "  $0                 # Build and push the API image for dev"
+    echo "  $0 live            # Build and push the API image for live"
     echo ""
-    echo "Note: This script builds Lambda functions and pushes them to ECR."
-    echo "      If no function-name is provided, all functions are built."
-    echo "      Make sure you have AWS credentials configured."
+    echo "Note: This script builds the API container and pushes it to the Scaleway"
+    echo "      Container Registry. Set SCW_SECRET_KEY (and optionally SCW_REGION)"
+    echo "      before running. The registry namespace is created by Terraform."
     echo ""
     echo "You can also run: $0 -h | --help | help"
 }
@@ -31,11 +27,6 @@ if [[ "$ENVIRONMENT" == "-h" || "$ENVIRONMENT" == "--help" || "$ENVIRONMENT" == 
 fi
 
 # Validate environment
-declare -A ENVIRONMENTS
-ENVIRONMENTS["dev"]="dev"
-ENVIRONMENTS["live"]="live"
-ENVIRONMENTS["all"]="dev live"
-
 if [[ ! "$ENVIRONMENT" =~ ^(dev|live)$ ]]; then
     echo "❌ Error: Invalid environment '$ENVIRONMENT'"
     echo ""
@@ -62,98 +53,50 @@ if ! docker info &> /dev/null; then
     exit 1
 fi
 
-echo "🏗️  Building Lambda functions for environment: $ENVIRONMENT"
-echo ""
+# Scaleway registry settings
+SCW_REGION=${SCW_REGION:-"fr-par"}
+REGISTRY="rg.${SCW_REGION}.scw.cloud"
+NAMESPACE="slay-drip-${ENVIRONMENT}"
+IMAGE_NAME="api"
+IMAGE_URI="${REGISTRY}/${NAMESPACE}/${IMAGE_NAME}:latest"
 
-# Get AWS account ID and region
-AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-AWS_REGION=${AWS_DEFAULT_REGION:-$(aws configure get region)}
-
-if [ -z "$AWS_ACCOUNT_ID" ] || [ -z "$AWS_REGION" ]; then
-    echo "❌ Error: AWS credentials not configured or region not set"
-    echo "   Please run 'aws configure' or set AWS_DEFAULT_REGION"
+if [ -z "$SCW_SECRET_KEY" ]; then
+    echo "❌ Error: SCW_SECRET_KEY is not set"
+    echo "   Export a Scaleway IAM API secret key with registry access."
     exit 1
 fi
 
-echo "📍 AWS Account: $AWS_ACCOUNT_ID"
-echo "📍 AWS Region: $AWS_REGION"
+echo "🏗️  Building API container for environment: $ENVIRONMENT"
+echo ""
+echo "📍 Scaleway Region: $SCW_REGION"
+echo "📍 Registry namespace: $NAMESPACE"
 echo ""
 
-# List of functions to build
-FUNCTIONS=(
-    "get-items"
-    "get-item"
-    "create-item"
-    "get-outfits"
-    "get-outfit"
-    "create-outfit"
-)
+# Build image
+echo "🔨 Building $IMAGE_NAME..."
+docker build \
+    -f Dockerfile.template \
+    -t "${NAMESPACE}/${IMAGE_NAME}:latest" \
+    .
 
-# Determine which functions to build
-if [[ -n "$FUNCTION_NAME" ]]; then
-    # Validate requested function name
-    if [[ ! " ${FUNCTIONS[*]} " =~ " ${FUNCTION_NAME} " ]]; then
-        echo "❌ Error: Invalid function name '$FUNCTION_NAME'"
-        echo ""
-        echo "Valid functions: ${FUNCTIONS[*]}"
-        echo ""
-        usage
-        exit 1
-    fi
-    FUNCTIONS_TO_BUILD=("$FUNCTION_NAME")
-else
-    FUNCTIONS_TO_BUILD=("${FUNCTIONS[@]}")
-fi
+docker tag "${NAMESPACE}/${IMAGE_NAME}:latest" "$IMAGE_URI"
 
-# Build and push each function
-for func in "${FUNCTIONS_TO_BUILD[@]}"; do
-    echo "🔨 Building $func..."
-    
-    # Repository name
-    REPO_NAME="slay-drip-${func}-${ENVIRONMENT}"
-    
-    # Check if repository exists, create if not
-    if ! aws ecr describe-repositories --repository-names "$REPO_NAME" --region "$AWS_REGION" >/dev/null 2>&1; then
-        echo "   Creating ECR repository: $REPO_NAME"
-        aws ecr create-repository \
-            --repository-name "$REPO_NAME" \
-            --region "$AWS_REGION" \
-            --tags Key=Environment,Value="$ENVIRONMENT" Key=Function,Value="$func"
-    fi
-    
-    # Build and tag image
-    echo "   Building Docker image..."
-    docker build \
-        -f Dockerfile.template \
-        --build-arg FUNCTION_NAME="$func" \
-        --build-arg ENVIRONMENT="$ENVIRONMENT" \
-        -t "$REPO_NAME:latest" \
-        .
-    
-    # Tag for ECR
-    ECR_URI="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$REPO_NAME:latest"
-    docker tag "$REPO_NAME:latest" "$ECR_URI"
-    
-    # Login to ECR
-    echo "   Logging in to ECR..."
-    aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com"
-    
-    # Push to ECR
-    echo "   Pushing to ECR..."
-    docker push "$ECR_URI"
-    
-    echo "✅ $func built and pushed successfully"
-    echo ""
-done
+# Login to the Scaleway Container Registry (username is ignored, secret key is the password)
+echo "   Logging in to Scaleway Container Registry..."
+echo "$SCW_SECRET_KEY" | docker login "$REGISTRY" --username nologin --password-stdin
 
-echo "🎉 Lambda functions built and pushed successfully!"
+# Push image
+echo "   Pushing $IMAGE_URI..."
+docker push "$IMAGE_URI"
+
+echo ""
+echo "🎉 API container built and pushed successfully!"
 echo ""
 echo "📋 Summary:"
 echo "   Environment: $ENVIRONMENT"
-echo "   Functions: ${FUNCTIONS_TO_BUILD[*]}"
-echo "   ECR Region: $AWS_REGION"
+echo "   Image: $IMAGE_URI"
 echo ""
 echo "🔗 Next steps:"
-echo "   1. Deploy infrastructure with Terraform: ./terraform/apply.sh $ENVIRONMENT"
-echo "   2. Or update existing Lambda functions with new images"
-echo "" 
+echo "   1. Deploy infrastructure with Terraform (terraform/)"
+echo "   2. Or redeploy the existing container: see .github/workflows/deploy-lambda-containers.yml"
+echo ""

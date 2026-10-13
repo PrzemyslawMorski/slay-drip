@@ -19,7 +19,7 @@ All tags are entered by hand today.
 
 ## Scope
 
-- Async tagging job (S3 event → queue → Lambda) calling the chosen vision model with structured output: category, colours, pattern, material, formality, season, fit.
+- Async tagging job (upload event → Scaleway queue → serverless container worker) calling the chosen vision model with structured output: category, colours, pattern, material, formality, season, fit.
 - Store tag source (`ai`/`user`) and confidence; UI shows tags as editable chips.
 - User edits are never overwritten by re-tagging.
 

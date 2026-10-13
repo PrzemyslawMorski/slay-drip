@@ -21,7 +21,7 @@ Upload accepts files only (drag-drop/file picker).
 
 - Camera capture (`<input capture>` or `getUserMedia`) with framing guidance.
 - Keep the existing client-side compression.
-- Upload to S3 and create the item in an `untagged` state.
+- Upload to Object Storage and create the item in an `untagged` state.
 
 ## Acceptance criteria
 

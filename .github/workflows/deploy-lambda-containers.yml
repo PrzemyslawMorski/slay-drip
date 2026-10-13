@@ -1,4 +1,4 @@
-name: Build and Push Lambda Container Images
+name: Build and Deploy API Container (Scaleway)
 
 on:
   push:
@@ -18,126 +18,113 @@ on:
           - live
 
 permissions:
-  id-token: write
   contents: read
 
 env:
-  AWS_REGION: ${{ github.env.AWS_REGION || 'eu-central-1' }}
-  ECR_REPOSITORY_PREFIX: slay-drip
+  SCW_REGION: fr-par
+  SCW_API_URL: https://api.scaleway.com
+
+# Only one API deploy per environment at a time
+concurrency:
+  group: api-deploy-${{ github.event.inputs.environment || 'dev' }}
+  cancel-in-progress: false
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'dev' || 'dev') }}
-
-    permissions:
-      id-token: write
-      contents: read
+    environment: ${{ github.event.inputs.environment || 'dev' }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-        aws-region: ${{ env.AWS_REGION }}
-
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build and push Lambda functions
+    - name: Build and push API image
       working-directory: ./backend/lambda
+      env:
+        SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        SCW_REGION: ${{ env.SCW_REGION }}
       run: |
-        # Use the shell build script
         ENVIRONMENT="${{ github.event.inputs.environment || 'dev' }}"
-        echo "Building Lambda functions for environment: $ENVIRONMENT"
-        
-        # Make script executable and run it
+        echo "Building API container for environment: $ENVIRONMENT"
+
         chmod +x build-all-functions.sh
         ./build-all-functions.sh "$ENVIRONMENT"
 
-    - name: Update Lambda functions with new images
-      run: |
-        # List of functions to update
-        FUNCTIONS=(
-          "get-items"
-          "get-item"
-          "create-item"
-          "get-outfits"
-          "get-outfit"
-          "create-outfit"
-        )
-
-        # Update each Lambda function
-        for func in "${FUNCTIONS[@]}"; do
-          echo "Updating $func..."
-          
-          # Get AWS account ID
-          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          
-          # Update Lambda function with new image
-          REPO_NAME="${ECR_REPOSITORY_PREFIX}-${func}-${{ github.event.inputs.environment || 'dev' }}"
-          IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${REPO_NAME}:latest"
-          
-          # Check if Lambda function exists before updating
-          if aws lambda get-function --function-name "slay-drip-${func}-${{ github.event.inputs.environment || 'dev' }}" --region ${AWS_REGION} 2>/dev/null; then
-            aws lambda update-function-code \
-              --function-name "slay-drip-${func}-${{ github.event.inputs.environment || 'dev' }}" \
-              --image-uri ${IMAGE_URI} \
-              --region ${AWS_REGION}
-            echo "✅ Updated $func"
-          else
-            echo "⚠️  Lambda function slay-drip-${func}-${{ github.event.inputs.environment || 'dev' }} does not exist. Skipping update."
-            echo "   Deploy infrastructure first using Terraform."
-          fi
-        done
-
-  test-deployment:
+  redeploy-container:
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'dev' || 'dev') }}
+    environment: ${{ github.event.inputs.environment || 'dev' }}
     needs: build-and-push
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-        aws-region: ${{ env.AWS_REGION }}
-
-    - name: Get API Gateway URL
-      id: get-api-url
+    - name: Redeploy API container to pick up the new image
+      env:
+        SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
       run: |
-        API_URL=$(aws apigateway get-rest-apis --query "items[?name=='slay-drip-api-${{ github.event.inputs.environment || 'dev' }}'].id" --output text)
-        if [ "$API_URL" != "None" ] && [ -n "$API_URL" ]; then
-          echo "api_url=https://${API_URL}.execute-api.${{ env.AWS_REGION }}.amazonaws.com/${{ github.event.inputs.environment || 'dev' }}/api/v1" >> $GITHUB_OUTPUT
-        else
-          echo "⚠️  API Gateway not found. Infrastructure may not be deployed yet."
+        ENVIRONMENT="${{ github.event.inputs.environment || 'dev' }}"
+        CONTAINER_NAME="slay-drip-api-${ENVIRONMENT}"
+
+        # Look up the Serverless Container by name
+        CONTAINER_ID=$(curl -sf \
+          -H "X-Auth-Token: ${SCW_SECRET_KEY}" \
+          "${SCW_API_URL}/containers/v1beta1/regions/${SCW_REGION}/containers?name=${CONTAINER_NAME}" \
+          | jq -r '.containers[0].id // empty')
+
+        if [ -z "$CONTAINER_ID" ]; then
+          echo "⚠️  Container ${CONTAINER_NAME} not found. Deploy infrastructure first using Terraform."
           exit 0
         fi
 
-    - name: Test API endpoints
+        curl -sf -X POST \
+          -H "X-Auth-Token: ${SCW_SECRET_KEY}" \
+          "${SCW_API_URL}/containers/v1beta1/regions/${SCW_REGION}/containers/${CONTAINER_ID}/deploy"
+
+        echo "✅ Redeploy requested for ${CONTAINER_NAME} (${CONTAINER_ID})"
+
+  test-deployment:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    needs: redeploy-container
+
+    steps:
+    - name: Get API endpoint
+      id: get-api-url
+      env:
+        SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
       run: |
-        # Only test if API Gateway exists
-        if [ -n "${{ steps.get-api-url.outputs.api_url }}" ]; then
-          # Wait for Lambda functions to be ready
-          sleep 30
-          
-          # Test get-items endpoint
-          curl -f "${{ steps.get-api-url.outputs.api_url }}/items" || {
-            echo "❌ get-items endpoint test failed"
-            exit 1
-          }
-          
-          echo "✅ API endpoints test passed"
+        ENVIRONMENT="${{ github.event.inputs.environment || 'dev' }}"
+        CONTAINER_NAME="slay-drip-api-${ENVIRONMENT}"
+
+        ENDPOINT=$(curl -sf \
+          -H "X-Auth-Token: ${SCW_SECRET_KEY}" \
+          "${SCW_API_URL}/containers/v1beta1/regions/${SCW_REGION}/containers?name=${CONTAINER_NAME}" \
+          | jq -r '.containers[0].domain_name // empty')
+
+        if [ -n "$ENDPOINT" ]; then
+          echo "api_url=https://${ENDPOINT}/api/v1" >> $GITHUB_OUTPUT
         else
-          echo "⚠️  Skipping API tests - infrastructure not deployed"
+          echo "⚠️  API container not found. Infrastructure may not be deployed yet."
         fi
+      env:
+        SCW_REGION: ${{ env.SCW_REGION }}
+
+    - name: Test API endpoints
+      env:
+        API_URL: ${{ steps.get-api-url.outputs.api_url }}
+      run: |
+        if [ -z "$API_URL" ]; then
+          echo "⚠️  Skipping API tests - infrastructure not deployed"
+          exit 0
+        fi
+
+        # Give the new revision time to start
+        sleep 30
+
+        curl -f "${API_URL}/items" || {
+          echo "❌ get-items endpoint test failed"
+          exit 1
+        }
+
+        echo "✅ API endpoints test passed"

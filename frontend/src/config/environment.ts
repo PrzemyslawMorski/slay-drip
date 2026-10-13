@@ -4,7 +4,6 @@ export interface EnvironmentConfig {
   appTitle: string;
   environment: string;
   enableDebug: boolean;
-  dynamodbTableName: string;
 }
 
 // Get environment variables from Vite (injected at build time)
@@ -18,7 +17,6 @@ const devConfig: EnvironmentConfig = {
   appTitle: 'Slay Drip - Development',
   environment: 'development',
   enableDebug: true,
-  dynamodbTableName: 'slay-drip-table-dev',
 };
 
 // Live environment configuration
@@ -27,7 +25,6 @@ const liveConfig: EnvironmentConfig = {
   appTitle: 'Slay Drip',
   environment: 'production',
   enableDebug: false,
-  dynamodbTableName: 'slay-drip-table-live',
 };
 
 // Determine current environment

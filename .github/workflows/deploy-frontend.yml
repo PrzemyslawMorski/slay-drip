@@ -1,4 +1,4 @@
-name: Deploy Frontend to S3
+name: Deploy Frontend to Scaleway Object Storage
 
 on:
   push:
@@ -22,11 +22,11 @@ on:
           - live
 
 permissions:
-  id-token: write
   contents: read
 
 env:
-  AWS_REGION: ${{ github.env.AWS_REGION || 'eu-central-1' }}
+  SCW_REGION: fr-par
+  APP_NAME: slay-drip
 
 jobs:
   test:
@@ -98,109 +98,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Validate AWS credentials
-        run: |
-          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
-            echo "❌ Error: AWS_ROLE_ARN is not set in the dev environment!"
-            echo "Please configure the AWS_ROLE_ARN secret in your environment settings."
-            echo "Go to Settings > Environments > dev > Add secret"
-            echo "Name: AWS_ROLE_ARN"
-            echo "Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME"
-            exit 1
-          fi
-          echo "✅ AWS_ROLE_ARN is configured in dev environment"
-
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
           path: frontend/build/
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Deploy frontend
+        uses: ./.github/actions/deploy-frontend
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Verify AWS credentials
-        run: |
-          echo "🔍 Verifying AWS credentials..."
-          aws sts get-caller-identity
-          echo "✅ AWS credentials are valid"
-          echo "🔍 Checking AWS region..."
-          echo "AWS_REGION: $AWS_REGION"
-          echo "AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION"
-          echo "✅ AWS region is configured"
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.5.0"
-
-      - name: Initialize Terraform and select workspace
-        run: |
-          cd terraform
-          terraform init
-          terraform workspace select dev || terraform workspace new dev
-        env:
-          TF_VAR_environment: dev
-
-      - name: Get S3 bucket name
-        id: get-bucket
-        run: |
-          cd terraform
-          BUCKET_NAME=$(terraform output -raw frontend_bucket_name)
-          echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
-        env:
-          TF_VAR_environment: dev
-
-      - name: Deploy to S3
-        run: |
-          aws s3 sync frontend/build/ s3://${{ steps.get-bucket.outputs.bucket_name }}/ --delete
-
-          # Set proper cache headers for PWA assets
-          if [ -f "frontend/build/service-worker.js" ]; then
-            aws s3 cp frontend/build/service-worker.js s3://${{ steps.get-bucket.outputs.bucket_name }}/service-worker.js \
-              --cache-control "no-cache, no-store, must-revalidate" \
-              --content-type "application/javascript"
-          fi
-
-          if [ -f "frontend/build/manifest.json" ]; then
-            aws s3 cp frontend/build/manifest.json s3://${{ steps.get-bucket.outputs.bucket_name }}/manifest.json \
-              --cache-control "max-age=3600" \
-              --content-type "application/json"
-          fi
-
-      - name: Invalidate CloudFront cache
-        run: |
-          cd terraform
-          DISTRIBUTION_ID=$(terraform output -raw frontend_cloudfront_distribution_id 2>/dev/null || echo "")
-          if [ -n "$DISTRIBUTION_ID" ]; then
-            aws cloudfront create-invalidation \
-              --distribution-id $DISTRIBUTION_ID \
-              --paths "/*"
-          fi
-        env:
-          TF_VAR_environment: dev
-
-      - name: Get deployment URL
-        run: |
-          cd terraform
-          CLOUDFRONT_URL=$(terraform output -raw frontend_cloudfront_url 2>/dev/null || echo "")
-          if [ -n "$CLOUDFRONT_URL" ]; then
-            echo "🌐 Frontend deployed to: $CLOUDFRONT_URL"
-          else
-            BUCKET_NAME=$(terraform output -raw frontend_bucket_name)
-            echo "🌐 Frontend deployed to S3: http://$BUCKET_NAME.s3-website-${{ env.AWS_REGION }}.amazonaws.com"
-          fi
-        env:
-          TF_VAR_environment: dev
-
-      - name: Print OIDC info
-        run: |
-          echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
-          echo "GITHUB_REF: $GITHUB_REF"
-          echo "GITHUB_ACTOR: $GITHUB_ACTOR"
+          environment: dev
+          scw-access-key: ${{ secrets.SCW_ACCESS_KEY }}
+          scw-secret-key: ${{ secrets.SCW_SECRET_KEY }}
+          region: ${{ env.SCW_REGION }}
+          app-name: ${{ env.APP_NAME }}
 
   deploy-live:
     name: Deploy to Live
@@ -213,109 +124,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Validate AWS credentials
-        run: |
-          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
-            echo "❌ Error: AWS_ROLE_ARN is not set in the live environment!"
-            echo "Please configure the AWS_ROLE_ARN secret in your environment settings."
-            echo "Go to Settings > Environments > live > Add secret"
-            echo "Name: AWS_ROLE_ARN"
-            echo "Value: arn:aws:iam::YOUR_ACCOUNT_ID:role/YOUR_ROLE_NAME"
-            exit 1
-          fi
-          echo "✅ AWS_ROLE_ARN is configured in live environment"
-
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: frontend-build
           path: frontend/build/
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Deploy frontend
+        uses: ./.github/actions/deploy-frontend
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Verify AWS credentials
-        run: |
-          echo "🔍 Verifying AWS credentials..."
-          aws sts get-caller-identity
-          echo "✅ AWS credentials are valid"
-          echo "🔍 Checking AWS region..."
-          echo "AWS_REGION: $AWS_REGION"
-          echo "AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION"
-          echo "✅ AWS region is configured"
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.5.0"
-
-      - name: Initialize Terraform and select workspace
-        run: |
-          cd terraform
-          terraform init
-          terraform workspace select live || terraform workspace new live
-        env:
-          TF_VAR_environment: live
-
-      - name: Get S3 bucket name
-        id: get-bucket
-        run: |
-          cd terraform
-          BUCKET_NAME=$(terraform output -raw frontend_bucket_name)
-          echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
-        env:
-          TF_VAR_environment: live
-
-      - name: Deploy to S3
-        run: |
-          aws s3 sync frontend/build/ s3://${{ steps.get-bucket.outputs.bucket_name }}/ --delete
-
-          # Set proper cache headers for PWA assets
-          if [ -f "frontend/build/service-worker.js" ]; then
-            aws s3 cp frontend/build/service-worker.js s3://${{ steps.get-bucket.outputs.bucket_name }}/service-worker.js \
-              --cache-control "no-cache, no-store, must-revalidate" \
-              --content-type "application/javascript"
-          fi
-
-          if [ -f "frontend/build/manifest.json" ]; then
-            aws s3 cp frontend/build/manifest.json s3://${{ steps.get-bucket.outputs.bucket_name }}/manifest.json \
-              --cache-control "max-age=3600" \
-              --content-type "application/json"
-          fi
-
-      - name: Invalidate CloudFront cache
-        run: |
-          cd terraform
-          DISTRIBUTION_ID=$(terraform output -raw frontend_cloudfront_distribution_id 2>/dev/null || echo "")
-          if [ -n "$DISTRIBUTION_ID" ]; then
-            aws cloudfront create-invalidation \
-              --distribution-id $DISTRIBUTION_ID \
-              --paths "/*"
-          fi
-        env:
-          TF_VAR_environment: live
-
-      - name: Get deployment URL
-        run: |
-          cd terraform
-          CLOUDFRONT_URL=$(terraform output -raw frontend_cloudfront_url 2>/dev/null || echo "")
-          if [ -n "$CLOUDFRONT_URL" ]; then
-            echo "🌐 Frontend deployed to: $CLOUDFRONT_URL"
-          else
-            BUCKET_NAME=$(terraform output -raw frontend_bucket_name)
-            echo "🌐 Frontend deployed to S3: http://$BUCKET_NAME.s3-website-${{ env.AWS_REGION }}.amazonaws.com"
-          fi
-        env:
-          TF_VAR_environment: live
-
-      - name: Print OIDC info
-        run: |
-          echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
-          echo "GITHUB_REF: $GITHUB_REF"
-          echo "GITHUB_ACTOR: $GITHUB_ACTOR"
+          environment: live
+          scw-access-key: ${{ secrets.SCW_ACCESS_KEY }}
+          scw-secret-key: ${{ secrets.SCW_SECRET_KEY }}
+          region: ${{ env.SCW_REGION }}
+          app-name: ${{ env.APP_NAME }}
 
   notify:
     name: Notify Deployment Status

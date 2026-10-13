@@ -1,4 +1,4 @@
-name: Deploy Infrastructure with Terraform
+name: Deploy Infrastructure with Terraform (Scaleway)
 
 on:
   push:
@@ -27,31 +27,51 @@ on:
           - destroy
 
 permissions:
-  id-token: write
   contents: read
 
 env:
-  AWS_REGION: ${{ github.env.AWS_REGION || 'eu-central-1' }}
+  SCW_REGION: fr-par
   TF_VERSION: "1.7.0"
+
+# Serialises runs per environment; Scaleway Object Storage has no DynamoDB-style state lock
+concurrency:
+  group: terraform-${{ github.event.inputs.environment || 'dev' }}
+  cancel-in-progress: false
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'dev' || 'dev') }}
+    environment: ${{ github.event.inputs.environment || 'dev' }}
 
-    permissions:
-      id-token: write
-      contents: read
+    env:
+      # Scaleway provider credentials
+      SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+      SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+      SCW_DEFAULT_PROJECT_ID: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+      SCW_DEFAULT_ORGANIZATION_ID: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
+      # Terraform variables
+      TF_VAR_environment: ${{ github.event.inputs.environment || 'dev' }}
+      TF_VAR_scw_project_id: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+      TF_VAR_database_url: ${{ secrets.DATABASE_URL }}
+      # Terraform's S3 backend reads AWS_* variable names; they carry the Scaleway keys
+      AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_KEY }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-        aws-region: ${{ env.AWS_REGION }}
+    - name: Validate Scaleway credentials
+      run: |
+        for var in SCW_ACCESS_KEY SCW_SECRET_KEY SCW_DEFAULT_PROJECT_ID SCW_DEFAULT_ORGANIZATION_ID DATABASE_URL; do
+          eval "value=\${${var}:-}"
+          if [ -z "$value" ]; then
+            echo "❌ ${var} is not set in the ${{ github.event.inputs.environment || 'dev' }} environment"
+            echo "Go to Settings > Environments > ${{ github.event.inputs.environment || 'dev' }} > Add secret"
+            exit 1
+          fi
+        done
+        echo "✅ Scaleway credentials are configured"
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
@@ -60,11 +80,7 @@ jobs:
 
     - name: Terraform Init
       working-directory: ./terraform
-      run: |
-        terraform init \
-          -backend-config="bucket=slay-drip-tfstate" \
-          -backend-config="key=terraform.tfstate" \
-          -backend-config="region=${{ env.AWS_REGION }}"
+      run: terraform init -input=false
 
     - name: Terraform Format Check
       working-directory: ./terraform
@@ -76,34 +92,17 @@ jobs:
 
     - name: Terraform Plan
       working-directory: ./terraform
-      run: |
-        terraform plan \
-          -var="environment=${{ github.event.inputs.environment || 'dev' }}" \
-          -var="github_repository=${{ github.repository }}" \
-          -out=tfplan
-      env:
-        TF_VAR_environment: ${{ github.event.inputs.environment || 'dev' }}
-        TF_VAR_github_repository: ${{ github.repository }}
+      run: terraform plan -input=false -out=tfplan
 
     - name: Terraform Apply
       if: github.event.inputs.action == 'apply' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
       working-directory: ./terraform
-      run: |
-        terraform apply -auto-approve tfplan
-      env:
-        TF_VAR_environment: ${{ github.event.inputs.environment || 'dev' }}
-        TF_VAR_github_repository: ${{ github.repository }}
+      run: terraform apply -input=false -auto-approve tfplan
 
     - name: Terraform Destroy
       if: github.event.inputs.action == 'destroy'
       working-directory: ./terraform
-      run: |
-        terraform destroy -auto-approve \
-          -var="environment=${{ github.event.inputs.environment || 'dev' }}" \
-          -var="github_repository=${{ github.repository }}"
-      env:
-        TF_VAR_environment: ${{ github.event.inputs.environment || 'dev' }}
-        TF_VAR_github_repository: ${{ github.repository }}
+      run: terraform destroy -input=false -auto-approve
 
     - name: Comment PR
       if: github.event_name == 'pull_request'
@@ -112,10 +111,10 @@ jobs:
         script: |
           const fs = require('fs');
           const plan = fs.readFileSync('./terraform/tfplan', 'utf8');
-          
+
           github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
             body: `## Terraform Plan for ${{ github.event.inputs.environment || 'dev' }} Environment\n\n\`\`\`hcl\n${plan}\n\`\`\``
-          }); 
+          });

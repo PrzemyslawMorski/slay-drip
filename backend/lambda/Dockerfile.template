@@ -1,5 +1,5 @@
-# Multi-stage build for Lambda functions - Lambda-compatible version
-FROM golang:1.24-alpine AS builder
+# Multi-stage build for the Slay Drip API container (Scaleway Serverless Containers).
+FROM golang:1.25-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates tzdata
@@ -16,28 +16,24 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the application
-# FUNCTION_NAME will be passed during build
-ARG FUNCTION_NAME
-RUN if [ -z "$FUNCTION_NAME" ]; then \
-        echo "Error: FUNCTION_NAME build argument is required"; \
-        exit 1; \
-    fi
-
-# Build with specific flags for Lambda compatibility
+# Build a static binary for the API entrypoint
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-s -w" \
-    -o bootstrap \
-    functions/$FUNCTION_NAME/main.go
+    -o /app/api \
+    ./functions/api
 
-# Runtime stage - use Lambda-provided al2023 base image
-FROM public.ecr.aws/lambda/provided:al2023
+# Runtime stage: minimal image with CA certificates (needed for TLS to the database)
+FROM alpine:3.20
 
-# Copy only the binary from builder stage
-COPY --from=builder /app/bootstrap ${LAMBDA_RUNTIME_DIR}/bootstrap
+RUN apk add --no-cache ca-certificates tzdata \
+    && addgroup -S app \
+    && adduser -S -G app app
 
-# Set proper permissions
-RUN chmod +x ${LAMBDA_RUNTIME_DIR}/bootstrap
+COPY --from=builder /app/api /usr/local/bin/api
 
-# Set the CMD to your handler
-CMD [ "bootstrap" ] 
+USER app
+
+# Scaleway injects PORT; the API listens on it (default 8080)
+EXPOSE 8080
+
+ENTRYPOINT ["/usr/local/bin/api"]

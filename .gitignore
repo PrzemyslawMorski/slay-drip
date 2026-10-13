@@ -38,10 +38,9 @@ public_key.pem
 credentials.json
 service-account-key.json
 gcp-key.json
-aws-credentials
-.aws/
-.aws/credentials
-.aws/config
+scw-credentials
+.scw/
+scw-config.yaml
 
 # API Keys and Tokens
 api-keys.txt

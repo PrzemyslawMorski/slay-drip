@@ -101,7 +101,7 @@ Privacy is designed in from the first session, not added before launch. Workshop
 **Requirements**
 
 1. **DPIA** completed before any real user data is collected.
-2. **EU-only processing:** all storage and AI inference in EU regions, with vendors under a DPA guaranteeing zero retention and no training on user data.
+2. **EU-only processing on Scaleway:** all hosting, storage, databases and AI inference run on Scaleway in EU regions (`fr-par` by default), with vendors under a DPA guaranteeing zero retention and no training on user data.
 3. **Data minimisation:** keep derived attributes by default (colour season, proportion descriptors). Store raw body photos only if the user opts in (needed for try-on later).
 4. **Granular, revocable consent** per data type. Revoking consent deletes that data.
 5. **Encryption** at rest and in transit; body photos kept in a separate store with stricter access.

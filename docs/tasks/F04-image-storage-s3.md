@@ -1,13 +1,13 @@
 ---
 id: F04
-title: Image storage in S3 with presigned uploads
+title: Image storage in Scaleway Object Storage with presigned uploads
 slice: Foundation
 priority: P0
 status: todo
 depends_on: [F02]
 ---
 
-# F04 · Image storage in S3 with presigned uploads
+# F04 · Image storage in Scaleway Object Storage with presigned uploads
 
 **Slice:** Foundation · **Priority:** P0 · **Status:** todo
 **Depends on:** [F02](F02-auth-and-user-scoped-data.md)
@@ -19,13 +19,13 @@ Images are stored as base64 strings inside IndexedDB. Requirements need encrypte
 
 ## Scope
 
-- Terraform: private S3 bucket for wardrobe images (SSE-KMS, block public access, `eu-central-1`) and a **separate** bucket + KMS key for body photos with narrower IAM.
+- Terraform: private Object Storage bucket for wardrobe images (`fr-par`, block public access, encryption at rest) and a **separate** bucket for body photos, with narrower IAM application keys.
 - Endpoint issuing presigned PUT/GET URLs scoped to `users/<sub>/...` keys.
-- Frontend uploads the compressed image directly to S3, stores only `imageKey` on the item.
+- Frontend uploads the compressed image directly to Object Storage, stores only `imageKey` on the item.
 - Lifecycle rule for orphaned uploads.
 
 ## Acceptance criteria
 
-- [ ] No image bytes go through DynamoDB or IndexedDB.
+- [ ] No image bytes go through the SQL database or IndexedDB.
 - [ ] A user cannot fetch another user's image key (presign checks ownership).
 - [ ] Body-photo bucket is not readable by the wardrobe-tagging role.

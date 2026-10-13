@@ -15,13 +15,13 @@ depends_on: []
 
 ## Context
 
-All API Gateway methods use `authorization = "NONE"`, items/outfits carry no owner, and `GetAllItems` scans the whole table with `begins_with(pk, "ITEM#")`. Nothing user-facing (consent, export, delete) can be built without users.
+All API routes are unauthenticated, items/outfits carry no owner, and `GetAllItems` returns the whole `items` table. Nothing user-facing (consent, export, delete) can be built without users.
 
 ## Scope
 
-- Add an EU-hosted identity provider (e.g. Cognito user pool in `eu-central-1`) via Terraform.
-- Add a Cognito/JWT authorizer to every API Gateway method; keep CORS preflight open.
-- Re-key DynamoDB: `pk = USER#<sub>`, `sk = ITEM#<id>` / `OUTFIT#<id>`; replace `Scan` with `Query` on `pk`.
+- Add an EU-hosted identity provider. Scaleway has no managed user directory, so the provider is an open decision (see CLAUDE.md); wire its configuration through Terraform and container secrets.
+- Verify the identity provider's JWTs in the API container for every route; keep CORS preflight open.
+- Add a `user_id` column to `items` and `outfits` in the Serverless SQL Database, and filter every query by it instead of reading whole tables.
 - Take the user id from the authorizer claims in handlers, never from the request body.
 - Frontend: sign-up / sign-in / sign-out, token storage and refresh, attach `Authorization` header in `services/api.ts`.
 - Remove the unused `user_id` GSI or use it consistently.

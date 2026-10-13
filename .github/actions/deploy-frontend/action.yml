@@ -1,0 +1,84 @@
+name: Deploy Frontend to Scaleway Object Storage
+description: Sync the frontend build to the environment's Scaleway Object Storage bucket and set PWA cache headers.
+
+inputs:
+  environment:
+    description: "Target environment (dev or live)"
+    required: true
+  scw-access-key:
+    description: "Scaleway access key (SCW_ACCESS_KEY)"
+    required: true
+  scw-secret-key:
+    description: "Scaleway secret key (SCW_SECRET_KEY)"
+    required: true
+  region:
+    description: "Scaleway region (EU only)"
+    required: false
+    default: "fr-par"
+  app-name:
+    description: "Application name used in bucket naming"
+    required: false
+    default: "slay-drip"
+  build-dir:
+    description: "Directory containing the frontend build output"
+    required: false
+    default: "frontend/build"
+
+runs:
+  using: composite
+  steps:
+    - name: Validate Scaleway credentials
+      shell: bash
+      env:
+        SCW_ACCESS_KEY_INPUT: ${{ inputs.scw-access-key }}
+        SCW_SECRET_KEY_INPUT: ${{ inputs.scw-secret-key }}
+      run: |
+        if [ -z "$SCW_ACCESS_KEY_INPUT" ] || [ -z "$SCW_SECRET_KEY_INPUT" ]; then
+          echo "❌ SCW_ACCESS_KEY and SCW_SECRET_KEY must be set in the ${{ inputs.environment }} environment"
+          exit 1
+        fi
+        echo "✅ Scaleway credentials are configured"
+
+    - name: Install rclone
+      shell: bash
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq rclone
+        rclone version | head -1
+
+    - name: Deploy to Object Storage
+      shell: bash
+      env:
+        ENVIRONMENT: ${{ inputs.environment }}
+        APP_NAME: ${{ inputs.app-name }}
+        SCW_REGION: ${{ inputs.region }}
+        BUILD_DIR: ${{ inputs.build-dir }}
+        # rclone remote "scw" is defined entirely through environment variables
+        RCLONE_CONFIG_SCW_TYPE: s3
+        RCLONE_CONFIG_SCW_PROVIDER: Scaleway
+        RCLONE_CONFIG_SCW_ENDPOINT: s3.${{ inputs.region }}.scw.cloud
+        RCLONE_CONFIG_SCW_REGION: ${{ inputs.region }}
+        RCLONE_CONFIG_SCW_ACCESS_KEY_ID: ${{ inputs.scw-access-key }}
+        RCLONE_CONFIG_SCW_SECRET_ACCESS_KEY: ${{ inputs.scw-secret-key }}
+      run: |
+        BUCKET="${APP_NAME}-frontend-${ENVIRONMENT}"
+
+        # Mirror the build, removing files that no longer exist
+        # (service worker and manifest are uploaded separately below with their own headers)
+        rclone sync "$BUILD_DIR/" "scw:${BUCKET}/" --delete \
+          --exclude service-worker.js --exclude manifest.json
+
+        # Service worker must never be cached
+        if [ -f "$BUILD_DIR/service-worker.js" ]; then
+          rclone copyto "$BUILD_DIR/service-worker.js" "scw:${BUCKET}/service-worker.js" --no-check-dest \
+            --header-upload "Cache-Control: no-cache, no-store, must-revalidate" \
+            --header-upload "Content-Type: application/javascript"
+        fi
+
+        if [ -f "$BUILD_DIR/manifest.json" ]; then
+          rclone copyto "$BUILD_DIR/manifest.json" "scw:${BUCKET}/manifest.json" --no-check-dest \
+            --header-upload "Cache-Control: max-age=3600" \
+            --header-upload "Content-Type: application/json"
+        fi
+
+        echo "🌐 Frontend deployed to: https://${BUCKET}.s3-website.${SCW_REGION}.scw.cloud"
