@@ -92,6 +92,7 @@ Run the narrowest relevant tests after touching an area. Do not leave dev server
 - **Strings**: all UI copy goes through externalised strings, ready for later localisation.
 - **Config**: frontend values are injected via `VITE_*` vars at build time. Backend reads its settings (`DATABASE_URL`, `ENVIRONMENT`) from environment variables set on the Scaleway container, and CI uses Scaleway IAM keys from GitHub secrets. Never hardcode secrets. Prefer the existing templates over new config mechanisms.
 - **Git**: prefer incremental commits with focused messages.
+- **Line endings**: files are stored with LF. `.gitattributes` (`* text=auto eol=lf`) normalises them, so Windows checkouts that show CRLF in the working tree are expected and should not appear as modified. Do not set `core.autocrlf` in the repo; rely on `.gitattributes`. Binary assets are marked `binary` there.
 
 ## When making changes
 
