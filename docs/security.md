@@ -2,7 +2,7 @@
 
 **Status:** Draft · **Owner:** Outfit Planner team · **Review:** before any real user data is collected, then every session
 
-This guide sets the security rules for building Slay Drip. It applies to every change in `frontend/`, `backend/lambda/`, `terraform/`, CI workflows and documentation. It turns the hard rules in [CLAUDE.md](../CLAUDE.md) and the privacy requirements in [requirements](requirements.md) into things a developer can check in a pull request.
+This guide sets the security rules for building Slay Drip. It applies to every change to code, infrastructure, CI and documentation. It turns the hard rules in [CLAUDE.md](../CLAUDE.md) and the privacy requirements in [requirements](requirements.md) into things a developer can check in a pull request.
 
 Where a rule depends on an open decision (identity provider, DPO review, DPIA), it says so. Do not settle those in code. Raise them.
 
@@ -21,13 +21,13 @@ Where a rule depends on an open decision (identity provider, DPO review, DPIA), 
 | **Body data** | Measurements, body photos, colouring photos, proportion descriptors | Separate store with stricter access. Derived attributes kept by default. Raw photos only with opt-in. |
 | **Special category (GDPR Art. 9 candidate)** | Modesty and cultural coverage rules, adaptive needs | Explicit consent required. Treat as sensitive everywhere. DPO review still open. |
 | **Location and weather** | Coarse location for local weather | Separate consent. Store the minimum (city or rounded coordinates, not history). |
-| **Secrets** | API keys, IAM keys, database URLs, signing keys | Never in the repo, the frontend bundle, logs or docs. See section 9. |
+| **Secrets** | API keys, IAM keys, database URLs, signing keys | Never in the repo, client bundles, logs or docs. See section 9. |
 
 Anything that is not obviously in one of these classes is **Personal** until someone decides otherwise.
 
 ## 2. Age gate (18+)
 
-- Enforce 18+ **on the server at sign-up**. The frontend check is for user experience only and is never the control.
+- Enforce 18+ **on the server at sign-up**. The client-side check is for user experience only and is never the control.
 - Store the minimum needed to show the check was passed. Do not keep a date of birth unless the DPO confirms it is needed.
 - A user who fails the gate gets no account and no personal data is written for them. Do not store the rejected age.
 - Tests: an under-18 sign-up attempt is rejected by the API directly, bypassing the UI.
@@ -64,7 +64,7 @@ Anything that is not obviously in one of these classes is **Personal** until som
 - Validate every request body: size limit, types, enums, required fields. Reject unknown fields on write endpoints.
 - Generate IDs on the server (UUID). Do not accept client-supplied IDs on create.
 - Errors: return a generic message and a **correlation ID**. Log the internal error with that ID. Never return database errors, stack traces or SQL text to clients (see F05).
-- CORS: allow-list the frontend origin and localhost in dev only. Never `*` on an endpoint that handles user data.
+- CORS: allow-list the app's own origin and localhost in dev only. Never `*` on an endpoint that handles user data.
 - Rate-limit authentication and AI-backed endpoints. Set a request timeout on every outbound call.
 - Use parameterised queries only. No string-built SQL.
 - Responses for personal data send `Cache-Control: no-store`.
@@ -91,8 +91,8 @@ Anything that is not obviously in one of these classes is **Personal** until som
 ## 9. Secrets and configuration
 
 - **Never commit secrets.** `.env`, `.env.*`, `*.env` and `.envrc` are blocked by repo permissions and a hook. Do not work around the block. Ask the owner for values.
-- **Anything in a `VITE_*` variable ships to every browser.** Never put a secret there. Only public configuration (API base URL, environment name) belongs in `VITE_*`.
-- Backend secrets (database URL, identity provider config) come from the Scaleway container environment, not from source or images.
+- **Anything compiled into a client bundle, or passed to it as a build variable, ships to every browser.** Never put a secret there. Only public configuration (API base URL, environment name) belongs in the client build.
+- Server secrets (database URL, identity provider config) come from the Scaleway container environment, not from source or images.
 - CI uses Scaleway IAM API keys from GitHub environment secrets. Scope each key to one environment and the least permissions needed.
 - Rotate any secret that appears in a log, a commit, a chat, a screenshot or a PR. Treat it as leaked the moment it is seen.
 - Keep dev and live data and credentials separate. Never copy live user data into dev.
@@ -105,7 +105,7 @@ Anything that is not obviously in one of these classes is **Personal** until som
 - Set a retention period for logs and state it in the privacy page. Keep access to logs to the people who need it.
 - Alert on authentication failures, unusual deletion volume and repeated 5xx from the API.
 
-## 11. Frontend
+## 11. Client app
 
 - Serve the app over HTTPS only. Set a Content Security Policy that allows only our own origin and the approved API host.
 - No inline scripts, no `eval`, no unpinned third-party scripts.
@@ -115,18 +115,18 @@ Anything that is not obviously in one of these classes is **Personal** until som
 
 ## 12. Dependencies and supply chain
 
-- Frontend: `bun install --frozen-lockfile` only. Commit lockfile changes with the dependency change.
-- Backend: commit `go.sum`. Run `go vet` and `go test ./...` in CI.
+- Install dependencies from the committed lockfile only. Commit lockfile changes with the dependency change.
+- Run the stack's static checks and tests in CI on every change.
 - Review each new dependency: maintenance, licence, size, and whether it sends data anywhere.
 - Pin CI tool versions (F06). Do not pull `latest` in pipelines.
 - Container images come from our own Scaleway registry and a pinned base image.
 
-## 13. Infrastructure (Terraform)
+## 13. Infrastructure
 
 - Least privilege on every resource and IAM policy. No wildcard permissions without a written reason.
 - The database is reachable only from the API container, never from the internet directly.
 - Encryption at rest and in transit for every store that holds personal data. Check that Scaleway's defaults meet this and record any gap.
-- Object storage buckets for user data are private. Public buckets are used only for the static frontend.
+- Object storage buckets for user data are private. Public buckets hold only public static assets.
 - Terraform changes that widen access or move data are reviewed by a second person.
 
 ## 14. Data subject rights
@@ -159,7 +159,7 @@ Copy this into PRs that touch user data, auth, storage, AI or infrastructure.
 - [ ] Are all regions EU (`fr-par`, `nl-ams`, `pl-waw`)? Any new vendor recorded in an ADR with a DPA?
 - [ ] Does it log anything personal? If so, remove it.
 - [ ] Are errors generic to the client, with a correlation ID?
-- [ ] Are secrets absent from code, `VITE_*` variables, logs and docs?
+- [ ] Are secrets absent from code, client builds, logs and docs?
 - [ ] Does it need a new ADR, spec or DPIA input?
 
 ## Open decisions

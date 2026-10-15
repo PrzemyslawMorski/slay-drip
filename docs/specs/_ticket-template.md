@@ -7,7 +7,7 @@
 | **Priority** | Highest \| High \| Medium \| Low \| Lowest (repo backlog: P0 = Highest, P1 = High, P2 = Medium) |
 | **Status** | To Do \| In Progress \| In Review \| Done \| Blocked |
 | **Epic** | <parent epic key and name, e.g. S2 · Capture and tagging> |
-| **Components** | frontend \| backend \| infra \| ai \| docs |
+| **Components** | client \| server \| infra \| ai \| docs |
 | **Labels** | <free tags, e.g. gdpr, a11y, eval> |
 | **Story points** | <1, 2, 3, 5, 8, 13; a Spike is time-boxed, not pointed> |
 | **Sprint / Fix version** | <workshop session, e.g. Session 2> |
@@ -45,11 +45,11 @@ If there are no blockers, write `None: can start now.`
 
 ## Definition of done
 
-- [ ] Code merged to `main` through a reviewed PR, with `gofmt` or the frontend test suite passing.
-- [ ] Tests added or updated under `frontend/src/**/__tests__/` or `backend/lambda/**_test.go`.
+- [ ] Code merged to `main` through a reviewed PR, with the repo's checks passing.
+- [ ] Tests added or updated alongside the changed code.
 - [ ] Quality and compliance checked, if the ticket touches AI, consent, retention or body data.
 - [ ] Accessibility checked against WCAG 2.1 AA, if the ticket changes UI.
-- [ ] Docs updated (spec, ADR or `docs/specs/README.md` status), if behaviour changed.
+- [ ] Docs updated (spec, ADR or ticket status), if behaviour changed.
 
 ## Notes
 
