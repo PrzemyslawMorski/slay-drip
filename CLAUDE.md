@@ -17,7 +17,10 @@ Single source of truth for agent and human guidance in this repo. `AGENTS.md` po
 Read these on demand rather than up front:
 
 - `docs/requirements.md`: product scope, functional requirements (F1–F6), GDPR requirements, AI quality bar, workshop plan, open questions. Source of truth for *what* to build.
-- `docs/tasks/README.md` and `docs/tasks/<slice>.md`: per-task specs (S1-01 … S6-01, F01–F10).
+- `docs/README.md`: how the docs folders work and which template to start from.
+- `docs/security.md`: security and privacy guidelines (18+, GDPR, EU-only, secrets, logging). Read before touching user data, auth, storage or AI.
+- `docs/specs/README.md` and `docs/specs/<task-id>.md`: per-task specs and the backlog (S1-01 … S8-02, F01–F10).
+- `docs/adr/`: architecture decision records. `docs/discovery/`: research before a decision. Templates in `docs/templates/`.
 - `frontend/src/config/environment.template.ts`: template for frontend env config.
 - `backend/lambda/README.md`: API container build, push and deploy workflow (Scaleway).
 
@@ -43,7 +46,7 @@ Read these on demand rather than up front:
   - `build-all-functions.sh`: builds and pushes the API image to the Scaleway Container Registry
   - `README.md`: API container workflow details
 - `terraform/`: IaC (Scaleway provider)
-- `docs/`: requirements and task specs
+- `docs/`: requirements, specs (`specs/`), ADRs (`adr/`), discovery notes (`discovery/`) and templates (`templates/`); see `docs/README.md`
 
 ## Commands
 
@@ -94,6 +97,20 @@ Run the narrowest relevant tests after touching an area. Do not leave dev server
 
 - Keep changes scoped to the requested task.
 - Add dependencies with `bun add` / `bun add -d` and commit lockfile changes.
+
+## Starting a feature or decision
+
+Follow this order before writing code for a new feature, or for any change that touches user data, auth, storage, AI or infrastructure. Templates live in `docs/templates/`; the index is `docs/README.md`.
+
+1. **Check the requirement.** Find the matching item in `docs/requirements.md`. If none exists, stop and ask whether to add one.
+2. **Check the backlog.** Find or create the ticket in `docs/specs/` using `templates/ticket.md`. Set its Dependencies table from the `depends_on` list and check each blocker's status.
+3. **Discovery first when unsure.** If the approach depends on an unanswered question (vendor, model, region, cost), write `docs/discovery/YYYY-MM-DD-<topic>.md` before choosing.
+4. **Write the spec.** Copy `templates/spec.md` into `docs/specs/<TASK-ID>-<slug>.md` for any feature larger than one ticket. Keep the ticket and the spec in step.
+5. **Record significant decisions as ADRs.** Anything hard to reverse (vendor, data store, auth model, a new region or dependency with data access) gets `docs/adr/NNNN-<slug>.md` from `templates/adr.md`. Never renumber; supersede instead.
+6. **Apply the security guide.** Read `docs/security.md` before touching personal, body or special-category data. Use its PR checklist in the PR description.
+7. **Only then implement,** with tests under the conventions above.
+
+Do not skip a step because the change looks small. If a step does not apply, say so in the PR. Do not duplicate the templates' content into code comments or other files.
 
 ## Hard rules (non-negotiable)
 
