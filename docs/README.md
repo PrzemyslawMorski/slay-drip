@@ -8,6 +8,7 @@ Where each kind of written decision or plan lives, and how to start a new one fr
 | [`adr/`](adr/) | Architecture Decision Records: one significant, hard-to-reverse decision each. | [adr.md](templates/adr.md) | `NNNN-kebab-title.md`, next free number, never renumbered |
 | [`discovery/`](discovery/) | Research, spikes and investigations that answer questions before a decision or spec. | [discovery.md](templates/discovery.md) | `YYYY-MM-DD-kebab-topic.md` |
 | [`specs/`](specs/) | Per-task specs and the backlog index (`specs/README.md`). | [spec.md](templates/spec.md) | `<TASK-ID>-kebab-title.md`, e.g. `S2-02-ai-auto-tagging.md` |
+| [`templates/ticket.md`](templates/ticket.md) | Work items in JIRA style: key, type, priority, epic, story points, acceptance criteria and dependencies. Use one per ticket. | n/a | `<KEY>` as the ticket key |
 | [`templates/`](templates/) | The starting points above. Copy, do not edit in place. | n/a | n/a |
 
 ## Starting a new doc
