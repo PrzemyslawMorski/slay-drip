@@ -38,3 +38,46 @@ variable "database_url" {
   type        = string
   sensitive   = true
 }
+
+# Keycloak (F11 spike). Secrets are set via TF_VAR_* and never committed.
+variable "keycloak_image" {
+  description = "Pinned Keycloak 26.x image. Use a full tag, never 'latest'."
+  type        = string
+  default     = "quay.io/keycloak/keycloak:26.4"
+}
+
+variable "keycloak_min_scale" {
+  description = "Minimum Keycloak container instances: 0 scales to zero (cold starts), 1 keeps one warm. The spike compares both."
+  type        = number
+  default     = 1
+}
+
+variable "keycloak_database_url" {
+  description = "JDBC URL for Keycloak's Serverless SQL Database. Set via TF_VAR_keycloak_database_url."
+  type        = string
+  sensitive   = true
+}
+
+variable "keycloak_database_username" {
+  description = "Database user for Keycloak. Set via TF_VAR_keycloak_database_username."
+  type        = string
+  sensitive   = true
+}
+
+variable "keycloak_database_password" {
+  description = "Database password for Keycloak. Set via TF_VAR_keycloak_database_password."
+  type        = string
+  sensitive   = true
+}
+
+variable "keycloak_admin_username" {
+  description = "Bootstrap admin username for the Keycloak admin console."
+  type        = string
+  default     = "admin"
+}
+
+variable "keycloak_admin_password" {
+  description = "Bootstrap admin password for Keycloak. Set via TF_VAR_keycloak_admin_password."
+  type        = string
+  sensitive   = true
+}
