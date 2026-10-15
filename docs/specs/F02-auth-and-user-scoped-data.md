@@ -40,6 +40,7 @@ All API routes are unauthenticated, items/outfits carry no owner, and `GetAllIte
 
 | Relationship | Ticket | Status | Why |
 | --- | --- | --- | --- |
+| is blocked by | [F11](F11-keycloak-serverless-spike.md) | To Do | Spike proving Keycloak runs on Scaleway Serverless Containers (ADR-0001) |
 | blocks | [F03](F03-unify-item-model-and-wire-api.md) | To Do | Unify the item/outfit model and wire the frontend to the API |
 | blocks | [F04](F04-image-storage-s3.md) | To Do | Image storage in Scaleway Object Storage with presigned uploads |
 | blocks | [F09](F09-ai-cost-tracking.md) | To Do | AI cost tracking per active user |
@@ -57,3 +58,5 @@ All API routes are unauthenticated, items/outfits carry no owner, and `GetAllIte
 ## Notes
 
 Requirements: F1.1; Privacy 6, 7, 8; Workshop #1 (see [requirements](../requirements.md))
+
+Identity provider: self-hosted Keycloak on Scaleway, per [ADR-0001](../adr/0001-self-hosted-keycloak-identity-provider.md). Consent flags are Keycloak user attributes. No age data is stored for now. Discovery: [2026-10-15-identity-provider](../discovery/2026-10-15-identity-provider.md). The spike [F11](F11-keycloak-serverless-spike.md) must pass before implementation starts.
