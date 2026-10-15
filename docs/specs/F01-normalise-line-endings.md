@@ -5,7 +5,7 @@
 | **Key** | F01 |
 | **Issue type** | Task |
 | **Priority** | Highest |
-| **Status** | To Do |
+| **Status** | Done |
 | **Epic** | Foundation |
 | **Components** | _to triage_ |
 | **Labels** | — |
@@ -28,7 +28,7 @@ The repo stores LF but Windows checkouts show CRLF, so `git status` lists 73 fil
 
 ## Acceptance criteria
 
-- [ ] Fresh clone on Windows shows a clean `git status`.
+- [x] Fresh clone on Windows shows a clean `git status`.
 - [ ] No content-free diffs in the next PR.
 
 ## Dependencies
