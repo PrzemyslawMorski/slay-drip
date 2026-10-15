@@ -4,7 +4,7 @@
 | --- | --- |
 | **Key** | <KEY, e.g. S2-02 or F04; use the next free ID in the epic> |
 | **Issue type** | Story \| Task \| Bug \| Spike \| Chore |
-| **Priority** | Highest \| High \| Medium \| Low \| Lowest |
+| **Priority** | Highest \| High \| Medium \| Low \| Lowest (repo backlog: P0 = Highest, P1 = High, P2 = Medium) |
 | **Status** | To Do \| In Progress \| In Review \| Done \| Blocked |
 | **Epic** | <parent epic key and name, e.g. S2 · Capture and tagging> |
 | **Components** | frontend \| backend \| infra \| ai \| docs |

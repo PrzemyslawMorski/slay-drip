@@ -1,23 +1,26 @@
----
-id: S3-01
-title: Bulk rack/closet capture with AI segmentation
-slice: Session 3 – Bulk capture
-priority: P0
-status: todo
-depends_on: [S2-02, F10]
----
-
 # S3-01 · Bulk rack/closet capture with AI segmentation
 
-**Slice:** Session 3 – Bulk capture · **Priority:** P0 · **Status:** todo
-**Depends on:** [S2-02](S2-02-ai-auto-tagging.md), [F10](F10-spike-eu-model-selection.md)
-**Requirements:** F2.1; Risk: segmentation unreliable (see [requirements](../requirements.md))
+| Field | Value |
+| --- | --- |
+| **Key** | S3-01 |
+| **Issue type** | Story |
+| **Priority** | Highest |
+| **Status** | To Do |
+| **Epic** | Session 3 – Bulk capture |
+| **Components** | _to triage_ |
+| **Labels** | — |
+| **Story points** | — |
+| **Sprint / Fix version** | Session 3 – Bulk capture |
+| **Reporter** | Outfit Planner team |
+| **Assignee** | Unassigned |
 
-## Context
+## Description
+
+**Context**
 
 Not started.
 
-## Scope
+**Scope**
 
 - Capture guidance screen (lighting, spacing, expectations).
 - Segmentation job splits one photo into item crops, each fed into tagging.
@@ -26,3 +29,23 @@ Not started.
 ## Acceptance criteria
 
 - [ ] A rack photo from the golden set becomes N candidate items.
+
+## Dependencies
+
+| Relationship | Ticket | Status | Why |
+| --- | --- | --- | --- |
+| is blocked by | [S2-02](S2-02-ai-auto-tagging.md) | To Do | AI auto-tagging with editable tags |
+| is blocked by | [F10](F10-spike-eu-model-selection.md) | To Do | Spike: EU-hosted model selection |
+| blocks | [S3-02](S3-02-correction-ui.md) | To Do | Human-in-the-loop correction UI |
+
+## Definition of done
+
+- [ ] Code merged to `main` through a reviewed PR, with `gofmt` or the frontend test suite passing.
+- [ ] Tests added or updated under `frontend/src/**/__tests__/` or `backend/lambda/**_test.go`.
+- [ ] Quality and compliance checked, if the ticket touches AI, consent, retention or body data.
+- [ ] Accessibility checked against WCAG 2.1 AA, if the ticket changes UI.
+- [ ] Docs updated (spec, ADR or `docs/specs/README.md` status), if behaviour changed.
+
+## Notes
+
+Requirements: F2.1; Risk: segmentation unreliable (see [requirements](../requirements.md))

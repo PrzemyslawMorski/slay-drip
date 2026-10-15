@@ -2,7 +2,7 @@
 
 Backlog derived from the gap analysis of the code against [requirements.md](../requirements.md) on 2026-10-13.
 
-**Conventions:** one file per task. Update `status` in the front matter (`todo` → `in-progress` → `done`) and tick acceptance criteria as you go. Priorities: P0 = needed for the slice's done-when, P1 = should, P2 = nice to have.
+**Conventions:** one file per ticket, built from the [ticket template](../templates/ticket.md). Update the **Status** row in the ticket table (To Do → In Progress → Done) and tick acceptance criteria as you go. Priorities: P0 = Highest (needed for the slice's done-when), P1 = High (should), P2 = Medium (nice to have). Dependencies must match in both the ticket and the table below.
 
 Foundation tasks (`F`) fix structural issues in the current code and should land before or during Session 1. `S<n>` tasks map to the workshop sessions.
 
