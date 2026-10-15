@@ -5,6 +5,7 @@ Where each kind of written decision or plan lives, and how to start a new one fr
 | Folder | What goes here | Template | Naming |
 | --- | --- | --- | --- |
 | [`requirements.md`](requirements.md) | Product scope, functional and quality requirements. Source of truth for *what* to build. | n/a | single file |
+| [`security.md`](security.md) | Security and privacy rules for building the app: 18+ gate, consent, EU-only, secrets, logging, AI, PR checklist. | n/a | single file |
 | [`adr/`](adr/) | Architecture Decision Records: one significant, hard-to-reverse decision each. | [adr.md](templates/adr.md) | `NNNN-kebab-title.md`, next free number, never renumbered |
 | [`discovery/`](discovery/) | Research, spikes and investigations that answer questions before a decision or spec. | [discovery.md](templates/discovery.md) | `YYYY-MM-DD-kebab-topic.md` |
 | [`specs/`](specs/) | Per-task specs and the backlog index (`specs/README.md`). | [spec.md](templates/spec.md) | `<TASK-ID>-kebab-title.md`, e.g. `S2-02-ai-auto-tagging.md` |

@@ -18,6 +18,7 @@ Read these on demand rather than up front:
 
 - `docs/requirements.md`: product scope, functional requirements (F1–F6), GDPR requirements, AI quality bar, workshop plan, open questions. Source of truth for *what* to build.
 - `docs/README.md`: how the docs folders work and which template to start from.
+- `docs/security.md`: security and privacy guidelines (18+, GDPR, EU-only, secrets, logging). Read before touching user data, auth, storage or AI.
 - `docs/specs/README.md` and `docs/specs/<task-id>.md`: per-task specs and the backlog (S1-01 … S8-02, F01–F10).
 - `docs/adr/`: architecture decision records. `docs/discovery/`: research before a decision. Templates in `docs/templates/`.
 - `frontend/src/config/environment.template.ts`: template for frontend env config.
