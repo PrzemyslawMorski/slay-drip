@@ -1,0 +1,14 @@
+{
+  "identities": [
+    {
+      "name": "local-dev",
+      "credentials": [
+        {
+          "accessKey": "slaydrip-local",
+          "secretKey": "slaydrip-local-secret"
+        }
+      ],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}

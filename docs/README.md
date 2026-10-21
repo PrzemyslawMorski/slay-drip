@@ -6,6 +6,7 @@ Where each kind of written decision or plan lives, and how to start a new one fr
 | --- | --- | --- | --- |
 | [`requirements.md`](requirements.md) | Product scope, functional and quality requirements. Source of truth for *what* to build. | n/a | single file |
 | [`security.md`](security.md) | Security and privacy rules for building the app: 18+ gate, consent, EU-only, secrets, logging, AI, PR checklist. | n/a | single file |
+| [`local-development.md`](local-development.md) | How to run the app and its cloud stand-ins on a developer machine (`compose.yaml`). Local run is a first-class target. | n/a | single file |
 | [`adr/`](adr/) | Architecture Decision Records: one significant, hard-to-reverse decision each. | [`_template.md`](adr/_template.md) | `NNNN-kebab-title.md`, next free number, never renumbered |
 | [`discovery/`](discovery/) | Research, spikes and investigations that answer questions before a decision or spec. | [`_template.md`](discovery/_template.md) | `YYYY-MM-DD-kebab-topic.md` |
 | [`specs/`](specs/) | Per-task specs and tickets. | [`_spec-template.md`](specs/_spec-template.md) and [`_ticket-template.md`](specs/_ticket-template.md) | Spec: `<TASK-ID>-kebab-title.md`, e.g. `S2-02-ai-auto-tagging.md`. Ticket: `<KEY>` as the ticket key |

@@ -1,0 +1,40 @@
+# Local cloud stand-ins for development and tests. See docs/local-development.md
+# and docs/adr/0005-local-cloud-emulation.md.
+#
+# Every credential here is a throwaway value for this machine only. It must never be
+# used outside local development, and no production value may live in this file.
+name: slay-drip-local
+
+services:
+  database:
+    # Same engine as Scaleway Managed PostgreSQL. Pinned: bump deliberately.
+    image: postgres:17
+    environment:
+      POSTGRES_DB: slaydrip
+      POSTGRES_USER: slaydrip
+      POSTGRES_PASSWORD: slaydrip-local-secret
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - database-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U slaydrip -d slaydrip"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+    restart: unless-stopped
+
+  object-storage:
+    # Stand-in for Scaleway Object Storage (S3 API). Pinned: bump deliberately.
+    image: chrislusf/seaweedfs:4.22
+    command: server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json -ip.bind=0.0.0.0
+    ports:
+      - "127.0.0.1:8333:8333"
+    volumes:
+      - ./infra/dev/s3.json:/etc/seaweedfs/s3.json:ro
+      - object-storage-data:/data
+    restart: unless-stopped
+
+volumes:
+  database-data:
+  object-storage-data:

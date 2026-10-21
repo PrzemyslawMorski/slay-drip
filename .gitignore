@@ -180,6 +180,11 @@ charts/*.tgz
 # Local configuration overrides
 config.local.*
 settings.local.*
+# Backend build output
+backend/bin/
+*.test
+*.out
+
 # Frontend generated test output
 frontend/.features-gen/
 frontend/test-results/

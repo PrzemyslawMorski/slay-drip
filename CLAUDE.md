@@ -32,11 +32,14 @@ Read these on demand rather than up front:
 
 - `docs/`: requirements, security guide, specs (`specs/`), ADRs (`adr/`) and discovery notes (`discovery/`). Each folder holds its `_`-prefixed template. See `docs/README.md`.
 - `.claude/`: project settings and the `.env` guard hook.
+- `compose.yaml`, `infra/dev/`, `scripts/dev/`: local stand-ins for Scaleway services (PostgreSQL, S3) and their smoke checks. See `docs/local-development.md` and ADR-0005.
+- `backend/`: Go API (module `slaydrip/backend`). `cmd/api` is the entry point, `internal/` holds the packages, `migrations/` the SQL migrations, `.golangci.yml` the lint config. Stack in ADR-0007 and ADR-0008.
 
-No application code exists yet. When code lands, add its layout, commands and conventions here.
+Backend commands are in `docs/local-development.md`. Run `go test ./...` in `backend/` before a PR. The frontend is in `frontend/`, and its Playwright tests are in ADR-0003.
 
 ## Working in this repo
 
+- **Local run is first class.** Any feature that touches a cloud service must run against the local stack (`docs/local-development.md`) before it ships, using the same config keys as production. Its PR shows the local run.
 - Run the narrowest relevant tests after touching an area. Do not leave dev servers running in automated sessions.
 - **Strings**: all UI copy goes through externalised strings, ready for later localisation.
 - **Secrets**: never hardcode secrets. Prefer existing templates over new config mechanisms.
@@ -57,7 +60,7 @@ Follow this order before writing code for a new feature, or for any change that 
 4. **Write the spec.** Copy `_spec-template.md` into `docs/specs/<TASK-ID>-<slug>.md` for any feature larger than one ticket. Keep the ticket and the spec in step.
 5. **Record significant decisions as ADRs.** Anything hard to reverse (vendor, data store, auth model, a new region or dependency with data access) gets `docs/adr/NNNN-<slug>.md` from `_template.md`. Never renumber; supersede instead.
 6. **Apply the security guide.** Read `docs/security.md` before touching personal, body or special-category data. Use its PR checklist in the PR description.
-7. **Only then implement,** with tests alongside the code.
+7. **Only then implement,** with tests alongside the code, and runnable locally against the stand-ins (`docs/local-development.md`).
 
 Do not skip a step because the change looks small. If a step does not apply, say so in the PR. Do not duplicate the templates' content into code comments or other files.
 
