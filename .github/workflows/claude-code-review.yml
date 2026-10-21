@@ -58,5 +58,6 @@ jobs:
             Do not edit files, push commits or approve the pull request. Leave the
             decision to a human reviewer.
           claude_args: |
+            --model claude-haiku-5-5
             --allowedTools "Read,Grep,Glob,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git status)"
             --max-turns 30
