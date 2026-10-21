@@ -1,0 +1,62 @@
+name: Claude Code review
+
+# Reviews every pull request against the repo's own rules in CLAUDE.md and
+# docs/security.md. Posts findings as PR comments; never pushes code.
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+concurrency:
+  group: claude-code-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    # Forks get no repository secrets, so skip them rather than fail.
+    if: github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Check out pull request
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Claude Code review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          track_progress: true
+          prompt: |
+            Review this pull request. Post findings as inline review comments on the
+            lines they concern, and a short summary comment at the end.
+
+            Focus on correctness bugs, security and privacy issues, and test gaps.
+            Report only issues you are confident about. Skip style nits that the
+            linters already cover (golangci-lint for Go, the frontend lint setup).
+
+            Check the change against the project rules:
+            - CLAUDE.md "Hard rules" and "Quality bar for AI features".
+            - docs/security.md, especially for any change that touches personal,
+              body or special-category data, auth, storage or AI calls.
+            - Hard constraints (availability, weather, modesty, adaptive needs) must
+              be enforced as hard filters, never as ranking weights.
+            - Body-talk guardrails: no weight mentions, no flaw language such as
+              "hide", "slimming" or "unflattering" in user-facing copy or prompts.
+            - UI copy must go through externalised strings, not inline literals.
+            - Cloud resources must be Scaleway in EU regions (fr-par, nl-ams, pl-waw).
+              Flag any AWS SDK, CLI or config.
+            - No real personal data, and no secrets, in the repo or in test fixtures.
+              Flag any .env file or hardcoded credential.
+
+            Do not edit files, push commits or approve the pull request. Leave the
+            decision to a human reviewer.
+          claude_args: |
+            --allowedTools "Read,Grep,Glob,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git status)"
+            --max-turns 30
