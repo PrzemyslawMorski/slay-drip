@@ -46,6 +46,18 @@ Backend commands are in `docs/local-development.md`. Run `go test ./...` in `bac
 - **Git**: prefer incremental commits with focused messages.
 - **Line endings**: files are stored with LF. `.gitattributes` (`* text=auto eol=lf`) normalises them, so Windows checkouts that show CRLF in the working tree are expected and should not appear as modified. Do not set `core.autocrlf` in the repo; rely on `.gitattributes`. Binary assets are marked `binary` there.
 
+## Parallel work with git worktrees
+
+Use git worktrees extensively so parallel work never shares a checkout. This applies to humans and agents alike.
+
+- **Default to a worktree** for any task that changes code, and always when more than one task, agent or session is running at once. Keep the main checkout at `main` for reading, review and release steps.
+- **One worktree per task, one agent per worktree.** Never point two agents or sessions at the same worktree or branch.
+- **Create from `main`:** `git worktree add ../slay-drip-worktrees/<branch-slug> -b <type>/<branch-slug> main`. Worktrees live outside the repo, in `../slay-drip-worktrees/`, never nested inside it. Uncommitted changes in another checkout do not carry over, so branch from the committed `main`.
+- **Untracked files are not copied.** `.env` files and other local config are absent in a new worktree. Ask the user for the values; never copy them from another checkout by hand.
+- **Dependencies and local services are per worktree.** Install dependencies inside each worktree. Do not share `node_modules` or build output. Local stack ports from `compose.yaml` clash across worktrees, so stop the stack in one before starting it in another, or give it its own compose project name.
+- **Keep the scope in the worktree.** Commit on its branch, open the PR from it, and leave other worktrees alone.
+- **Clean up** once the branch is merged or abandoned: `git worktree remove <path>`, then `git worktree prune`. Do not leave dev servers running in a worktree when the task ends.
+
 ## When making changes
 
 - Keep changes scoped to the requested task.

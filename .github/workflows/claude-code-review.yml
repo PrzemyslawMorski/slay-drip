@@ -41,19 +41,14 @@ jobs:
             Report only issues you are confident about. Skip style nits that the
             linters already cover (golangci-lint for Go, the frontend lint setup).
 
-            Check the change against the project rules:
-            - CLAUDE.md "Hard rules" and "Quality bar for AI features".
-            - docs/security.md, especially for any change that touches personal,
-              body or special-category data, auth, storage or AI calls.
-            - Hard constraints (availability, weather, modesty, adaptive needs) must
-              be enforced as hard filters, never as ranking weights.
-            - Body-talk guardrails: no weight mentions, no flaw language such as
-              "hide", "slimming" or "unflattering" in user-facing copy or prompts.
-            - UI copy must go through externalised strings, not inline literals.
-            - Cloud resources must be Scaleway in EU regions (fr-par, nl-ams, pl-waw).
-              Flag any AWS SDK, CLI or config.
-            - No real personal data, and no secrets, in the repo or in test fixtures.
-              Flag any .env file or hardcoded credential.
+            Check the change against the project rules. Follow docs/requirements.md,
+            CLAUDE.md and docs/security.md first. Then read docs/code-review/README.md
+            and apply every convention file it links, such as EU-only processing,
+            the 18+ age gate, consent and GDPR, secrets and logging, product
+            guardrails, TDD, and the backend or frontend ruleset that matches the
+            paths the change touches. Report each rule by its ID (for example BE-42
+            or FE-30). Report a broken blocking rule as blocking, and flag any change
+            that depends on an open decision instead of deciding it.
 
             Do not edit files, push commits or approve the pull request. Leave the
             decision to a human reviewer.
