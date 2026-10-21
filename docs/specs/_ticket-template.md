@@ -14,21 +14,37 @@
 | **Reporter** | <role or name> |
 | **Assignee** | <role or name, or Unassigned> |
 
-## Description
+## User story
 
-**As a** <persona from [requirements](../requirements.md)>,
-**I want** <capability>,
-**so that** <outcome>.
+Write the story in Gherkin form. The persona must match a persona in [requirements](../requirements.md).
+
+```gherkin
+Feature: <capability name, as the ticket summary>
+  As a <persona from requirements>
+  I want <capability>
+  So that <outcome>
+```
 
 Context and any detail needed to build it. Link the spec or ADR that governs the design
 rather than restating it.
 
 ## Acceptance criteria
 
-Each criterion is testable. Use Given / When / Then for behaviour, or a checkbox for a fact.
+Every criterion is a Gherkin `Scenario` with `Given`, `When` and `Then` steps, written in a
+`gherkin` code block. Each scenario is testable and maps to at least one automated test.
+Use `And` or `But` to extend a step. Do not use checkboxes or free prose for criteria.
 
-- [ ] Given <context>, when <action>, then <result>.
-- [ ] ...
+```gherkin
+Scenario: <short name describing the behaviour>
+  Given <precondition, in terms of the persona and the system state>
+  When <single action the persona takes>
+  Then <observable result>
+  And <additional result, if needed>
+```
+
+Add one `Scenario` per distinct behaviour, including the error and edge cases the ticket
+covers. Where several inputs produce the same behaviour, use `Scenario Outline` with an
+`Examples` table.
 
 ## Dependencies
 
