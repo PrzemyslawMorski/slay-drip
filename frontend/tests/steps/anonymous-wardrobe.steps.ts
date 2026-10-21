@@ -5,12 +5,14 @@ import { createBdd } from 'playwright-bdd';
 import { en } from '../../src/strings/en';
 import {
   addPhotos,
+  addSamplePhotos,
   confirmAdult,
   countStoredRecords,
+  expectOnlyAppRequests,
+  goTo,
   itemCountLabel,
   metadataFoundIn,
   openApp,
-  requestsMade,
 } from '../support/app';
 import {
   notAPhoto,
@@ -18,21 +20,12 @@ import {
   PhotoFormat,
   samplePhotoFile,
   withLocationAndDeviceDetails,
-  type PhotoFile,
 } from '../support/photos';
 
 const { Given, When, Then } = createBdd();
 
 const consentHeading = en.consent.heading;
 const addPhotosButton = en.wardrobe.addPhotos;
-
-async function addSamplePhotos(page: Parameters<typeof samplePhotoFile>[0], count: number, format: PhotoFormat = 'JPEG') {
-  const files: PhotoFile[] = [];
-  for (let seed = 0; seed < count; seed++) {
-    files.push(await samplePhotoFile(page, format, seed));
-  }
-  await addPhotos(page, files);
-}
 
 // Age confirmation
 
@@ -115,17 +108,19 @@ Given('I have agreed to store photos of my clothes on this device', async ({ pag
   await expect.poll(() => countStoredRecords(page, 'consent')).toBe(1);
 });
 
-Given('I have added {int} photos to my wardrobe', async ({ page }, count: number) => {
+Given('I have added {int} photo(s) to my wardrobe', async ({ page }, count: number) => {
   await addSamplePhotos(page, count);
   await expect(page.getByText(itemCountLabel(count), { exact: true })).toBeVisible();
 });
 
 When('I withdraw consent and delete my photos', async ({ page }) => {
+  await goTo(page, 'wardrobe');
   await page.getByRole('button', { name: en.wardrobe.withdraw }).click();
 });
 
+// Matches the withdrawal, item and outfit confirmations. Only one is open at a time.
 When('I confirm the deletion', async ({ page }) => {
-  await page.getByRole('button', { name: en.wardrobe.withdrawYes }).click();
+  await page.getByRole('button', { name: /^Yes, delete/ }).click();
 });
 
 Then('adding a photo asks for consent again', async ({ page }) => {
@@ -168,6 +163,7 @@ Then('the photo appears in my wardrobe', async ({ page }) => {
 });
 
 Then('my wardrobe shows {int} item(s)', async ({ page }, count: number) => {
+  await goTo(page, 'wardrobe');
   await expect(page.getByText(itemCountLabel(count), { exact: true })).toBeVisible();
 });
 
@@ -190,14 +186,7 @@ Then('the stored photo contains no location or device details', async ({ page })
 });
 
 Then('no request leaves the app carrying photo data', async ({ page }) => {
-  const appOrigin = new URL(page.url()).origin;
-  const requests = requestsMade(page);
-  expect(requests.length).toBeGreaterThan(0);
-  for (const request of requests) {
-    expect(new URL(request.url()).origin, request.url()).toBe(appOrigin);
-    expect(request.method(), request.url()).toBe('GET');
-    expect(request.postData(), request.url()).toBeNull();
-  }
+  expectOnlyAppRequests(page);
 });
 
 // Viewing

@@ -15,6 +15,8 @@ Three facts constrain the storage choice:
 - Viewing the wardrobe after a reload is expected, so storage must survive a reload.
 - Consent must be granular and revocable, and withdrawing it must delete the photos (security guide, section 3).
 
+**Amended for S1-02 (2026-10-21):** outfits are stored on the device in the same database, as a fourth store, `outfits`. Each record is a name, the ordered list of wardrobe item ids and two timestamps. Outfits are not a separate consent type. They follow the wardrobe-photo consent, and withdrawing that consent clears `outfits` in the same transaction as `items`. Deleting a wardrobe item removes its id from every outfit that uses it, and deletes an outfit that is left with no items. The database moves from version 1 to version 2, which only adds the `outfits` store.
+
 The security guide (section 11) allows personal data in IndexedDB only as long as it is needed, and requires it to be cleared on sign-out and account deletion. There is no sign-out in this slice, so the withdrawal action is the deletion path.
 
 ## Decision
@@ -24,8 +26,9 @@ We will store wardrobe photos as Blobs in **IndexedDB** on the device, through t
 - `items`: one record per photo, with a server-free UUID key, the JPEG Blob (EXIF removed before storage) and the time it was added.
 - `consent`: one record per data type, with `granted`, the time, and the wording version the person saw (security guide, section 3).
 - `profile`: one record with the age confirmation (`confirmedAt`). No date of birth is stored (security guide, section 2).
+- `outfits` (added for S1-02): one record per outfit, with a name, the ordered wardrobe item ids and the creation and update times.
 
-Photos are never uploaded. Withdrawing consent for wardrobe photos clears the `items` store and records the withdrawal in `consent`.
+Photos are never uploaded. Withdrawing consent for wardrobe photos clears the `items` and `outfits` stores and records the withdrawal in `consent`.
 
 ## Options considered
 

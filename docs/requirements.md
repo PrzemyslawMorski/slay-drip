@@ -76,6 +76,7 @@ The MVP is a closed loop: **capture wardrobe → build profile → ask for an oc
 4. "Swap this piece" per item and "show me another" per outfit.
 5. Prefer under-worn items; avoid repeating an outfit worn in the last N days (user-set).
 6. When the wardrobe can't satisfy a request, say so honestly and offer a gap suggestion instead of a weak outfit.
+7. A person can build an outfit from their own wardrobe items by hand, name it and save it, without an occasion, weather or AI suggestion. Saved outfits stay on the device and follow the wardrobe-photo consent (S1-02).
 
 **F4. Feedback & learning**
 
