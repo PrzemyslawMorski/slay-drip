@@ -180,3 +180,7 @@ charts/*.tgz
 # Local configuration overrides
 config.local.*
 settings.local.*
+# Frontend generated test output
+frontend/.features-gen/
+frontend/test-results/
+frontend/playwright-report/
