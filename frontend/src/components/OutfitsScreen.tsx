@@ -9,6 +9,11 @@ import {
 } from '../storage/localDb';
 import { AppNav } from './AppNav';
 
+async function loadLists() {
+  const [outfits, items] = await Promise.all([listOutfits(), listWardrobeItems()]);
+  return { outfits, items };
+}
+
 interface OutfitsScreenProps {
   onOpenWardrobe: () => void;
   onCreateOutfit: () => void;
@@ -26,17 +31,18 @@ export function OutfitsScreen({
   const [error, setError] = useState<string | null>(null);
 
   async function reload() {
-    setOutfits(await listOutfits());
-    setItems(await listWardrobeItems());
+    const lists = await loadLists();
+    setOutfits(lists.outfits);
+    setItems(lists.items);
   }
 
   // Loads on mount. The flag drops a result that arrives after unmount.
   useEffect(() => {
     let ignore = false;
-    void Promise.all([listOutfits(), listWardrobeItems()]).then(([loadedOutfits, loadedItems]) => {
+    void loadLists().then((lists) => {
       if (!ignore) {
-        setOutfits(loadedOutfits);
-        setItems(loadedItems);
+        setOutfits(lists.outfits);
+        setItems(lists.items);
       }
     });
     return () => {

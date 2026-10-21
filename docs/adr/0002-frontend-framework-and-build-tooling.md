@@ -21,7 +21,7 @@ The workshop audience includes engineers new to the project. The framework must 
 
 We will build the client as a single-page app in **React and TypeScript**, bundled with **Vite**. It will be made installable as a PWA later, with a service worker plugin, once the production build is in scope.
 
-- **Language:** TypeScript in strict mode.
+- **Language:** TypeScript in strict mode, pinned to `~6.0.3` rather than 7.x. `typescript-eslint` 8.x does not support TypeScript 7 yet, so the pin is required for lint to install. The reason and the upgrade trigger are in [ADR-0009](0009-frontend-lint-format-and-unit-tests.md).
 - **UI:** React function components with hooks. No global state library for this slice.
 - **Build and dev server:** Vite. `npm run dev` serves the app locally.
 - **Local persistence:** `idb`, a small promise wrapper over IndexedDB (see [ADR-0004](0004-on-device-wardrobe-storage.md)).
