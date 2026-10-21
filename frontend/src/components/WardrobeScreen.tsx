@@ -168,7 +168,11 @@ export function WardrobeScreen({ onOpenOutfits, onCreateOutfit }: WardrobeScreen
           <h2 id="delete-item-heading">{en.wardrobe.deleteItemHeading(itemToDelete.number)}</h2>
           <p>{en.wardrobe.deleteItemBody}</p>
           <div className="button-row">
-            <button type="button" className="button button-danger" onClick={handleConfirmItemDelete}>
+            <button
+              type="button"
+              className="button button-danger"
+              onClick={handleConfirmItemDelete}
+            >
               {en.wardrobe.deleteItemYes}
             </button>
             <button type="button" className="button" onClick={() => setItemToDelete(null)}>
@@ -186,7 +190,11 @@ export function WardrobeScreen({ onOpenOutfits, onCreateOutfit }: WardrobeScreen
               <button type="button" className="button button-danger" onClick={handleWithdraw}>
                 {en.wardrobe.withdrawYes}
               </button>
-              <button type="button" className="button" onClick={() => setConfirmingWithdrawal(false)}>
+              <button
+                type="button"
+                className="button"
+                onClick={() => setConfirmingWithdrawal(false)}
+              >
                 {en.wardrobe.cancel}
               </button>
             </div>

@@ -1,6 +1,6 @@
 # Frontend ruleset (React, TypeScript, Vite)
 
-Applies to `frontend/`. Stack decisions: [ADR-0002](../adr/0002-frontend-framework-and-build-tooling.md) (React, Vite, TypeScript strict), [ADR-0003](../adr/0003-gherkin-acceptance-tests-with-playwright.md) (Playwright and playwright-bdd, Vitest for pure logic), [ADR-0004](../adr/0004-on-device-wardrobe-storage.md) (on-device storage). Tests follow [tdd.md](tdd.md). Project-wide hard rules are in [CLAUDE.md](../../CLAUDE.md) and [security.md](../security.md), and the convention files in this folder cover them in detail.
+Applies to `frontend/`. Stack decisions: [ADR-0002](../adr/0002-frontend-framework-and-build-tooling.md) (React, Vite, TypeScript strict), [ADR-0003](../adr/0003-gherkin-acceptance-tests-with-playwright.md) (Playwright and playwright-bdd, Vitest for pure logic), [ADR-0004](../adr/0004-on-device-wardrobe-storage.md) (on-device storage), [ADR-0009](../adr/0009-frontend-lint-format-and-unit-tests.md) (lint, format and unit test tooling). Tests follow [tdd.md](tdd.md). Project-wide hard rules are in [CLAUDE.md](../../CLAUDE.md) and [security.md](../security.md), and the convention files in this folder cover them in detail.
 
 Level: **Blocking** rules fail the review. **Advisory** rules are reported and may be deferred with a reason.
 
@@ -17,7 +17,7 @@ Level: **Blocking** rules fail the review. **Advisory** rules are reported and m
 
 ## 2. Lint and format
 
-Lint and format must be configured for the frontend. The current `frontend/` has no lint config yet, so the first frontend change that adds one sets it up (follow-up below). Once it exists, these rules apply.
+Lint and format are configured in `frontend/` (ADR-0009) and run in CI (`.github/workflows/frontend-ci.yml`). These rules apply to every frontend change.
 
 | ID | Rule | Level |
 | --- | --- | --- |
@@ -75,7 +75,7 @@ Lint and format must be configured for the frontend. The current `frontend/` has
 
 | ID | Rule | Level |
 | --- | --- | --- |
-| FE-60 | Pure logic (parsing, validation, sniffing, ranking helpers) has Vitest unit tests. The first pure module that lands adds Vitest (ADR-0003). | Blocking |
+| FE-60 | Pure logic (parsing, validation, sniffing, ranking helpers) has Vitest unit tests. Run them with `npm run test:unit` (Vitest, ADR-0003 and ADR-0009). | Blocking |
 | FE-61 | Every Gherkin scenario in a ticket runs in Playwright with playwright-bdd (ADR-0003). Step definitions live in `tests/steps/`. | Blocking |
 | FE-62 | Tests query by role, label and visible text, not by CSS class or internal structure. | Advisory |
 | FE-63 | Playwright tests do not use fixed `waitForTimeout` sleeps. Wait on a condition. | Blocking |
@@ -101,8 +101,15 @@ Lint and format must be configured for the frontend. The current `frontend/` has
 - [ ] Keyboard, labels, contrast and touch targets checked on the new screen.
 - [ ] Personal data stays in IndexedDB, and revoke and sign-out clear it.
 
-## Follow-ups (not yet enforced)
+## Follow-ups
 
-- Add ESLint and Prettier configs to `frontend/`, with a decision recorded in an ADR if the choice is new.
-- Add Vitest with the first pure module (ADR-0003).
-- Add CI jobs that run typecheck, lint, unit tests, acceptance tests and `npm audit`.
+Done (ADR-0009):
+
+- ESLint and Prettier configs in `frontend/`, with the lint rules in section 2.
+- Vitest, with the first pure module (`src/photos/preparePhoto.ts`).
+- CI in `.github/workflows/frontend-ci.yml`: typecheck, lint, format check, unit tests, build, acceptance tests and `npm audit --audit-level=high`.
+
+Still to do:
+
+- Coverage gate in CI for Vitest, with the coverage target in [tdd.md](tdd.md) (TDD-13).
+- WebKit project in the Playwright acceptance tests, for iOS Safari coverage.

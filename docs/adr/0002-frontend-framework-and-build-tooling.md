@@ -1,6 +1,6 @@
 # ADR-0002: React, Vite and TypeScript for the client app
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-21
 **Deciders:** Outfit Planner team (product owner to accept)
 **Related:** [S1-01](../specs/S1-01-anonymous-wardrobe-upload.md), [ADR-0003](0003-gherkin-acceptance-tests-with-playwright.md), [ADR-0004](0004-on-device-wardrobe-storage.md), [requirements](../requirements.md) (non-functional: mobile-first PWA), [security guide](../security.md) (sections 4, 11, 12), [CLAUDE.md](../../CLAUDE.md) (open decision: application stack)
@@ -60,6 +60,7 @@ Server rendering frameworks are not used. There is no server in this slice, and 
   - Add the PWA plugin, manifest and service worker in a later ticket, with a decision recorded if it changes caching of personal data.
   - Add a Content Security Policy when the production build exists (security guide, section 11).
   - Record any new runtime dependency that touches data in its own ADR (security guide, section 4).
+  - Lint, formatting and unit test tooling is recorded in [ADR-0009](0009-frontend-lint-format-and-unit-tests.md).
 
 ## Compliance check
 

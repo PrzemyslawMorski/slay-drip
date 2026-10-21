@@ -179,10 +179,12 @@ export async function withdrawWardrobeConsent(): Promise<void> {
   await Promise.all([
     tx.objectStore('items').clear(),
     tx.objectStore('outfits').clear(),
-    tx.objectStore('consent').put(
-      { granted: false, at: new Date().toISOString(), wordingVersion: CONSENT_WORDING_VERSION },
-      WARDROBE_CONSENT_KEY,
-    ),
+    tx
+      .objectStore('consent')
+      .put(
+        { granted: false, at: new Date().toISOString(), wordingVersion: CONSENT_WORDING_VERSION },
+        WARDROBE_CONSENT_KEY,
+      ),
     tx.done,
   ]);
 }

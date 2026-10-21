@@ -1,6 +1,6 @@
 # ADR-0005: Local cloud emulation with Docker Compose stand-ins, S3 first
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-21
 **Deciders:** Outfit Planner team (product owner to confirm the tooling choice)
 **Related:** [CLAUDE.md](../../CLAUDE.md) (Platform decisions, Working in this repo), [ADR-0001](0001-eu-hosting-18plus-gate-gdpr-baseline.md), [security guide](../security.md) (sections 4, 13), [local development guide](../local-development.md), [compose.yaml](../../compose.yaml)

@@ -8,7 +8,8 @@ import { WardrobeScreen } from './components/WardrobeScreen';
 
 type Phase = 'loading' | 'age' | 'underage' | 'adult';
 
-type View = { screen: 'wardrobe' } | { screen: 'outfits' } | { screen: 'builder'; outfitId?: string };
+type View =
+  { screen: 'wardrobe' } | { screen: 'outfits' } | { screen: 'builder'; outfitId?: string };
 
 export function App() {
   const [phase, setPhase] = useState<Phase>('loading');

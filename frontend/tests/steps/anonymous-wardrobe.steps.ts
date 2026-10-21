@@ -92,10 +92,13 @@ Then('no photo is stored yet', async ({ page }) => {
   expect(await countStoredRecords(page, 'items')).toBe(0);
 });
 
-Given('I have been asked whether to store photos of my clothes on this device', async ({ page }) => {
-  await page.getByRole('button', { name: addPhotosButton }).click();
-  await expect(page.getByRole('heading', { name: consentHeading })).toBeVisible();
-});
+Given(
+  'I have been asked whether to store photos of my clothes on this device',
+  async ({ page }) => {
+    await page.getByRole('button', { name: addPhotosButton }).click();
+    await expect(page.getByRole('heading', { name: consentHeading })).toBeVisible();
+  },
+);
 
 When('I decline to store photos', async ({ page }) => {
   await page.getByRole('button', { name: en.consent.no }).click();
@@ -142,9 +145,12 @@ When('I add {int} photos of clothing items at once', async ({ page }, count: num
   await addSamplePhotos(page, count);
 });
 
-When('I add a file named {string} that is not a JPEG, PNG or WebP image', async ({ page }, name: string) => {
-  await addPhotos(page, [{ name, mimeType: 'image/jpeg', buffer: notAPhoto() }]);
-});
+When(
+  'I add a file named {string} that is not a JPEG, PNG or WebP image',
+  async ({ page }, name: string) => {
+    await addPhotos(page, [{ name, mimeType: 'image/jpeg', buffer: notAPhoto() }]);
+  },
+);
 
 When('I add a JPEG photo that is larger than 10 MB', async ({ page }) => {
   await addPhotos(page, [{ name: 'large.jpg', mimeType: 'image/jpeg', buffer: oversizedJpeg() }]);
@@ -185,7 +191,7 @@ Then('the stored photo contains no location or device details', async ({ page })
   });
 });
 
-Then('no request leaves the app carrying photo data', async ({ page }) => {
+Then('no request leaves the app carrying photo data', ({ page }) => {
   expectOnlyAppRequests(page);
 });
 
@@ -204,14 +210,19 @@ Then('I see {int} photos of clothing items in a grid', async ({ page }, count: n
   await expect(page.getByRole('img', { name: /^Wardrobe item \d+$/ })).toHaveCount(count);
 });
 
-Then('each photo has the name {string} followed by its number', async ({ page }, prefix: string) => {
-  const photos = page.getByRole('img', { name: new RegExp(`^${prefix} \\d+$`) });
-  const count = await photos.count();
-  expect(count).toBeGreaterThan(0);
-  for (let position = 1; position <= count; position++) {
-    await expect(page.getByRole('img', { name: `${prefix} ${position}`, exact: true })).toBeVisible();
-  }
-});
+Then(
+  'each photo has the name {string} followed by its number',
+  async ({ page }, prefix: string) => {
+    const photos = page.getByRole('img', { name: new RegExp(`^${prefix} \\d+$`) });
+    const count = await photos.count();
+    expect(count).toBeGreaterThan(0);
+    for (let position = 1; position <= count; position++) {
+      await expect(
+        page.getByRole('img', { name: `${prefix} ${position}`, exact: true }),
+      ).toBeVisible();
+    }
+  },
+);
 
 When('I move through the wardrobe using only the Tab key', async ({ page }) => {
   const addButton = page.getByRole('button', { name: addPhotosButton });

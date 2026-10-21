@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { en } from '../strings/en';
-import { deleteOutfit, listOutfits, listWardrobeItems, type Outfit, type WardrobeItem } from '../storage/localDb';
+import {
+  deleteOutfit,
+  listOutfits,
+  listWardrobeItems,
+  type Outfit,
+  type WardrobeItem,
+} from '../storage/localDb';
 import { AppNav } from './AppNav';
 
 interface OutfitsScreenProps {
@@ -9,7 +15,11 @@ interface OutfitsScreenProps {
   onEditOutfit: (outfitId: string) => void;
 }
 
-export function OutfitsScreen({ onOpenWardrobe, onCreateOutfit, onEditOutfit }: OutfitsScreenProps) {
+export function OutfitsScreen({
+  onOpenWardrobe,
+  onCreateOutfit,
+  onEditOutfit,
+}: OutfitsScreenProps) {
   const [outfits, setOutfits] = useState<Outfit[]>([]);
   const [items, setItems] = useState<WardrobeItem[]>([]);
   const [outfitToDelete, setOutfitToDelete] = useState<Outfit | null>(null);
@@ -20,8 +30,18 @@ export function OutfitsScreen({ onOpenWardrobe, onCreateOutfit, onEditOutfit }: 
     setItems(await listWardrobeItems());
   }
 
+  // Loads on mount. The flag drops a result that arrives after unmount.
   useEffect(() => {
-    void reload();
+    let ignore = false;
+    void Promise.all([listOutfits(), listWardrobeItems()]).then(([loadedOutfits, loadedItems]) => {
+      if (!ignore) {
+        setOutfits(loadedOutfits);
+        setItems(loadedItems);
+      }
+    });
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   async function handleCreateClick() {
@@ -73,7 +93,11 @@ export function OutfitsScreen({ onOpenWardrobe, onCreateOutfit, onEditOutfit }: 
             return (
               <li key={outfit.id} className="outfit-card">
                 <h2>
-                  <button type="button" className="outfit-name" onClick={() => onEditOutfit(outfit.id)}>
+                  <button
+                    type="button"
+                    className="outfit-name"
+                    onClick={() => onEditOutfit(outfit.id)}
+                  >
                     {outfit.name}
                   </button>
                 </h2>

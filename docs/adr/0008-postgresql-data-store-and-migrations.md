@@ -1,6 +1,6 @@
 # ADR-0008: PostgreSQL 17 as the data store, with pgx and golang-migrate
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-21
 **Deciders:** Outfit Planner team (product owner and DPO to confirm before any personal data is stored)
 **Related:** [ADR-0005](0005-local-cloud-emulation.md) (local cloud emulation), [ADR-0006](0006-development-feedback-loops-ports-and-fakes.md) (ports and fakes, integration loop), [ADR-0007](0007-backend-go-and-test-stack.md) (Go backend and test stack), [local development guide](../local-development.md), [CLAUDE.md](../../CLAUDE.md) (Platform decisions)

@@ -1,6 +1,6 @@
 # ADR-0006: Three development feedback loops, with ports and fakes for cloud calls
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-21
 **Deciders:** Outfit Planner team (product owner to confirm)
 **Related:** [ADR-0005](0005-local-cloud-emulation.md) (local cloud emulation), [local development guide](../local-development.md), [CLAUDE.md](../../CLAUDE.md) (Working in this repo, Quality bar for AI features), [security guide](../security.md) (section 13)

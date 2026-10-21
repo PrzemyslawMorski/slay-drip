@@ -50,7 +50,11 @@ export function OutfitBuilder({ outfitId, onDone }: OutfitBuilderProps) {
       return;
     }
     const finalName = trimmed || en.builder.defaultName((await listOutfits()).length + 1);
-    await saveOutfit({ id: outfitId ?? crypto.randomUUID(), name: finalName, itemIds: selectedIds });
+    await saveOutfit({
+      id: outfitId ?? crypto.randomUUID(),
+      name: finalName,
+      itemIds: selectedIds,
+    });
     onDone();
   }
 
@@ -94,7 +98,13 @@ export function OutfitBuilder({ outfitId, onDone }: OutfitBuilderProps) {
 
       <div className="field">
         <label htmlFor="outfit-name">{en.builder.nameLabel}</label>
-        <input id="outfit-name" type="text" value={name} aria-describedby="outfit-name-hint" onChange={(event) => setName(event.target.value)} />
+        <input
+          id="outfit-name"
+          type="text"
+          value={name}
+          aria-describedby="outfit-name-hint"
+          onChange={(event) => setName(event.target.value)}
+        />
         <p id="outfit-name-hint" className="hint">
           {en.builder.nameHint}
         </p>

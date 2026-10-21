@@ -17,17 +17,34 @@ export interface PhotoFile {
 }
 
 // Draws a plain colour block in the browser and encodes it in the requested format.
-export async function renderSamplePhoto(page: Page, format: PhotoFormat, seed = 0): Promise<Buffer> {
+export async function renderSamplePhoto(
+  page: Page,
+  format: PhotoFormat,
+  seed = 0,
+): Promise<Buffer> {
   const base64 = await page.evaluate(
     async ({ mimeType, seed }) => {
       const canvas = document.createElement('canvas');
       canvas.width = 300;
       canvas.height = 400;
-      const context = canvas.getContext('2d')!;
+      const context = canvas.getContext('2d');
+      if (!context) {
+        throw new Error('This browser has no 2D canvas context');
+      }
       context.fillStyle = `hsl(${(seed * 97) % 360} 60% 55%)`;
       context.fillRect(0, 0, canvas.width, canvas.height);
-      const blob = await new Promise<Blob>((resolve) =>
-        canvas.toBlob((result) => resolve(result!), mimeType, 0.9),
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(
+          (result) => {
+            if (result) {
+              resolve(result);
+            } else {
+              reject(new Error(`Canvas could not encode ${mimeType}`));
+            }
+          },
+          mimeType,
+          0.9,
+        ),
       );
       const bytes = new Uint8Array(await blob.arrayBuffer());
       let binary = '';
@@ -39,7 +56,11 @@ export async function renderSamplePhoto(page: Page, format: PhotoFormat, seed = 
   return Buffer.from(base64, 'base64');
 }
 
-export async function samplePhotoFile(page: Page, format: PhotoFormat, seed = 0): Promise<PhotoFile> {
+export async function samplePhotoFile(
+  page: Page,
+  format: PhotoFormat,
+  seed = 0,
+): Promise<PhotoFile> {
   return {
     name: `item-${seed}.${format.toLowerCase() === 'jpeg' ? 'jpg' : format.toLowerCase()}`,
     mimeType: MIME_TYPES[format],
@@ -49,7 +70,10 @@ export async function samplePhotoFile(page: Page, format: PhotoFormat, seed = 0)
 
 // Inserts an APP1 (Exif) segment after the JPEG start marker, with fake location and device details.
 export function withLocationAndDeviceDetails(jpeg: Buffer): Buffer {
-  const payload = Buffer.from('Exif\0\0Make=TestCamera;GPSLatitude=52.2297;GPSLongitude=21.0122', 'latin1');
+  const payload = Buffer.from(
+    'Exif\0\0Make=TestCamera;GPSLatitude=52.2297;GPSLongitude=21.0122',
+    'latin1',
+  );
   const segmentLength = payload.length + 2;
   const app1 = Buffer.concat([
     Buffer.from([0xff, 0xe1, segmentLength >> 8, segmentLength & 0xff]),

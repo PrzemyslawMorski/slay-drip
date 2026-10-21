@@ -1,6 +1,6 @@
 # ADR-0007: Backend in Go, with the standard `testing` package and hand-written fakes
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-21
 **Deciders:** Outfit Planner team (product owner to confirm)
 **Related:** [ADR-0006](0006-development-feedback-loops-ports-and-fakes.md) (feedback loops, ports and fakes), [ADR-0003](0003-gherkin-acceptance-tests-with-playwright.md) (Playwright acceptance tests), [ADR-0005](0005-local-cloud-emulation.md) (local cloud emulation), [CLAUDE.md](../../CLAUDE.md) (Platform decisions, Quality bar for AI features)

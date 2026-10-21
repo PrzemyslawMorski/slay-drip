@@ -1,6 +1,6 @@
 # ADR-0004: Wardrobe photos stored on the device in IndexedDB
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-21
 **Deciders:** Outfit Planner team (product owner and DPO to review)
 **Related:** [S1-01](../specs/S1-01-anonymous-wardrobe-upload.md), [ADR-0001](0001-eu-hosting-18plus-gate-gdpr-baseline.md), [ADR-0002](0002-frontend-framework-and-build-tooling.md), [security guide](../security.md) (sections 1, 3, 7, 11), [requirements](../requirements.md) (F2.2, F6)

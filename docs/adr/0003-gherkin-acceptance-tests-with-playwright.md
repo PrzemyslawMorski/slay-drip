@@ -1,6 +1,6 @@
 # ADR-0003: Gherkin acceptance tests run on Playwright
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-21
 **Deciders:** Outfit Planner team (product owner to accept)
 **Related:** [S1-01](../specs/S1-01-anonymous-wardrobe-upload.md), [ADR-0002](0002-frontend-framework-and-build-tooling.md), [CLAUDE.md](../../CLAUDE.md) (quality bar), [security guide](../security.md) (section 16)

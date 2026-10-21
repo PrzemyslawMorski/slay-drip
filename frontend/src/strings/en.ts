@@ -31,7 +31,8 @@ export const en = {
     deleteItemYes: 'Yes, delete item',
     outfitDeleted: (name: string) => `${name} was deleted because none of its items are left.`,
     withdraw: 'Withdraw consent and delete photos',
-    withdrawConfirm: 'This deletes all photos and outfits on this device and turns off photo storage. It cannot be undone.',
+    withdrawConfirm:
+      'This deletes all photos and outfits on this device and turns off photo storage. It cannot be undone.',
     withdrawYes: 'Yes, delete all photos',
     cancel: 'Cancel',
   },
