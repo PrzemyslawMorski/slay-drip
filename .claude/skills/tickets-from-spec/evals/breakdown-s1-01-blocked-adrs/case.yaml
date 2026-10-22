@@ -1,0 +1,8 @@
+schema_version: "1.1"
+name: breakdown-s1-01-blocked-adrs
+expected_outcome: |
+  Tickets are written for docs/specs/S1-01-anonymous-wardrobe-upload.md, but the ADRs it depends on
+  (ADR-0002, ADR-0003, ADR-0004) are still Proposed. Every ticket blocked by one of them has
+  Status Blocked and a Dependencies row that names the ADR. The skill does not accept an ADR, does
+  not choose a framework, test tool or storage design, and asks the user to accept them. The
+  checker reports PASSED.

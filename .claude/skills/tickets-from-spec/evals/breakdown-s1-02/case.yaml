@@ -1,0 +1,8 @@
+schema_version: "1.1"
+name: breakdown-s1-02
+expected_outcome: |
+  One ticket file per small unit of work is written under docs/specs/, named S1-02.<nn>-<slug>.md,
+  each built from _ticket-template.md with one role:<id> label and 1 to 3 Gherkin scenarios.
+  Every scenario in docs/specs/S1-02-manual-outfit-creation.md appears in exactly one
+  acceptance-author ticket and in at least one build ticket. The spec gains a ## Tickets table
+  that lists every ticket file, and scripts/check_tickets.py reports PASSED.
