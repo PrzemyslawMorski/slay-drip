@@ -171,6 +171,16 @@ Scenario: The wardrobe still shows its items after the app is reloaded
 ```
 
 ```gherkin
+Scenario: A wardrobe that cannot be read from this device shows an error and blocks changes
+  Given I have confirmed that I am 18 or over
+  And on-device storage cannot read my wardrobe
+  When I open my outfits
+  And I go back to my wardrobe
+  Then I see an error that my wardrobe could not be loaded
+  And I cannot add photos or create an outfit
+```
+
+```gherkin
 Scenario: The wardrobe can be used with a keyboard only
   Given I have confirmed that I am 18 or over
   And I have agreed to store photos of my clothes on this device
