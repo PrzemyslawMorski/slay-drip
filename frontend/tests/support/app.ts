@@ -131,17 +131,34 @@ export async function countStoredRecords(
   }, store);
 }
 
-// Reads the stored bytes of a displayed photo and reports any metadata that survived.
+// Reads the stored bytes of one wardrobe photo from on-device storage and reports any metadata that survived.
+// Reads IndexedDB rather than the blob: URL, so the test does not need a connect-src exception in the CSP.
 export async function metadataFoundIn(
   page: Page,
-  photoName: string,
+  itemNumber: number,
 ): Promise<Record<string, boolean>> {
-  const src = await page.getByRole('img', { name: photoName }).getAttribute('src');
-  if (src === null) {
-    throw new Error(`The photo "${photoName}" has no src attribute`);
-  }
-  return page.evaluate(async (url) => {
-    const bytes = new Uint8Array(await (await fetch(url)).arrayBuffer());
+  return page.evaluate(async (number) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('slay-drip-local');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () =>
+        reject(request.error ?? new Error('Could not open the on-device database'));
+    });
+    let photo: Blob | undefined;
+    try {
+      const items = await new Promise<{ number: number; photo: Blob }[]>((resolve, reject) => {
+        const request = db.transaction('items').objectStore('items').getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error ?? new Error('Could not read wardrobe items'));
+      });
+      photo = items.find((item) => item.number === number)?.photo;
+    } finally {
+      db.close();
+    }
+    if (photo === undefined) {
+      throw new Error(`No stored photo with number ${number}`);
+    }
+    const bytes = new Uint8Array(await photo.arrayBuffer());
     const text = new TextDecoder('latin1').decode(bytes);
     let app1Segment = false;
     for (let index = 0; index < bytes.length - 1; index++) {
@@ -156,5 +173,5 @@ export async function metadataFoundIn(
       gpsCoordinates: text.includes('GPS'),
       app1Segment,
     };
-  }, src);
+  }, itemNumber);
 }
