@@ -1,0 +1,87 @@
+name: Backend CI
+
+# Checks the Go backend on every pull request that touches it: vet, unit tests, lint, vulnerability scan and integration tests against a PostgreSQL service container.
+# Read-only. No secrets, no deploy step. Tool versions come from backend/go.mod (tool directive), not from the workflow.
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Unit tests
+        run: go test ./...
+
+      - name: Lint
+        run: go tool golangci-lint run ./...
+
+      - name: Vulnerability scan
+        run: go tool govulncheck -scan package ./...
+
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      database:
+        # Same engine as compose.yaml and Scaleway Managed PostgreSQL. Pinned: bump deliberately.
+        image: postgres:17
+        env:
+          POSTGRES_DB: slaydrip
+          POSTGRES_USER: slaydrip
+          # Trust auth for this ephemeral CI container only, so no credential is stored in the repo.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U slaydrip -d slaydrip"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 15
+    env:
+      DATABASE_URL: postgres://slaydrip@127.0.0.1:5432/slaydrip?sslmode=disable
+    steps:
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Integration tests
+        run: go test -tags=integration ./...
