@@ -19,8 +19,8 @@ Match the request to one row. Read the playbook named in that row, then load the
 
 | Request kind | Playbook | Load skills |
 | --- | --- | --- |
-| A new or changed feature, or a change to how something should work, including user data, auth, storage, AI or infrastructure. Not a defect in behaviour that already exists | `playbooks/feature.md` | `spec-from-intent` when there is no spec yet, `tickets-from-spec` for splitting, `owasp-security-review` when personal, body or special-category data is touched |
-| A reported defect in existing behaviour: an error, a 500, a failing test, a crash, or "this used to work". Applies even when personal data is involved | `playbooks/bugfix.md` | `owasp-security-review` when personal, body or special-category data is touched |
+| A new or changed feature, or a change to how something should work, including user data, auth, storage, AI or infrastructure. Not a defect in behaviour that already exists | `playbooks/feature.md` | `spec-from-intent` when there is no spec yet, `tickets-from-spec` for splitting, `owasp-security-review` whenever personal, body or special-category data is touched. Outfits, wardrobe photos, body photos, measurements, profile, location and account data always count |
+| A reported defect in existing behaviour: an error, a 500, a failing test, a crash, or "this used to work". Applies even when personal data is involved | `playbooks/bugfix.md` | `owasp-security-review` whenever personal, body or special-category data is touched. Outfits, wardrobe photos, body photos, measurements, profile, location and account data always count |
 | A read-only question, or "are we sure?" about existing behaviour, code or docs | `playbooks/investigation.md` | none |
 | Wrapping up, switching machines, or picking up tomorrow | none | `handoff` |
 | A security, privacy or OWASP check on code, config, CI or a PR | none | `owasp-security-review` |
