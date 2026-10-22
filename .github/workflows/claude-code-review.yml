@@ -33,6 +33,7 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           track_progress: true
+          show_full_output: true
           prompt: |
             Review this pull request. Post findings as inline review comments on the
             lines they concern, and a short summary comment at the end.
