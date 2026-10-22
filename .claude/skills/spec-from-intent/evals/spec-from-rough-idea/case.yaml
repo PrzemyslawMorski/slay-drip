@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: spec-from-rough-idea
+expected_outcome: |
+  A single draft spec in docs/specs/ named S<session>-<nn>-<slug>.md, built from _spec-template.md,
+  that links a matching requirement (F6 feedback or F1 style preferences are both plausible),
+  has a checkbox acceptance list, fills or marks N/A each compliance line, and contains no ticket files.

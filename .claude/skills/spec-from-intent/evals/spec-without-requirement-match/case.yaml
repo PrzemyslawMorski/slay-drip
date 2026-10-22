@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: spec-without-requirement-match
+expected_outcome: |
+  No requirement in docs/requirements.md covers loyalty points or partner discounts. The skill says so,
+  does not write a finished spec before the gap is resolved, and offers to draft a proposed requirement
+  for the user to approve (or to write a Draft spec that is flagged as having no backing requirement).
