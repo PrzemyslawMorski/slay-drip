@@ -1,44 +1,65 @@
 ---
 name: slay-drip
 description: >-
-  Master entry point for working in the Slay Drip (Outfit Planner) repo. Use this whenever a task touches this codebase: building a feature, changing the Go backend or the PWA frontend, a wardrobe, outfit, profile or occasion flow, a new requirement or decision, writing or reviewing a spec, ticket or ADR, a security or privacy review, anything touching body photos, measurements, wardrobe photos, location or accounts, a CI or deployment change, docs, or handing a session over. It routes to the right doc or skill in order, so use it even when the request is only a short phrase like "add wardrobe upload", "new feature for outfits", "what should I do next for F4" or "wrap this up for tomorrow". Skip it for generic questions that do not involve this repo.
+  Master entry point for working in the Slay Drip (Outfit Planner) repo. Use this whenever a task touches this codebase: building a feature, changing the Go backend or the PWA frontend, a wardrobe, outfit, profile or occasion flow, a new requirement or decision, writing or reviewing a spec, ticket or ADR, a security or privacy review, anything touching body photos, measurements, wardrobe photos, location or accounts, a CI or deployment change, docs, or handing a session over. It routes to the right playbook or skill in order, so use it even when the request is only a short phrase like "add wardrobe upload", "new feature for outfits", "what should I do next for F4" or "wrap this up for tomorrow". Skip it for generic questions that do not involve this repo.
 ---
 
 # Slay Drip master skill
 
-This skill is a router. `CLAUDE.md` is the single source of truth for rules and conventions, so read the relevant part of it instead of relying on memory. This skill tells you which doc or skill to open next and in what order.
+This skill is a router. It classifies the request, picks one playbook, and loads the skills that playbook names. `CLAUDE.md` is the single source of truth for rules and conventions. Read the relevant part of it instead of relying on memory.
 
 ## Step 0: Orient
 
 1. Read `CLAUDE.md` (sections "Where to look", "Working in this repo" and "Hard rules") when you have not read it in this session.
-2. Check the branch and worktree with `git status` and `git worktree list`. If the task changes code, work in its own worktree (see the gates below). Do not edit the main checkout unless the task is reading, review or release.
+2. Run `git status` and `git worktree list`. If the task changes code, work in its own worktree (see the standing gates). Do not edit the main checkout unless the task is reading, review or release.
 
-## Step 1: Pick the path
+## Step 1: Route
 
-| The request is about | Go to |
-| --- | --- |
-| A new feature or a change to user data, auth, storage, AI or infrastructure | The feature flow below |
-| A feature or requirement that has no spec yet | `spec-from-intent` skill |
-| Splitting an existing spec into work | `tickets-from-spec` skill |
-| A security, privacy or OWASP check on code, config or a PR | `owasp-security-review` skill |
-| Wrapping up, switching machines, or picking up tomorrow | `handoff` skill |
-| A code review of a diff or PR | `docs/code-review/README.md` (the rule files it links) |
-| Running the app or its local stack | `docs/local-development.md` |
-| A fix or change that is clearly small and in one area | Read the area's code and its tests, then make the change |
+Match the request to one row. Read the playbook named in that row, then load the skills in its "Load skills" column. Do not load a playbook that is not in the table.
 
-## Feature flow (the seven steps from CLAUDE.md)
+| Request kind | Playbook | Load skills |
+| --- | --- | --- |
+| A new or changed feature, or any change to user data, auth, storage, AI or infrastructure | `playbooks/feature.md` | `spec-from-intent` when there is no spec yet, `tickets-from-spec` for splitting, `owasp-security-review` when personal, body or special-category data is touched |
+| A bug fix or regression, with an error, a failing test or "this used to work" | `playbooks/bugfix.md` | none |
+| A read-only question, or "are we sure?" about existing behaviour, code or docs | `playbooks/investigation.md` | none |
+| Wrapping up, switching machines, or picking up tomorrow | none | `handoff` |
+| A security, privacy or OWASP check on code, config, CI or a PR | none | `owasp-security-review` |
+| A code review of a diff or PR | none | `docs/code-review/README.md` and the rule files it links |
+| Running the app or its local stack | none | `docs/local-development.md` |
+| A large or multi-PR change, or one that spans several sessions | `playbooks/multi-phase-plan.md` | `tickets-from-spec` |
+| Anything not matching a row above | `playbooks/workflow.md` (fallback, "figure it out") | none |
 
-Do not skip a step because the change looks small. If a step does not apply, say so in the PR.
+Rules for routing:
 
-1. **Requirement.** Find the matching item in `docs/requirements.md` (F1 to F6, GDPR, quality bar, workshop plan). If none exists, stop and ask whether to add one.
-2. **Ticket.** Find or create it in `docs/specs/` from `_ticket-template.md`. Check each blocker's status in the Dependencies table.
-3. **Discovery.** If the approach depends on an open question (vendor, model, region, cost), write `docs/discovery/YYYY-MM-DD-<topic>.md` before choosing. Open decisions are listed in `CLAUDE.md`. Do not decide them yourself.
-4. **Spec.** For anything larger than one ticket, use `spec-from-intent` or copy `docs/specs/_spec-template.md`. Keep the ticket and spec in step.
-5. **ADR.** Anything hard to reverse (vendor, data store, auth model, a new region or dependency with data access) gets `docs/adr/NNNN-<slug>.md` from `docs/adr/_template.md`. Never renumber. Supersede instead.
-6. **Security.** Read `docs/security.md` before touching personal, body or special-category data. Use its PR checklist in the PR description.
-7. **Implement.** Write tests alongside the code and run the feature against the local stack (`docs/local-development.md`). The PR shows the local run.
+- Pick the row by what the request asks for, not by how big the change looks. A small change to user data is still a feature.
+- If two rows fit, use the one that protects more: a bug in personal data follows `feature.md` plus `owasp-security-review`.
+- If no row fits, use the fallback. Do not guess a playbook.
+- Say which row and playbook you picked, in one line, before you start.
+
+## Step 2: Track and finish
+
+1. Open a todo list whose first items are the playbook's steps, copied in as written, before any task-specific todos. A step you skip stays in the list with a one-line `skip: <reason>`.
+2. End every playbook that changes code with `playbooks/pull-request.md`. Its checklist goes into the PR description, and a step that does not apply is marked "not applicable" with the reason.
+3. Finish with a short reply: what changed, the evidence for each claim (measured, read in a file, or inferred), and what is still open.
+
+## Autonomy
+
+- **Just do it.** Reversible work proceeds without asking: reading, searching, editing files in your own worktree, running the narrow tests, running the local stack, and opening a draft PR.
+- **Ask only for what only the user can know.** Secrets and `.env` values, the open decisions listed in `CLAUDE.md`, product or preference calls that no experiment can settle, and the requirement gate in step 1 of the feature playbook.
+- **Always pause** before an irreversible or outward-facing action: force-pushing a shared branch, merging to `main`, deploys, deleting personal, body or measurement data, messages to users or vendors, and sending any data to an external service.
+- **Settle facts by running them.** If a question is about behaviour you can observe (a test result, a response shape, a layout), run it instead of asking.
+- **Say no when it is right.** If a request adds scope that does not earn its place, or an approach looks wrong, say so with the reason. Agreement is not the default.
+
+## Triggers that route elsewhere
+
+- Any request touching personal, body or special-category data → also load `owasp-security-review` and read `docs/security.md` first.
+- A claim about speed, load or cost → measure it and show the number before you report it.
+- A bug that comes back after a fix → stop and check the premise of the fix before writing another one.
+- A new internal API or type while old callers exist → migrate the callers and delete the old API in the same change.
 
 ## Standing gates
+
+These apply to every playbook.
 
 - **Worktree per task.** Create it from `main` in `../slay-drip-worktrees/` as described under "Parallel work with git worktrees" in `CLAUDE.md`. Clean up with `git worktree remove` and `git worktree prune` when the branch is merged.
 - **Backend tests.** Run `go test ./...` in `backend/` before opening a PR.
@@ -50,6 +71,7 @@ Do not skip a step because the change looks small. If a step does not apply, say
 
 ## Where things live
 
+- Playbooks: `.claude/skills/slay-drip/playbooks/`
 - Requirements and workshop plan: `docs/requirements.md`
 - Security and privacy rules: `docs/security.md`
 - Local run and stand-ins: `docs/local-development.md`, `compose.yaml`
