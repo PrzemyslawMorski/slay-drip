@@ -1,6 +1,6 @@
 # Playbook: bug fix
 
-Use for a bug or regression: an error, a failing test, or behaviour that used to work.
+Use for a reported defect in existing behaviour: an error, a 500, a crash, a failing test, or behaviour that used to work. Use it even when the defect touches personal data, and load `owasp-security-review` alongside it.
 
 1. **Reproduce.** Get the failure to happen on demand, locally, with the exact input or steps. Record the command or steps in the PR.
 2. **Find the requirement.** Check the behaviour against `docs/requirements.md`. If the bug is really a missing requirement, switch to `playbooks/feature.md`.

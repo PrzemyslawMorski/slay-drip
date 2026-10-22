@@ -19,20 +19,22 @@ Match the request to one row. Read the playbook named in that row, then load the
 
 | Request kind | Playbook | Load skills |
 | --- | --- | --- |
-| A new or changed feature, or any change to user data, auth, storage, AI or infrastructure | `playbooks/feature.md` | `spec-from-intent` when there is no spec yet, `tickets-from-spec` for splitting, `owasp-security-review` when personal, body or special-category data is touched |
-| A bug fix or regression, with an error, a failing test or "this used to work" | `playbooks/bugfix.md` | none |
+| A new or changed feature, or a change to how something should work, including user data, auth, storage, AI or infrastructure. Not a defect in behaviour that already exists | `playbooks/feature.md` | `spec-from-intent` when there is no spec yet, `tickets-from-spec` for splitting, `owasp-security-review` when personal, body or special-category data is touched |
+| A reported defect in existing behaviour: an error, a 500, a failing test, a crash, or "this used to work". Applies even when personal data is involved | `playbooks/bugfix.md` | `owasp-security-review` when personal, body or special-category data is touched |
 | A read-only question, or "are we sure?" about existing behaviour, code or docs | `playbooks/investigation.md` | none |
 | Wrapping up, switching machines, or picking up tomorrow | none | `handoff` |
 | A security, privacy or OWASP check on code, config, CI or a PR | none | `owasp-security-review` |
 | A code review of a diff or PR | none | `docs/code-review/README.md` and the rule files it links |
 | Running the app or its local stack | none | `docs/local-development.md` |
 | A large or multi-PR change, or one that spans several sessions | `playbooks/multi-phase-plan.md` | `tickets-from-spec` |
+| A git or release action that writes to a remote or a shared branch: force-push, merge to `main`, deploy, delete a remote branch | none | none. Apply the always-pause list in "Autonomy" before anything else, and ask the user to confirm |
 | Anything not matching a row above | `playbooks/workflow.md` (fallback, "figure it out") | none |
 
 Rules for routing:
 
 - Pick the row by what the request asks for, not by how big the change looks. A small change to user data is still a feature.
-- If two rows fit, use the one that protects more: a bug in personal data follows `feature.md` plus `owasp-security-review`.
+- If two rows fit, the more specific row wins. A reported defect goes to the bug-fix row even when it touches personal data, and the security check is loaded alongside it.
+- A git or release action that writes to a remote or a shared branch always pauses first, whatever else the request says.
 - If no row fits, use the fallback. Do not guess a playbook.
 - Say which row and playbook you picked, in one line, before you start.
 
