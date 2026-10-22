@@ -2,7 +2,7 @@
 
 Use for new or changed behaviour, and for any change to user data, auth, storage, AI or infrastructure. Do not skip a step because the change looks small. If a step does not apply, say so in the PR.
 
-1. **Requirement.** Find the matching item in `docs/requirements.md` (F1 to F6, GDPR, quality bar, workshop plan). If none exists, stop and ask whether to add one.
+1. **Requirement.** Find the matching item in `docs/requirements.md` (F1 to F6, GDPR, quality bar, workshop plan). If none exists, stop and ask whether to add one. Until the user answers, do not draft a spec or ticket, write tests or code, create a worktree, or call any external service. Steps 2 to 7 wait for this answer.
 2. **Ticket.** Find or create it in `docs/specs/` from `_ticket-template.md`. Check each blocker's status in the Dependencies table.
 3. **Discovery.** If the approach depends on an open question (vendor, model, region, cost), write `docs/discovery/YYYY-MM-DD-<topic>.md` from `_template.md` before choosing. Open decisions are listed in `CLAUDE.md`. Do not decide them yourself.
 4. **Spec.** For anything larger than one ticket, use `spec-from-intent` or copy `docs/specs/_spec-template.md`. Keep the ticket and spec in step.
