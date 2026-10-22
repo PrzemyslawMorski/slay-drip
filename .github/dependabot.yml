@@ -1,0 +1,8 @@
+version: 2
+updates:
+  # Proposes PRs that bump the SHA pins in .github/workflows/ and update the
+  # version comment, so pinned actions do not go stale.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
