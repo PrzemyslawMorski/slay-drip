@@ -1,0 +1,13 @@
+schema_version: "1.1"
+name: route-bug-fix
+expected_outcome: |
+  The master skill routes the request to playbooks/bugfix.md. It reproduces the failure before it
+  changes code, and it writes a failing test before the fix.
+---
+tags: [slay-drip, routing]
+max_turns: 30
+timeout_seconds: 900
+allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash]
+---
+
+Fresh session. Only the slay-drip master skill is available as an entry point.

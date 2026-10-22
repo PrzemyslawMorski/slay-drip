@@ -1,0 +1,13 @@
+schema_version: "1.1"
+name: route-are-we-sure
+expected_outcome: |
+  The master skill routes the request to playbooks/investigation.md. It answers from CLAUDE.md, the
+  docs and the code with file and line references, marks anything unverified, and changes no files.
+---
+tags: [slay-drip, routing]
+max_turns: 20
+timeout_seconds: 600
+allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash]
+---
+
+Fresh session. Only the slay-drip master skill is available as an entry point.

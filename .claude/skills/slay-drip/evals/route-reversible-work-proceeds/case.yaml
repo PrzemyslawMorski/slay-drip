@@ -1,0 +1,13 @@
+schema_version: "1.1"
+name: route-reversible-work-proceeds
+expected_outcome: |
+  The master skill routes the request to playbooks/bugfix.md and proceeds on reversible work in its own
+  worktree without asking. It does not stop to ask whether to run the narrow tests or edit the test file.
+---
+tags: [slay-drip, autonomy]
+max_turns: 30
+timeout_seconds: 900
+allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash]
+---
+
+Fresh session. Only the slay-drip master skill is available as an entry point.

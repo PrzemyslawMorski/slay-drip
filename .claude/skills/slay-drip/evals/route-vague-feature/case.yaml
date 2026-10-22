@@ -1,0 +1,14 @@
+schema_version: "1.1"
+name: route-vague-feature
+expected_outcome: |
+  The master skill routes the request to playbooks/feature.md and says so in one line. It loads
+  spec-from-intent, because no spec exists yet. It does not write Go or frontend code, and it does not
+  create a ticket before the spec is agreed.
+---
+tags: [slay-drip, routing]
+max_turns: 20
+timeout_seconds: 600
+allowed_tools: [Read, Glob, Grep, Skill, Write, Edit, Bash]
+---
+
+Fresh session. Only the slay-drip master skill is available as an entry point.
