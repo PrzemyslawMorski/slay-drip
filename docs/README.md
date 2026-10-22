@@ -14,7 +14,7 @@ Where each kind of written decision or plan lives, and how to start a new one fr
 
 ## Starting a new doc
 
-1. Copy the template into the right folder, using the naming rule above.
+1. Copy the template into the right folder, using the naming rule above. Use the next free number for ADRs; never reuse one.
 2. Replace every `<placeholder>` and delete the sections that do not apply. Do not leave empty headings in a finished doc.
 3. Link it from what it depends on or affects: an ADR from the spec it governs, a spec from the requirement it serves.
 4. ADRs: add a line to the status once decided (`Accepted`). To change a decision, write a new ADR and mark the old one `Superseded by`. Do not rewrite history.
