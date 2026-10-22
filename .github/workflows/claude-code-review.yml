@@ -33,7 +33,6 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           track_progress: true
-          show_full_output: true
           prompt: |
             Review this pull request. Post findings as inline review comments on the
             lines they concern, and a short summary comment at the end.
@@ -57,3 +56,7 @@ jobs:
             --model claude-haiku-5-5
             --allowedTools "Read,Grep,Glob,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(git status)"
             --max-turns 30
+
+      - name: Show Claude execution output
+        if: always()
+        run: cat /home/runner/work/_temp/claude-execution-output.json || true
