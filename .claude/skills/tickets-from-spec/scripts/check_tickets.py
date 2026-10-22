@@ -116,7 +116,7 @@ def first_ref(cell):
 def load_roles(path):
     roles, current = {}, None
     for line in path.read_text(encoding="utf-8").splitlines():
-        heading = re.match(r"^### `([a-z-]+)`", line)
+        heading = re.match(r"^### `([a-z0-9-]+)`", line)
         if heading:
             current = heading.group(1)
             roles[current] = {"owns": [], "read_only": False}
@@ -245,7 +245,7 @@ def main():
             report.error(where, f"Status '{status}' is not one of {sorted(STATUSES)}")
 
         labels = fields.get("Labels", "")
-        role_labels = re.findall(r"role:([a-z-]+)", labels)
+        role_labels = re.findall(r"role:([a-z0-9-]+)", labels)
         if len(role_labels) != 1:
             report.error(where, f"exactly one role:<id> label is required, found {len(role_labels)}")
             role = None

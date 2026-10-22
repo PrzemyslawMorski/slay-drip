@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: handoff-out-of-context
+expected_outcome: |
+  A handoff file is written to disk, with Goal, Status, Repo state, Decisions, Next steps and How to verify, and it reflects the real git state of the repo.

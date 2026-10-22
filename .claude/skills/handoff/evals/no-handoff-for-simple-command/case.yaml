@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: no-handoff-for-simple-command
+expected_outcome: |
+  No handoff is written. The reply reports the go version command's real output or its error.

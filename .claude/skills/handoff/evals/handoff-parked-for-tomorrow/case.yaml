@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: handoff-parked-for-tomorrow
+expected_outcome: |
+  A handoff file is written to disk recording the open question about the owasp-security-review folder as unresolved, with no changes made to the repo.
