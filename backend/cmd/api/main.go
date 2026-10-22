@@ -26,11 +26,7 @@ func run() error {
 	defer stop()
 
 	addr := ":" + getenv("PORT", "8080")
-	srv := &http.Server{
-		Addr:              addr,
-		Handler:           server.NewRouter(),
-		ReadHeaderTimeout: 5 * time.Second,
-	}
+	srv := server.NewHTTPServer(addr)
 
 	serveErr := make(chan error, 1)
 	go func() { serveErr <- srv.ListenAndServe() }()
