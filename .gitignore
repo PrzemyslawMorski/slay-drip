@@ -189,3 +189,6 @@ backend/bin/
 frontend/.features-gen/
 frontend/test-results/
 frontend/playwright-report/
+
+# Handoff notes (kept local, see the handoff skill)
+docs/handoffs/
