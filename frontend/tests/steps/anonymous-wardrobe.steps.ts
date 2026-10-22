@@ -182,7 +182,8 @@ Then('I see an error that the photo is too large', async ({ page }) => {
 });
 
 Then('the stored photo contains no location or device details', async ({ page }) => {
-  const found = await metadataFoundIn(page, en.wardrobe.itemAlt(1));
+  await expect(page.getByRole('img', { name: en.wardrobe.itemAlt(1) })).toBeVisible();
+  const found = await metadataFoundIn(page, 1);
   expect(found).toEqual({
     exifHeader: false,
     deviceMake: false,
