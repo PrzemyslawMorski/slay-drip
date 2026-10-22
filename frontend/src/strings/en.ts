@@ -21,6 +21,7 @@ export const en = {
   wardrobe: {
     heading: 'My wardrobe',
     empty: 'Your wardrobe is empty. Add a photo of a clothing item to start.',
+    loadFailed: 'Your wardrobe could not be loaded. Try reloading the page.',
     addPhotos: 'Add photos',
     itemCount: (count: number) => (count === 1 ? '1 item' : `${count} items`),
     itemAlt: (number: number) => `Wardrobe item ${number}`,

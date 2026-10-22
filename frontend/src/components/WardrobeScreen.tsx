@@ -32,14 +32,22 @@ export function WardrobeScreen({ onOpenOutfits, onCreateOutfit }: WardrobeScreen
   const [confirmingWithdrawal, setConfirmingWithdrawal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<WardrobeItem | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void (async () => {
-      const consent = await getWardrobeConsent();
-      setConsentGranted(consent?.granted === true);
-      setItems(await listWardrobeItems());
+      try {
+        const consent = await getWardrobeConsent();
+        setConsentGranted(consent?.granted === true);
+        setItems(await listWardrobeItems());
+      } catch {
+        // Fail closed: without a readable consent record, consent is not granted.
+        setConsentGranted(false);
+        setLoadFailed(true);
+        setError(en.wardrobe.loadFailed);
+      }
     })();
   }, []);
 
@@ -121,10 +129,15 @@ export function WardrobeScreen({ onOpenOutfits, onCreateOutfit }: WardrobeScreen
       </p>
 
       <div className="button-row">
-        <button type="button" className="button button-primary" onClick={handleAddClick}>
+        <button
+          type="button"
+          className="button button-primary"
+          onClick={handleAddClick}
+          disabled={loadFailed}
+        >
           {en.wardrobe.addPhotos}
         </button>
-        <button type="button" className="button" onClick={handleCreateClick}>
+        <button type="button" className="button" onClick={handleCreateClick} disabled={loadFailed}>
           {en.outfits.create}
         </button>
       </div>

@@ -206,6 +206,45 @@ When('I reload the app', async ({ page }) => {
   await page.reload();
 });
 
+// Makes reads of the consent and items stores fail, as they would if the browser blocked on-device storage.
+// Writes and the age check are left alone, so the wardrobe can still be opened.
+Given('on-device storage cannot read my wardrobe', async ({ page }) => {
+  await page.evaluate(() => {
+    const blockedStores = ['consent', 'items'];
+    const proto = IDBObjectStore.prototype;
+    const original = (name: 'get' | 'getAll') =>
+      Object.getOwnPropertyDescriptor(proto, name)?.value as IDBObjectStore['get'];
+    const realGet = original('get');
+    const realGetAll = original('getAll') as IDBObjectStore['getAll'];
+    proto.get = function (this: IDBObjectStore, ...args: Parameters<IDBObjectStore['get']>) {
+      if (blockedStores.includes(this.name)) {
+        throw new DOMException('On-device storage is blocked', 'SecurityError');
+      }
+      return realGet.apply(this, args);
+    };
+    proto.getAll = function (this: IDBObjectStore, ...args: Parameters<IDBObjectStore['getAll']>) {
+      if (blockedStores.includes(this.name)) {
+        throw new DOMException('On-device storage is blocked', 'SecurityError');
+      }
+      return realGetAll.apply(this, args);
+    };
+  });
+});
+
+When('I go back to my wardrobe', async ({ page }) => {
+  // Moves in-app, so the blocked reads are still in place when the wardrobe mounts again.
+  await goTo(page, 'wardrobe');
+});
+
+Then('I see an error that my wardrobe could not be loaded', async ({ page }) => {
+  await expect(page.getByRole('alert')).toContainText(en.wardrobe.loadFailed);
+});
+
+Then('I cannot add photos or create an outfit', async ({ page }) => {
+  await expect(page.getByRole('button', { name: addPhotosButton })).toBeDisabled();
+  await expect(page.getByRole('button', { name: en.outfits.create })).toBeDisabled();
+});
+
 Then('I see {int} photos of clothing items in a grid', async ({ page }, count: number) => {
   await expect(page.getByRole('img', { name: /^Wardrobe item \d+$/ })).toHaveCount(count);
 });
