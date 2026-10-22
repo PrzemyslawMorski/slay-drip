@@ -62,6 +62,15 @@ Use git worktrees extensively so parallel work never shares a checkout. This app
 
 - Keep changes scoped to the requested task.
 
+## Workshop takeaways (end of day)
+
+`docs/workshop-takeaways.md` records what was done each workshop day, with a short takeaway per day. It is updated at the end of the workshop day.
+
+- **When to update:** if the local time is 14:00 or later, treat the workshop day as closing and update the file before finishing. Check the time with `Get-Date` (PowerShell) or `date` (Bash), not by guessing.
+- **What to write:** add or update the entry for today's date, with a short summary and a one-line takeaway. Base it on the day's commits and merged PRs (`git log --since=midnight`) and on the work finished in the session.
+- **Keep it short:** one dated entry per day, grouped under its week. Do not repeat the same entry, and do not add content the repo already records elsewhere (link to it instead).
+- **Before 14:00:** do not update the file unless the user asks.
+
 ## Starting a feature or decision
 
 Follow this order before writing code for a new feature, or for any change that touches user data, auth, storage, AI or infrastructure. Templates are the `_`-prefixed files in each docs folder; the index is `docs/README.md`.
