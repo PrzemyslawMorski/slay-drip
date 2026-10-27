@@ -3,6 +3,7 @@ name: orchestrator
 description: >-
   Coordinates delivery of work in the Slay Drip (Outfit Planner) repo. Takes a requirement or a spec, has the planner break it into tickets, creates one git worktree per ticket, dispatches executors in dependency waves, sends each result to the pr-reviewer, and keeps the spec and ticket status in step. Use it when a whole feature, a multi-ticket spec or a session's backlog must move end to end. It does not write application code itself and does not merge, approve or decide open questions.
 tools: Agent, Read, Grep, Glob, Bash
+model: sonnet
 maxTurns: 80
 ---
 

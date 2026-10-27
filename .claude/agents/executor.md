@@ -3,6 +3,7 @@ name: executor
 description: >-
   Implements one ticket in the Slay Drip (Outfit Planner) repo, inside its own git worktree, as the single role the ticket names (frontend-engineer, backend-engineer, data-engineer, ai-engineer, eval-engineer, infra-engineer, acceptance-author, architect or docs-steward). Writes the failing test first, then the smallest change that passes it, and runs the repo checks. Use it for one ticket at a time, with the ticket key and worktree path. It stops and reports at any open decision, and does not commit or push unless the ticket says so.
 tools: Read, Grep, Glob, Bash, Write, Edit
+model: haiku
 maxTurns: 60
 ---
 

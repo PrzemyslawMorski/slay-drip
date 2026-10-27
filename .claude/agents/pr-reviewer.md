@@ -3,6 +3,7 @@ name: pr-reviewer
 description: >-
   Reviews a pull request or diff in the Slay Drip (Outfit Planner) repo for correctness, project rule compliance and zero-downtime deployment safety. Every change must stay backward compatible with the version running in production and with clients that have not reloaded yet. Use it on a PR, a branch diff or a set of changed files before merge, especially for changes to backend/migrations/, the HTTP API, config, background jobs, the PWA shell or on-device storage. It reports findings and never edits files, pushes or approves.
 tools: Read, Grep, Glob, Bash
+model: sonnet
 maxTurns: 10
 ---
 
