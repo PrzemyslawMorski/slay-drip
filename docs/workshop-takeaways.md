@@ -1,6 +1,6 @@
-# Workshop takeaways: last two weeks
+# Workshop takeaways
 
-Repo activity from 2026-10-08 to 2026-10-22, grouped by day. Commit hashes are in brackets.
+Repo activity from 2026-10-08 to 2026-10-27, grouped by day. Commit hashes are in brackets.
 
 ## Week 1 (8–14 October)
 
@@ -41,6 +41,14 @@ Repo activity from 2026-10-08 to 2026-10-22, grouped by day. Commit hashes are i
 
 **Takeaway:** once the skills existed, the pipeline (intent → spec → tickets → code → review) could be repeated. Security findings were turned into fixes on the same day.
 
+## Week 3 (23–29 October)
+
+### 2026-10-27: Agent definitions
+
+- Added a PR reviewer agent in `.claude/agents/pr-reviewer.md` [6d2667b]. It checks changes against the repo rulesets and carries zero-downtime rules: expand-only migrations, backward-compatible API changes, and clients that lag behind the server.
+
+**Takeaway:** an agent definition is a repo file, so its rules are versioned and reviewed like code. Keep the rules an agent enforces inside its definition, so one file says both what to check and how to judge it.
+
 ## The pipeline at a glance
 
 | Stage | What exists now | Where it started |
@@ -51,6 +59,7 @@ Repo activity from 2026-10-08 to 2026-10-22, grouped by day. Commit hashes are i
 | Automated review | Claude Code PR review workflow, review conventions | 2026-10-21 |
 | Skills | `spec-from-intent`, ticket breakdown, OWASP review, handoff, master `slay-drip` | 2026-10-21 to 2026-10-22 |
 | CI | Backend workflow, pinned actions, Dependabot | 2026-10-22 |
+| Agent definitions | `.claude/agents/pr-reviewer.md` | 2026-10-27 |
 
 ## The master skill: one entry point that routes to playbooks
 
