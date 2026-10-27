@@ -43,11 +43,21 @@ Repo activity from 2026-10-08 to 2026-10-27, grouped by day. Commit hashes are i
 
 ## Week 3 (23–29 October)
 
-### 2026-10-27: Agent definitions
+### 2026-10-27: Agent definitions and agent guardrails
 
-- Added a PR reviewer agent in `.claude/agents/pr-reviewer.md` [6d2667b]. It checks changes against the repo rulesets and carries zero-downtime rules: expand-only migrations, backward-compatible API changes, and clients that lag behind the server.
+- Added a PR reviewer agent in `.claude/agents/pr-reviewer.md` [6d2667b]. It checks changes against the repo rulesets and carries zero-downtime rules: expand-only migrations, backward-compatible API changes, and clients that lag behind the server. A `maxTurns` limit followed [0401002].
+- Added executor, orchestrator and planner agents [828105e], with a model attribute on all four agents [e113f2c]. ADR-0010 chose self-hosted Keycloak on Scaleway as the identity provider [b409f69].
+- Required git worktrees for any repo change, so parallel agents never share a checkout [f3fb7f3].
 
-**Takeaway:** an agent definition is a repo file, so its rules are versioned and reviewed like code. Keep the rules an agent enforces inside its definition, so one file says both what to check and how to judge it.
+**Five ways to waste agents, and where the repo stands**
+
+- **Persona zoo** (agents with vague roles such as "architect" or "PM"): the executor takes its role from the ticket's role field, not from a separate agent per persona. Keep the role list short.
+- **Micro-agent for trivial tasks** (a whole agent for a two-line fix): open. No rule in the repo yet says when to do a task in the main session instead.
+- **Excessive nesting** (three or more layers of subagents): only the orchestrator has the Agent tool, so dispatch stops at two levels. Executors and the PR reviewer cannot spawn agents.
+- **Concurrent writes to shared context**: one worktree per task and one agent per worktree, per `CLAUDE.md`.
+- **Undefined output contract** (vague results that the main session must interpret): the executor stops and reports at any open decision, and the PR reviewer reports findings without editing or approving. Each agent's output shape still needs writing down as a template.
+
+**Takeaway:** an agent definition is a repo file, so its rules are versioned and reviewed like code. Keep the rules an agent enforces inside its definition, so one file says both what to check and how to judge it. Limit depth and write-access up front, because agents do not limit themselves.
 
 ## The pipeline at a glance
 
@@ -59,7 +69,7 @@ Repo activity from 2026-10-08 to 2026-10-27, grouped by day. Commit hashes are i
 | Automated review | Claude Code PR review workflow, review conventions | 2026-10-21 |
 | Skills | `spec-from-intent`, ticket breakdown, OWASP review, handoff, master `slay-drip` | 2026-10-21 to 2026-10-22 |
 | CI | Backend workflow, pinned actions, Dependabot | 2026-10-22 |
-| Agent definitions | `.claude/agents/pr-reviewer.md` | 2026-10-27 |
+| Agent definitions | `.claude/agents/` (pr-reviewer, executor, orchestrator, planner), worktree rule | 2026-10-27 |
 
 ## The master skill: one entry point that routes to playbooks
 
