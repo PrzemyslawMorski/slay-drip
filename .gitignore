@@ -192,3 +192,6 @@ frontend/playwright-report/
 
 # Handoff notes (kept local, see the handoff skill)
 docs/handoffs/
+
+# Python bytecode
+__pycache__/
