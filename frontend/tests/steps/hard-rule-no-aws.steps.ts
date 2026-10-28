@@ -1,7 +1,7 @@
 // Step definitions for tests/features/hard-rule-no-aws.feature (S1-03.10).
 // A read-only, case-insensitive search of the local identity stack for AWS references. It reads compose.yaml,
-// docs/local-development.md and scripts/dev/keycloak-smoke.sh as files, and the infra/dev/keycloak folder recursively.
-// It does not scan scripts/dev/s3-smoke.sh. No browser is opened, and no docker command or HTTP call is made.
+// docs/local-development.md and scripts/dev/keycloak_smoke.py as files, and the infra/dev/keycloak folder recursively.
+// It does not scan scripts/dev/s3_smoke.py. No browser is opened, and no docker command or HTTP call is made.
 // No .env file is read. A hit is reported as file and line with the token only, never the line's text.
 import { expect, test, type TestInfo } from '@playwright/test';
 import { readdir, readFile, stat } from 'node:fs/promises';
@@ -18,7 +18,7 @@ const FORBIDDEN_TOKENS = ['amazonaws', 'aws-sdk', 'awscli', 'aws cli', 'AWS_'];
 const SCANNED_FILES = [
   'compose.yaml',
   'docs/local-development.md',
-  'scripts/dev/keycloak-smoke.sh',
+  'scripts/dev/keycloak_smoke.py',
 ];
 
 // The folders the scan reads recursively, relative to the repo root.
@@ -59,7 +59,7 @@ function toRepoPath(absolute: string): string {
 }
 
 Given(
-  /^compose\.yaml, the infra\/dev\/keycloak folder, scripts\/dev\/keycloak-smoke\.sh and docs\/local-development\.md are present$/,
+  /^compose\.yaml, the infra\/dev\/keycloak folder, scripts\/dev\/keycloak_smoke.py and docs\/local-development\.md are present$/,
   async () => {
     const texts = new Map<string, string>();
     const missing: string[] = [];

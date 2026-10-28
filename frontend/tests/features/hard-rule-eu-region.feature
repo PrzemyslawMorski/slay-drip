@@ -9,7 +9,7 @@ Feature: EU-only regions in the local identity stack
   # The steps read three committed files as text. No browser is used, and no HTTP call or docker command is made.
 
   Scenario: The local stack uses only the allowed Scaleway regions
-    Given the files compose.yaml, infra/dev/keycloak/realm/slay-drip-realm.json and scripts/dev/keycloak-smoke.sh are present
+    Given the files compose.yaml, infra/dev/keycloak/realm/slay-drip-realm.json and scripts/dev/keycloak_smoke.py are present
     When I read every region value and every Scaleway host in those files
     Then every value is one of fr-par, nl-ams or pl-waw
     And no file names any other Scaleway region

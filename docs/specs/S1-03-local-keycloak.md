@@ -29,7 +29,7 @@ Label note: CLAUDE.md, the security guide and ADR-0010 call the identity provide
 
 - `compose.yaml`: a `keycloak` service, pinned by exact image tag, bound to `127.0.0.1` on one free host port, dev mode with realm import, healthcheck, no named volume.
 - `infra/dev/keycloak/`: the realm import file (clients, audience mapper, service-account role, synthetic users) and the local admin config for the Keycloak console.
-- `scripts/dev/keycloak-smoke.sh`: the smoke check, in the style of `scripts/dev/s3-smoke.sh`.
+- `scripts/dev/keycloak_smoke.py`: the smoke check, in the style of `scripts/dev/s3_smoke.py`.
 - `docs/local-development.md`: Keycloak section, config contract rows, troubleshooting, commands, feature checklist.
 - `frontend/tests/`: the acceptance and hard-rule tests for this spec (see Acceptance criteria and Quality and compliance). This is the only test location the acceptance-author role owns.
 
@@ -138,7 +138,7 @@ Scenario: The local development guide documents the Keycloak config contract
 
 - Unit / integration: none in the app. Acceptance scenarios run as Playwright API tests under `frontend/` (`npm run test:acceptance`), without a browser flow: S1-03.06 to S1-03.08. Hard-rule guards: S1-03.09 to S1-03.11 (Playwright, file checks) and S1-03.12 (Go, `backend/internal/server`). The compose service is also checked by `docker compose config --quiet`.
 - Evals or golden-set checks: N/A.
-- Manual or device checks: `docker compose up -d`, then `bash scripts/dev/keycloak-smoke.sh`, recorded in each PR (local-development feature checklist).
+- Manual or device checks: `docker compose up -d`, then `python scripts/dev/keycloak_smoke.py`, recorded in each PR (local-development feature checklist).
 
 ## Risks and open questions
 
@@ -157,7 +157,7 @@ Scenario: The local development guide documents the Keycloak config contract
 | Ticket keys S1-03.06 to S1-03.12 are appended after S1-03.05, so the numbering does not follow dispatch order. | Readers may assume S1-03.05 runs first. | User (confirm) | Kept, as decided: no renumbering. The Tickets table waves give the order. Every new ticket name starts with its test type (red acceptance or hard-rule). |
 | Hard-rule scenarios are not in the spec's Acceptance criteria. | The checker does not trace them to a build ticket, because a build ticket holds at most three scenarios. | User (confirm) | Each sits in its hard-rule ticket and is cited under Quality and compliance. S1-03.01 to S1-03.03 list the hard-rule tickets they must pass in their Notes. |
 | The user-scoped endpoint guard probes a fixed list of paths. The router has only `GET /healthz` today. | A user-scoped route at a path not on the list would pass the guard. | backend-engineer (S1-03.12) | The list covers the paths this stack would use. Extend it in the same PR as any new route. |
-| `scripts/dev/s3-smoke.sh` uses curl's `--aws-sigv4` option and the `aws:amz` signing name for the S3 API. | The text matches an "AWS" search. It is not an AWS resource, SDK or CLI. | privacy-reviewer (S1-03.04) | Outside the S1-03.10 guard, which scans only the Keycloak files and the local guide. The review confirms it is protocol naming. |
+| `scripts/dev/s3_smoke.py` uses curl's `--aws-sigv4` option and the `aws:amz` signing name for the S3 API. | The text matches an "AWS" search. It is not an AWS resource, SDK or CLI. | privacy-reviewer (S1-03.04) | Outside the S1-03.10 guard, which scans only the Keycloak files and the local guide. The review confirms it is protocol naming. |
 | `roles.md` does not list `docs/local-development.md` for docs-steward (the user reassigned S1-03.03 to docs-steward). | The checker reports one ownership error on S1-03.03 until `roles.md` changes. | User (approve a `roles.md` change) | Add `docs/local-development.md` to the docs-steward owned paths. The planner cannot edit `.claude/`. S1-03.03 is not worked around. |
 
 ## Tickets

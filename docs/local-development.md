@@ -5,14 +5,14 @@ Local run is a first-class target. Every feature that touches a cloud service mu
 ## Prerequisites
 
 - Docker (Docker Desktop on Windows or macOS, Docker Engine on Linux) with Compose v2.
-- `bash` and `curl` for the smoke script. On Windows, Git Bash provides both.
+- Python 3.10 or later for the smoke scripts in `scripts/dev/`. They use only the standard library. Check with `python --version`. On Windows, install Python from python.org, not the Store stub.
 - Go 1.27.3 or later for the backend. The `go` command downloads the toolchain named in `backend/go.mod` on first use.
 
 ## Start and check the object storage stand-in
 
 ```bash
 docker compose up -d                 # start PostgreSQL on 127.0.0.1:5432 and the S3 stand-in on 127.0.0.1:8333
-bash scripts/dev/s3-smoke.sh         # create the dev bucket and round-trip one object
+python scripts/dev/s3_smoke.py         # create the dev bucket and round-trip one object
 ```
 
 A passing run ends with `OK: S3 round-trip passed`. Run it again whenever you change the stand-in or its config.
@@ -23,7 +23,7 @@ Stop the stack without losing data with `docker compose stop`. Wipe all local da
 
 ```bash
 docker compose up -d keycloak        # start Keycloak on 127.0.0.1:8180 (realm imported from infra/dev/keycloak/realm/)
-bash scripts/dev/keycloak-smoke.sh   # discovery, JWKS, PKCE sign-in, admin lifecycle, registration setting
+python scripts/dev/keycloak_smoke.py   # discovery, JWKS, PKCE sign-in, admin lifecycle, registration setting
 ```
 
 A passing run ends with `OK: Keycloak smoke passed`. Run it again after any change to the realm file or to `compose.yaml`.
@@ -72,14 +72,14 @@ The app reads these keys. It must not hard-code any of them, and the same names 
 
 Local values are throwaway and are only valid against the local stand-in. Do not reuse them anywhere else.
 
-The smoke script reads the same names, so you can point it at another S3-compatible endpoint with `S3_ENDPOINT=... bash scripts/dev/s3-smoke.sh`.
+The smoke script reads the same names, so you can point it at another S3-compatible endpoint with `S3_ENDPOINT=... python scripts/dev/s3_smoke.py`.
 
 ## Adding a stand-in for a new service
 
 1. Add a service to `compose.yaml` that speaks the same protocol as the Scaleway service, with its image pinned by tag.
 2. Put its local credentials in `infra/dev/`, never in an `.env` file. Agents must not read `.env` files (CLAUDE.md).
 3. Read its endpoint and credentials through the config contract above, with a new key for each value.
-4. Add a smoke check under `scripts/dev/` that proves the round trip, in the same style as `s3-smoke.sh`.
+4. Add a smoke check under `scripts/dev/` that proves the round trip, in the same style as `s3_smoke.py`.
 5. Record the choice in an ADR, and link it from the spec.
 
 ## Feature checklist (local run)
@@ -107,5 +107,5 @@ Before a feature that uses a cloud service is marked done, its PR must show:
 - **Realm change not picked up:** the import runs on container start. Run `docker compose up -d --force-recreate keycloak`.
 - **`invalid_redirect_uri` or an issuer mismatch:** the redirect URI and `KC_HOSTNAME` must match `OIDC_REDIRECT_URI` and `OIDC_ISSUER_URL`. Use `127.0.0.1` in the issuer, not `localhost`.
 - **Image tag check:** confirm the pinned tag exists with `docker pull keycloak/keycloak:26.8.1`, and compare it with the tags listed on Docker Hub before you bump it.
-- **Smoke step 3 fails at the login form:** the Keycloak login markup changed. Update the parse in `scripts/dev/keycloak-smoke.sh`.
+- **Smoke step 3 fails at the login form:** the Keycloak login markup changed. Update the parse in `scripts/dev/keycloak_smoke.py`.
 - **`migrate-up` fails with `first .: file does not exist`:** `backend/migrations/` has no migrations yet. The first migration arrives with the first feature that stores server-side data (ADR-0008).

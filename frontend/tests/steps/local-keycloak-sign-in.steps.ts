@@ -23,7 +23,7 @@ const runs = new WeakMap<TestInfo, SmokeRun>();
 
 // Runs the smoke script once for this scenario. It fails at once when the script does not exist yet.
 async function runScriptForScenario(): Promise<void> {
-  expect(smokeScriptExists(), 'scripts/dev/keycloak-smoke.sh exists (S1-03.02 creates it)').toBe(
+  expect(smokeScriptExists(), 'scripts/dev/keycloak_smoke.py exists (S1-03.02 creates it)').toBe(
     true,
   );
   const run = await runSmokeScript();

@@ -102,6 +102,7 @@ These come from `docs/requirements.md` and apply to every change, including test
 - **Accessibility**: UI meets WCAG 2.1 AA.
 - **Test data**: workshop sessions use only synthetic, freely licensed personas. Never introduce real personal data into the repo.
 - **Secrets**: agents must never read, search, print, edit or create `.env` files (`.env`, `.env.*`, `*.env`, `.envrc`). Blocked by `permissions.deny` and a PreToolUse hook in the project's `.claude/settings.json`. Ask the user for values instead; do not work around the block through Bash.
+- **Scripts are Python**: repo scripts (dev tooling, smoke checks, hooks, CI helpers) are written in Python using the standard library. Do not add PowerShell (`.ps1`) or bash (`.sh`) scripts to the repo. Docs may show a one-line command that runs a Python script, but not a shell script.
 
 ## Quality bar for AI features
 

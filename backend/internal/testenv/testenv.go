@@ -8,7 +8,7 @@ import (
 )
 
 // localDefaults are the throwaway values of the local stack. They apply only when a key
-// is unset, the same way scripts/dev/s3-smoke.sh does. Never use them outside local development.
+// is unset, the same way scripts/dev/s3_smoke.py does. Never use them outside local development.
 
 //nolint:gosec // G101: throwaway local-stack values (docs/local-development.md), never used outside local development.
 var localDefaults = map[string]string{

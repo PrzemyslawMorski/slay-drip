@@ -97,7 +97,7 @@ Then('it has a Keycloak section with the start and smoke commands', () => {
   const text = (section ?? []).join('\n');
   expect(text, 'the Keycloak section gives the start command').toMatch(/docker compose up/);
   expect(text, 'the Keycloak section gives the smoke command').toMatch(
-    /scripts\/dev\/keycloak-smoke\.sh/,
+    /scripts\/dev\/keycloak_smoke.py/,
   );
 });
 

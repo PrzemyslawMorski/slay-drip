@@ -13,7 +13,7 @@ import (
 )
 
 // TestS3AgainstObjectStorage needs the compose stack running (docker compose up -d) and the
-// bucket created by scripts/dev/s3-smoke.sh. See docs/local-development.md.
+// bucket created by scripts/dev/s3_smoke.py. See docs/local-development.md.
 func TestS3AgainstObjectStorage(t *testing.T) {
 	blobs, err := NewS3(Config{
 		Endpoint:       testenv.Get(t, "S3_ENDPOINT"),

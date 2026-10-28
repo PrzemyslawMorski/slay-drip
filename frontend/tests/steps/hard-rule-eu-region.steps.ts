@@ -21,7 +21,7 @@ const OTHER_SCALEWAY_REGIONS = ['it-mil'];
 const SCANNED_FILES = [
   'compose.yaml',
   'infra/dev/keycloak/realm/slay-drip-realm.json',
-  'scripts/dev/keycloak-smoke.sh',
+  'scripts/dev/keycloak_smoke.py',
 ];
 
 // A Scaleway region name, such as fr-par, with an optional trailing digit.
@@ -92,7 +92,7 @@ function scanFile(file: string, text: string, result: ScanResult): void {
 }
 
 Given(
-  /^the files compose\.yaml, infra\/dev\/keycloak\/realm\/slay-drip-realm\.json and scripts\/dev\/keycloak-smoke\.sh are present$/,
+  /^the files compose\.yaml, infra\/dev\/keycloak\/realm\/slay-drip-realm\.json and scripts\/dev\/keycloak_smoke.py are present$/,
   async () => {
     const texts = new Map<string, string>();
     const missing: string[] = [];

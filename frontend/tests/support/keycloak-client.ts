@@ -1,5 +1,5 @@
 // Helpers for the sign-in and admin scenarios (tests/features/local-keycloak-sign-in.feature, S1-03.07).
-// The smoke script (scripts/dev/keycloak-smoke.sh, S1-03.02) makes the token, admin and registration calls.
+// The smoke script (scripts/dev/keycloak_smoke.py, S1-03.02) makes the token, admin and registration calls.
 // This file only runs the script as a child process, reads the committed realm file, and reports the script's
 // exit status and output lines. It never re-derives a token, and it never reads or prints the admin client secret,
 // the persona password or a token. No browser is used.
@@ -9,7 +9,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { REPO_ROOT } from './keycloak-stack';
 
-export const SMOKE_SCRIPT = path.join(REPO_ROOT, 'scripts', 'dev', 'keycloak-smoke.sh');
+export const SMOKE_SCRIPT = path.join(REPO_ROOT, 'scripts', 'dev', 'keycloak_smoke.py');
 export const REALM_FILE = path.join(
   REPO_ROOT,
   'infra',
@@ -48,28 +48,18 @@ export interface CommittedRealm {
   users?: RealmUser[];
 }
 
-// Git Bash on Windows. A WSL bash.exe on PATH would run the script inside WSL, so prefer Git Bash when it exists.
-const GIT_BASH_WINDOWS = 'C:\\Program Files\\Git\\bin\\bash.exe';
-
-function bashCommand(): string {
-  if (process.platform === 'win32' && existsSync(GIT_BASH_WINDOWS)) {
-    return GIT_BASH_WINDOWS;
-  }
-  return 'bash';
-}
-
-// Runs `bash scripts/dev/keycloak-smoke.sh` from the repo root and resolves with its exit status and output.
-// A non-zero exit resolves (the scenario decides what it means). A failure to start bash rejects.
+// Runs `python scripts/dev/keycloak_smoke.py` from the repo root and resolves with its exit status and output.
+// A non-zero exit resolves (the scenario decides what it means). A failure to start python rejects.
 // The output is returned to the caller and not printed here, because the script's output is the only evidence.
 export function runSmokeScript(timeoutMs = 240_000): Promise<SmokeRun> {
   return new Promise((resolve, reject) => {
     execFile(
-      bashCommand(),
-      ['scripts/dev/keycloak-smoke.sh'],
+      'python',
+      ['scripts/dev/keycloak_smoke.py'],
       { cwd: REPO_ROOT, timeout: timeoutMs, maxBuffer: 8 * 1024 * 1024, windowsHide: true },
       (error, stdout, stderr) => {
         if (error && typeof error.code === 'string') {
-          reject(new Error(`could not start bash for the smoke script: ${error.message}`));
+          reject(new Error(`could not start python for the smoke script: ${error.message}`));
           return;
         }
         resolve({
