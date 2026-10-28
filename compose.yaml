@@ -35,6 +35,29 @@ services:
       - object-storage-data:/data
     restart: unless-stopped
 
+  keycloak:
+    # Stand-in for the identity provider (ADR-0010). Pinned: bump deliberately.
+    # Tag checked on Docker Hub 2026-10-28 (latest stable 26.8.x).
+    image: keycloak/keycloak:26.8.1
+    command: start-dev --import-realm
+    env_file:
+      - ./infra/dev/keycloak/local-admin.conf
+    environment:
+      KC_HOSTNAME: http://127.0.0.1:8180
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "127.0.0.1:8180:8080"
+    volumes:
+      - ./infra/dev/keycloak/realm:/opt/keycloak/data/import:ro
+    healthcheck:
+      # The image ships bash but no curl. The management port (9000) serves /health/ready.
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.0\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '\"status\": \"UP\"'"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+    restart: unless-stopped
+
 volumes:
   database-data:
   object-storage-data:
