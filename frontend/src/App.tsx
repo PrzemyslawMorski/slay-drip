@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { en } from './strings/en';
 import { getAgeConfirmed } from './storage/localDb';
 import { AgeGate } from './components/AgeGate';
+import { AuthPanel } from './auth/AuthPanel';
 import { OutfitBuilder } from './components/OutfitBuilder';
 import { OutfitsScreen } from './components/OutfitsScreen';
 import { WardrobeScreen } from './components/WardrobeScreen';
@@ -28,6 +29,7 @@ export function App() {
     <div className="app">
       <header className="app-header">
         <p className="app-name">{en.app.name}</p>
+        <AuthPanel />
       </header>
       <main className="app-main">
         {phase === 'age' && (

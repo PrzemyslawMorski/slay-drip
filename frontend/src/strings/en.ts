@@ -75,4 +75,12 @@ export const en = {
     unreadable: 'This photo could not be read. Try another photo.',
     saveFailed: 'The photo could not be saved on this device. Try again.',
   },
+  auth: {
+    groupLabel: 'Account',
+    signIn: 'Sign in',
+    register: 'Create account',
+    signedIn: 'Signed in',
+    signOut: 'Sign out',
+    failed: 'Sign-in did not complete. Try again.',
+  },
 } as const;
