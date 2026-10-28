@@ -1,4 +1,4 @@
-@S1-03 @mode:serial
+@S1-03 @mode:serial @stack-lifecycle
 Feature: Local identity provider stack acceptance tests
   As a considered dresser
   I want the local identity provider's start-up and discovery behaviour checked by executable tests
