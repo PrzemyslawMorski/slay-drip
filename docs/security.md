@@ -81,7 +81,7 @@ Anything that is not obviously in one of these classes is **Personal** until som
 
 ## 8. AI features
 
-- **Minimise what the model sees.** No names, emails, user IDs or location in prompts. Use an opaque per-request reference if the job needs one.
+- **Minimise what the model sees.** No names, emails, user IDs or location in prompts. Use an opaque per-request reference if the job needs one. The agent's `block-pii-egress` hook (`.claude/hooks/`) blocks outbound tool calls, including subagent prompts, web queries and MCP calls, that contain emails, cards, IBANs, PESEL numbers, phone numbers, IPs or secrets.
 - **Treat all user text as untrusted** (free-text occasions, item names, notes). It is data, never instructions. Do not let model output choose tools, change permissions, or write to other users' data.
 - **Hard constraints are enforced in code, not by the model.** Availability, weather, modesty and adaptive rules are filters that run after generation and before display. If the wardrobe cannot satisfy a request, return an honest "cannot" and a gap suggestion, not a weak outfit.
 - **Body-talk guardrails are a safety control.** Banned language (weight, "hide", "slimming", "unflattering") is checked in prompts and in output. Adversarial tone tests run in CI (S4-03). A change that weakens them is a security regression.

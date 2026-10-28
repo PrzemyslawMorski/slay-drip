@@ -3,6 +3,7 @@ name: planner
 description: >-
   Plans work in the Slay Drip (Outfit Planner) repo before any code is written. Checks the requirement gate, turns an idea or a spec into a spec, breaks a spec into role-assigned tickets, orders them by dependency and flags open decisions. Use it when a feature, decision or change is new, a spec or tickets are missing, or the orchestrator needs a work breakdown. It writes plans, specs and tickets under docs/ only and never writes application code.
 tools: Read, Grep, Glob, Bash, Write, Edit
+model: sonnet
 maxTurns: 25
 ---
 

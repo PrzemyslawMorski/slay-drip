@@ -7,6 +7,7 @@ Where each kind of written decision or plan lives, and how to start a new one fr
 | [`requirements.md`](requirements.md) | Product scope, functional and quality requirements. Source of truth for *what* to build. | n/a | single file |
 | [`security.md`](security.md) | Security and privacy rules for building the app: 18+ gate, consent, EU-only, secrets, logging, AI, PR checklist. | n/a | single file |
 | [`code-review/`](code-review/) | Review conventions for human and AI reviewers: the rules to check in a diff (EU-only, 18+, GDPR, secrets, guardrails). Start with its README. | n/a | one README plus one file per rule area |
+| [`agent-guardrails.md`](agent-guardrails.md) | What the agent PreToolUse hooks block (worktrees, env files, recursive deletes, outbound personal data) and how to run git and PR commands within them. Read before your first shell or git command. | n/a | single file |
 | [`local-development.md`](local-development.md) | How to run the app and its cloud stand-ins on a developer machine (`compose.yaml`). Local run is a first-class target. | n/a | single file |
 | [`adr/`](adr/) | Architecture Decision Records: one significant, hard-to-reverse decision each. | [`_template.md`](adr/_template.md) | `NNNN-kebab-title.md`, next free number, never renumbered |
 | [`discovery/`](discovery/) | Research, spikes and investigations that answer questions before a decision or spec. | [`_template.md`](discovery/_template.md) | `YYYY-MM-DD-kebab-topic.md` |

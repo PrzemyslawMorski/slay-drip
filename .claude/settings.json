@@ -16,13 +16,76 @@
     ]
   },
   "hooks": {
-    "PreToolUse": [
+    "PreCompact": [
       {
-        "matcher": "Read|Edit|Write|MultiEdit|Grep|Glob|Bash",
+        "matcher": "manual|auto",
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-env-files.ps1\""
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/save_precompact_snapshot.py\"",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "manual|auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/save_postcompact_summary.py\"",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/restore_after_compact.py\"",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write|MultiEdit|Grep|Glob|Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/block_env_files.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/block_recursive_delete.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/require_worktree.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "Agent|Bash|PowerShell|Monitor|WebSearch|WebFetch|Artifact|ArtifactData|ArtifactComments|SendMessage|PushNotification|RemoteTrigger|PublishPlugin|DesignSync|CronCreate|Workflow|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/block_pii_egress.py\""
           }
         ]
       }
