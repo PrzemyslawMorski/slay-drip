@@ -1,6 +1,6 @@
 # Workshop takeaways
 
-Repo activity from 2026-10-08 to 2026-10-27, grouped by day. Commit hashes are in brackets.
+Repo activity from 2026-10-08 to 2026-10-28, grouped by day. Commit hashes are in brackets.
 
 ## Week 1 (8–14 October)
 
@@ -59,6 +59,38 @@ Repo activity from 2026-10-08 to 2026-10-27, grouped by day. Commit hashes are i
 
 **Takeaway:** an agent definition is a repo file, so its rules are versioned and reviewed like code. Keep the rules an agent enforces inside its definition, so one file says both what to check and how to judge it. Limit depth and write-access up front, because agents do not limit themselves.
 
+### 2026-10-28: Hooks in Python, local Keycloak and CI for integration services
+
+- Moved the agent hooks from PowerShell to Python and added compaction hooks [ea3d829]. The Python requirement is documented in [agent-guardrails.md](agent-guardrails.md) [3b5e8cf]. The guards are described there, not repeated here.
+- Added the local Keycloak stand-in, its realm, a PKCE smoke script and the signed-in wardrobe path on `feat/local-keycloak` [810b93c, ecd426d, 060033c, 7e878ba]. Wardrobe API and consent storage are on `feat/wardrobe-api` [cf6d38c, 008e221].
+- The backend integration job now applies migrations and starts the object-storage stand-in before its tests [b909bf0, dba7621 on `ci/integration-services`].
+
+**Hooks: what they are and what they do**
+
+Hooks are set in `.claude/settings.json` and run scripts in `.claude/hooks/`. The harness runs them at fixed events, so they apply on every call without the agent having to remember them.
+
+- **PreToolUse** runs before a tool call. It can block the call with exit code 2, and the message goes back to the agent. Four guards run here: `.env` files, recursive deletes, edits and branch changes outside a linked worktree, and personal data or secrets leaving the machine (agent prompts, web calls, MCP servers, publishing, outbound shell commands).
+- **PreCompact** saves the repo state before context is compacted, outside the repo.
+- **PostCompact** saves the compaction summary to disk, because its output never reaches the model.
+- **SessionStart** with the `compact` matcher restores the saved state and the latest handoff after compaction.
+
+The PreCompact, PostCompact and SessionStart hooks never block. Only PreToolUse does.
+
+**Status of the system today**
+
+- **Keycloak:** ADR-0010 chose self-hosted Keycloak on Scaleway [b409f69]. The local stack runs Keycloak 26.8.1 with a readiness check on its management port. S1-03 has its specs and red acceptance scenarios on the branch. Self-registration is on [41ae32f]. Not yet merged to `main`.
+- **Local stack:** `compose.yaml` on the branch adds the Keycloak service next to PostgreSQL and the SeaweedFS S3 stand-in. Both smoke scripts are now Python [fae1790]. A rule in `CLAUDE.md` requires Python for the scripts.
+- **CI:** the backend workflow now starts the same object storage as `compose.yaml` and applies migrations before the integration tests. Before this, the job failed on a missing `consents` table and a refused connection on port 8333. Both changes are on `ci/integration-services`, not merged. Frontend Playwright runs in parallel, with the stack lifecycle first [6bb4b66].
+- **Not run today:** the local stack, the smoke scripts and the CI changes have not been run in a session that records the result. Check them before merging.
+
+**Takeaway:** a hook runs on every call, while a rule in a prompt depends on the agent remembering it. Put the rules that must hold in hooks, and keep the stack CI uses identical to the one developers run.
+
+**Still open**
+
+- The hooks fail open. A `SessionStart` check now warns the agent when `python` is missing or older than 3.10, so the guards are no longer silently off. The warning reaches the agent, not the person at the keyboard, so check it yourself too.
+- The Keycloak and CI work needs review and merge.
+- The consent deletion gap from 2026-10-27 is still open.
+
 ## The pipeline at a glance
 
 | Stage | What exists now | Where it started |
@@ -70,6 +102,8 @@ Repo activity from 2026-10-08 to 2026-10-27, grouped by day. Commit hashes are i
 | Skills | `spec-from-intent`, ticket breakdown, OWASP review, handoff, master `slay-drip` | 2026-10-21 to 2026-10-22 |
 | CI | Backend workflow, pinned actions, Dependabot | 2026-10-22 |
 | Agent definitions | `.claude/agents/` (pr-reviewer, executor, orchestrator, planner), worktree rule | 2026-10-27 |
+| Hooks | `.claude/hooks/` (Python), PreToolUse guards, compaction hooks | 2026-10-13 (`.env` guard), 2026-10-28 (Python port and compaction hooks) |
+| Local identity | Keycloak stand-in on `feat/local-keycloak` (not merged) | 2026-10-27 (spec), 2026-10-28 (stack) |
 
 ## The master skill: one entry point that routes to playbooks
 

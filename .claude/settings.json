@@ -42,6 +42,14 @@
     ],
     "SessionStart": [
       {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python -c \"import sys; sys.exit(sys.version_info < (3, 10))\" >/dev/null 2>&1 || echo 'WARNING: Python 3.10 or later is not on PATH, so the guards in .claude/hooks/ are not running. Tell the user. Install Python from python.org and check with python --version.'"
+          }
+        ]
+      },
+      {
         "matcher": "compact",
         "hooks": [
           {

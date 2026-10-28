@@ -9,7 +9,7 @@ The hooks are Python scripts that use only the standard library, so there is not
 - **Python 3.13** (tested on 3.13; the code needs 3.10 or later). Git and `gh` must also be on PATH for the worktree and PR checks.
 - **`python` must resolve to that interpreter** from the shell that Claude Code uses. The hook commands in `.claude/settings.json` call `python` directly.
 - **Windows:** the Microsoft Store `python.exe` stub is not a real interpreter, and a machine that has only the `py` launcher has no `python` command. Install Python from python.org and check with `python --version`.
-- **Fail open:** if `python` is missing, the hooks do not run and the guards do not block anything, with no error. Check `python --version` before relying on the guards.
+- **Fail open, with a warning:** if `python` is missing or older than 3.10, the hooks do not run and the guards do not block anything. A `SessionStart` check prints a warning into the agent's context at the start of each session. That check runs in the shell, not in Python, so it still works when Python is missing. Check `python --version` before relying on the guards.
 
 ## What each hook blocks
 
