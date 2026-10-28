@@ -4,21 +4,17 @@ package db
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"slaydrip/backend/internal/testenv"
 )
 
-// TestOpenAgainstPostgres needs the compose stack running (docker compose up -d)
-// and DATABASE_URL set. See docs/local-development.md.
+// TestOpenAgainstPostgres needs the compose stack running (docker compose up -d).
+// See docs/local-development.md.
 func TestOpenAgainstPostgres(t *testing.T) {
-	databaseURL := os.Getenv("DATABASE_URL")
-	if databaseURL == "" {
-		t.Fatal("DATABASE_URL must be set for integration tests (see docs/local-development.md)")
-	}
-
-	pool, err := Open(context.Background(), databaseURL)
+	pool, err := Open(context.Background(), testenv.Get(t, "DATABASE_URL"))
 	require.NoError(t, err)
 	t.Cleanup(pool.Close)
 
