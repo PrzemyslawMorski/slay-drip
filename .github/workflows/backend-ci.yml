@@ -93,6 +93,12 @@ jobs:
         working-directory: .
         run: |
           docker compose up -d --wait object-storage
+          # --wait only checks the container is running. Wait until the S3 gateway answers HTTP.
+          for _ in $(seq 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8333/ || true)
+            if [ "$code" != "000" ] && [ "${code:0:1}" != "5" ]; then break; fi
+            sleep 1
+          done
           python3 scripts/dev/s3_smoke.py
 
       - name: Integration tests
