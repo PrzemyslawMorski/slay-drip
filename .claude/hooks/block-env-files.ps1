@@ -12,11 +12,19 @@ $toolName  = [string]$payload.tool_name
 $toolInput = $payload.tool_input
 if ($null -eq $toolInput) { exit 0 }
 
+# Message text is prose, not file access: a commit message or PR body may mention an env file by name.
+# Quoted heredocs (<<'EOF') and unexpanded -m / --title / --body values are removed before the scan.
+# Values with $ or a backtick are kept, because they can run commands such as $(cat <env file>).
+function Remove-ProseArguments([string]$command) {
+    $command = [regex]::Replace($command, '(?s)<<\s*''(\w+)''\r?\n.*?\r?\n\s*\1\b', ' ')
+    return [regex]::Replace($command, '(?<=\s)(?:-m|--message|--title|--body)(?:\s+|=)"[^"$`]*"', ' ')
+}
+
 # Collect candidate path-like strings from the call.
 $candidates = @()
 if ($toolName -in 'Bash', 'PowerShell') {
     if ($toolInput.command) {
-        $candidates += [regex]::Split([string]$toolInput.command, '[\s''"`;|&<>()=,]+')
+        $candidates += [regex]::Split((Remove-ProseArguments ([string]$toolInput.command)), '[\s''"`;|&<>()=,]+')
     }
 } else {
     foreach ($prop in 'file_path', 'notebook_path', 'path', 'glob') {

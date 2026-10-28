@@ -12,18 +12,25 @@ $toolName  = [string]$payload.tool_name
 $toolInput = $payload.tool_input
 if ($null -eq $toolInput) { exit 0 }
 
+# Git Bash writes paths as /c/repos/...; Windows .NET path APIs need C:/repos/... to resolve them.
+function ConvertTo-WindowsPath([string]$path) {
+    if ($path -match '^/([a-zA-Z])(/.*)?$') { return ($matches[1].ToUpper() + ':' + $matches[2]) }
+    return $path
+}
+
 # Relative paths and bare git commands resolve from the session's working directory.
 $sessionDir = if ($payload.cwd) { [string]$payload.cwd }
     elseif ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR }
     else { (Get-Location).Path }
-$sessionDir = [IO.Path]::GetFullPath($sessionDir).TrimEnd('\')
+$sessionDir = [IO.Path]::GetFullPath((ConvertTo-WindowsPath $sessionDir)).TrimEnd('\')
 
 # Git commands that change the working tree, index or branch state.
 $mutatingGit = '\bgit\s+(?:(?:-C|-c)\s+\S+\s+)*(add|commit|checkout|switch|restore|merge|rebase|reset|cherry-pick|revert|stash|am|apply|clean|mv|rm)(\s|$)'
 
+# Bash and PowerShell both carry the command in tool_input.command.
 $isEditTool = $toolName -in 'Edit', 'Write', 'MultiEdit', 'NotebookEdit'
-$isBash     = $toolName -eq 'Bash'
-if (-not ($isEditTool -or $isBash)) { exit 0 }
+$isShell    = $toolName -in 'Bash', 'PowerShell'
+if (-not ($isEditTool -or $isShell)) { exit 0 }
 
 # Nearest existing directory at or above a path, so a new file in a new folder still resolves to its repo.
 function Resolve-ExistingDir([string]$path) {
@@ -53,10 +60,10 @@ if ($isEditTool) {
     $actionDir = $sessionDir
     # A leading "cd <dir> &&" or a "git -C <dir>" moves the directory the git command runs in.
     if ($command -match '^\s*cd\s+"?([^"&;|]+?)"?\s*(&&|;)') {
-        $actionDir = Resolve-ExistingDir ([IO.Path]::Combine($actionDir, $matches[1].Trim()))
+        $actionDir = Resolve-ExistingDir ([IO.Path]::Combine($actionDir, (ConvertTo-WindowsPath $matches[1].Trim())))
     }
     if ($actionDir -and $command -match '\bgit\s+-C\s+"?([^"\s;|&]+)"?') {
-        $actionDir = Resolve-ExistingDir ([IO.Path]::Combine($actionDir, $matches[1]))
+        $actionDir = Resolve-ExistingDir ([IO.Path]::Combine($actionDir, (ConvertTo-WindowsPath $matches[1])))
     }
     $blockedLabel = "'$command'"
 }

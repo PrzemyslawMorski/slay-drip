@@ -11,6 +11,12 @@ $toolInput = $payload.tool_input
 if ($null -eq $toolInput -or -not $toolInput.command) { exit 0 }
 $command = [string]$toolInput.command
 
+# Message text is prose, not a delete: a commit message or PR body may name the command.
+# Quoted heredocs (<<'EOF') and unexpanded -m / --title / --body values are removed before the scan.
+# Values with $ or a backtick are kept, because they can run commands.
+$command = [regex]::Replace($command, '(?s)<<\s*''(\w+)''\r?\n.*?\r?\n\s*\1\b', ' ')
+$command = [regex]::Replace($command, '(?<=\s)(?:-m|--message|--title|--body)(?:\s+|=)"[^"$`]*"', ' ')
+
 $patterns = @(
     '(?<![\w-])(?:[\w./\\-]*[/\\])?rm\s+(?:-\S+\s+)*(?:-[a-zA-Z]*[rR][a-zA-Z]*\b|--recursive\b)',
     '(?i)(?<![\w-])(?:remove-item|rm|ri|rmdir|rd|del|erase)\s+(?:[^;|&\n]*\s)?-(?:recurse|r)\b',
