@@ -6,10 +6,10 @@ The PreToolUse hooks in `.claude/hooks/` stop agents from doing things this repo
 
 | Hook | Blocks | Matches on |
 | --- | --- | --- |
-| `require-worktree.ps1` | Edits, and git commands that change state (`add`, `commit`, `checkout`, `merge`, ...), in the main checkout | The directory the call acts on |
-| `block-env-files.ps1` | Reading, searching or editing env files (`.env`, `.env.*`, `*.env`, `.envrc`) | Path-like words in the command, and dot-globs such as `.en*` |
-| `block-recursive-delete.ps1` | Recursive deletes: `rm -r` in any flag order, `Remove-Item -Recurse`, `rd /s`, `del /s` | Command text |
-| `block-pii-egress.ps1` | Outbound calls (`gh`, `git push`, `curl`, web and MCP tools, subagent prompts) that contain emails, phone numbers, card or bank numbers, IPs, secrets, or personal identifiers from the user's own list | Command text and tool input |
+| `require_worktree.py` | Edits, and git commands that change state (`add`, `commit`, `checkout`, `merge`, ...), in the main checkout | The directory the call acts on |
+| `block_env_files.py` | Reading, searching or editing env files (`.env`, `.env.*`, `*.env`, `.envrc`) | Path-like words in the command, and dot-globs such as `.en*` |
+| `block_recursive_delete.py` | Recursive deletes: `rm -r` in any flag order, `Remove-Item -Recurse`, `rd /s`, `del /s` | Command text |
+| `block_pii_egress.py` | Outbound calls (`gh`, `git push`, `curl`, web and MCP tools, subagent prompts) that contain emails, phone numbers, card or bank numbers, IPs, secrets, or personal identifiers from the user's own list | Command text and tool input |
 
 The env-file and recursive-delete guards ignore message text. Quoted heredocs (`<<'EOF'`) and unexpanded `-m`, `--title` and `--body` values are removed before the scan, so a commit message or PR body can name a file or a command. A value with `$` or a backtick is still scanned.
 
