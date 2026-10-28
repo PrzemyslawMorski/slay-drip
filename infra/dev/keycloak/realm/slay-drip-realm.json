@@ -1,0 +1,103 @@
+{
+  "realm": "slay-drip",
+  "enabled": true,
+  "displayName": "Slay Drip (local)",
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "accessTokenLifespan": 300,
+  "clients": [
+    {
+      "clientId": "slay-drip-pwa",
+      "name": "Slay Drip PWA (local)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://localhost:5173/auth/callback"],
+      "webOrigins": ["http://localhost:5173"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/"
+      },
+      "protocolMappers": [
+        {
+          "name": "slay-drip-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "slay-drip-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "slay-drip-backend-admin",
+      "name": "Slay Drip backend admin (local)",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "slaydrip-local-admin-secret",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "clientAuthenticatorType": "client-secret"
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-slay-drip-backend-admin",
+      "enabled": true,
+      "serviceAccountClientId": "slay-drip-backend-admin",
+      "clientRoles": {
+        "realm-management": ["manage-users"]
+      }
+    },
+    {
+      "username": "persona.menswear@example.test",
+      "email": "persona.menswear@example.test",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Alex",
+      "lastName": "Sample",
+      "requiredActions": [],
+      "credentials": [
+        { "type": "password", "value": "slaydrip-local-persona-1", "temporary": false }
+      ]
+    },
+    {
+      "username": "persona.womenswear@example.test",
+      "email": "persona.womenswear@example.test",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Jordan",
+      "lastName": "Sample",
+      "requiredActions": [],
+      "credentials": [
+        { "type": "password", "value": "slaydrip-local-persona-2", "temporary": false }
+      ]
+    },
+    {
+      "username": "smoke.user@example.test",
+      "email": "smoke.user@example.test",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Riley",
+      "lastName": "Smoke",
+      "requiredActions": [],
+      "credentials": [
+        { "type": "password", "value": "slaydrip-local-smoke-1", "temporary": false }
+      ]
+    }
+  ]
+}

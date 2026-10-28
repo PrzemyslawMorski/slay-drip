@@ -57,7 +57,7 @@ Look for: SQL built by string concatenation or formatting; shell commands with i
 In this repo:
 - No SQL yet. `backend/internal/db/db.go` only opens a pool and pings. Every future query must use placeholders (security guide 6, pgx parameters).
 - `frontend/src` has no `dangerouslySetInnerHTML`, `innerHTML` or `eval` in the current code. Outfit names and item labels reach React as text. Re-check on each change.
-- `scripts/dev/s3-smoke.sh`: check that no argument is interpolated unquoted into a command.
+- `scripts/dev/s3_smoke.py`: check that no argument is interpolated unquoted into a command.
 - AI injection (security guide 8, treat user text as data) applies once outfit generation exists. Not applicable yet.
 
 ## A06:2025 Insecure Design
