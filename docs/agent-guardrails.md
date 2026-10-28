@@ -2,6 +2,15 @@
 
 The PreToolUse hooks in `.claude/hooks/` stop agents from doing things this repo forbids. They run on every Bash and PowerShell call and on the file tools. This page says what each hook checks and how to do routine work without tripping it. Read it before your first git, GitHub or shell command in this repo.
 
+## Requirements
+
+The hooks are Python scripts that use only the standard library, so there is nothing to install beyond Python itself.
+
+- **Python 3.13** (tested on 3.13; the code needs 3.10 or later). Git and `gh` must also be on PATH for the worktree and PR checks.
+- **`python` must resolve to that interpreter** from the shell that Claude Code uses. The hook commands in `.claude/settings.json` call `python` directly.
+- **Windows:** the Microsoft Store `python.exe` stub is not a real interpreter, and a machine that has only the `py` launcher has no `python` command. Install Python from python.org and check with `python --version`.
+- **Fail open:** if `python` is missing, the hooks do not run and the guards do not block anything, with no error. Check `python --version` before relying on the guards.
+
 ## What each hook blocks
 
 | Hook | Blocks | Matches on |
