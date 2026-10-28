@@ -1,6 +1,6 @@
 name: Backend CI
 
-# Checks the Go backend on every pull request that touches it: vet, unit tests, lint, vulnerability scan and integration tests against a PostgreSQL service container.
+# Checks the Go backend on every pull request that touches it: vet, unit tests, lint, vulnerability scan and integration tests against a PostgreSQL service container and the compose object-storage stand-in.
 # Read-only. No secrets, no deploy step. Tool versions come from backend/go.mod (tool directive), not from the workflow.
 
 on:
@@ -82,6 +82,18 @@ jobs:
         with:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
+
+      - name: Apply migrations
+        run: |
+          go install -tags postgres github.com/golang-migrate/migrate/v4/cmd/migrate@v4.20.1
+          "$(go env GOPATH)/bin/migrate" -path migrations -database "$DATABASE_URL" up
+
+      - name: Start object storage
+        # Same S3 stand-in as compose.yaml. Pinned there, not here.
+        working-directory: .
+        run: |
+          docker compose up -d --wait object-storage
+          python3 scripts/dev/s3_smoke.py
 
       - name: Integration tests
         run: go test -tags=integration ./...
