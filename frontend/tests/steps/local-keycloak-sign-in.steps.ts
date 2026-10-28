@@ -118,7 +118,7 @@ Then('the throwaway user is no longer found afterwards', () => {
   expectStepPassed(recordedRun(), 4, 'the lookup after the delete');
 });
 
-// Scenario 3: self-service registration off, static check of the committed file.
+// Scenario 3: self-service registration on, static check of the committed file.
 
 // A regular expression, because a Cucumber expression reads the "/" in the path as an alternative.
 Given(
@@ -133,10 +133,10 @@ When('the smoke script reads that file', async () => {
   await runScriptForScenario();
 });
 
-Then('registrationAllowed is false', async () => {
+Then('registrationAllowed is true', async () => {
   // Read from the committed file, the same file the script reads. The admin client cannot read the live realm.
   const realm = await readCommittedRealm();
-  expect(realm.registrationAllowed, 'registrationAllowed in the committed realm file').toBe(false);
+  expect(realm.registrationAllowed, 'registrationAllowed in the committed realm file').toBe(true);
 });
 
 Then('the script reports this as a static check of the committed file', () => {

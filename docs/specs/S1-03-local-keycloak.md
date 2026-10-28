@@ -43,7 +43,7 @@ Label note: CLAUDE.md, the security guide and ADR-0010 call the identity provide
 
 - Client `slay-drip-pwa`: public. Authorization code flow with PKCE, method `S256` required. Direct grants and implicit flow off. Redirect URI and web origin for the local frontend only (`http://localhost:5173`, the Vite default). The callback path `/auth/callback` is proposed here and confirmed by the frontend ticket that adds sign-in. An audience mapper adds `slay-drip-api` to access tokens.
 - Client `slay-drip-backend-admin`: confidential, client credentials through a service account. The service account holds the realm-management role `manage-users` and no other role. Deleting a user and revoking its sessions both need only that role. If a later ticket needs more, it records why.
-- Self-service registration off (`registrationAllowed: false`). Sign-up goes through the app, where the 18+ gate is enforced, not through a Keycloak form.
+- Self-service registration on in the local realm only (`registrationAllowed: true`), amended 2026-10-28 at the user's request. The Keycloak form is the sign-up entry point, so the server-side 18+ gate (F1.1, BE-49) is still needed before any real sign-up. It is not built yet.
 - Access token lifespan 300 seconds (security guide, section 5).
 - Three synthetic users: emails on `example.test`, invented names, no age, date of birth, postal address, body or special-category attributes. Keycloak stores only the account identifier, email and credentials (ADR-0010).
 
@@ -103,10 +103,10 @@ Scenario: The backend admin client can create, log out and delete a throwaway us
   Then the create, logout and delete calls return HTTP 201, 204 and 204
   And the throwaway user is no longer found afterwards
 
-Scenario: Self-service registration is off in the local realm
+Scenario: Self-service registration is on in the local realm
   Given the committed realm file is infra/dev/keycloak/realm/slay-drip-realm.json
   When the smoke script reads that file
-  Then registrationAllowed is false
+  Then registrationAllowed is true
   And the script reports this as a static check of the committed file
 ```
 
@@ -131,7 +131,7 @@ Scenario: The local development guide documents the Keycloak config contract
   - Synthetic personas only in the realm and smoke fixtures: S1-03.11.
   - No user-scoped API endpoint added by this spec: S1-03.12.
 - Consent, retention and EU-only impact: no personal data, only synthetic personas. Keycloak holds the account identifier, email and credentials, so the production version falls under the Scaleway EU-region rules in ADR-0010. Local data is wiped with `docker compose down`. The only external traffic is the image pull, which carries no personal data. No consent record lives in Keycloak; consent stays in the app's database.
-- Age gate: F1.1 is enforced by the app at sign-up on the server. This spec adds no age data to Keycloak and keeps self-registration off so that sign-up cannot skip the app's gate.
+- Age gate: F1.1 is enforced by the app at sign-up on the server. This spec adds no age data to Keycloak and turns self-registration on for local development only. Sign-up can therefore skip the app's 18+ gate until the server-side gate is built (open item).
 - Accessibility (WCAG 2.1 AA) impact: none in this slice. The login page is Keycloak's own page. Its accessibility is checked when the sign-in screen is built.
 
 ## Test plan
@@ -150,7 +150,7 @@ Scenario: The local development guide documents the Keycloak config contract
 | The smoke parses the login form HTML. | A different Keycloak release could change the markup and break the check. | infra-engineer (S1-03.02) | The image is pinned. Note the markup dependency in the script. |
 | Local realm uses password credentials. | Could be read as a decision on the MVP login method. | Product owner | Not a decision. The realm is for synthetic users only. Passkeys or magic links stay open in ADR-0010. |
 | Throwaway secrets sit in committed files. | Someone may reuse them outside local dev. | privacy-reviewer (S1-03.04) | Same rule as `s3.json` (ADR-0005). Reviewed in S1-03.04. |
-| Self-registration off means sign-up must come through the app. | The sign-up design must put the 18+ gate on the server. | Owner of the Session 1 sign-up spec (not written yet) | The sign-up ticket owns the gate test. This spec does not decide the sign-up design. |
+| Self-registration on (local realm) lets sign-up skip the app. | The 18+ gate must be enforced on the server before any real sign-up, and the local realm must hold synthetic users only. | Owner of the Session 1 sign-up spec (not written yet) | The sign-up ticket owns the gate test. This spec does not decide the sign-up design. |
 | The admin client cannot read the realm (no `view-realm`), so `registrationAllowed` is checked in the committed file only. | The live state is not proven. | infra-engineer (S1-03.02) | Say "static check" in the script output. Grant no extra role without a recorded reason. |
 | Acceptance-author owned paths (`frontend/tests/`) fit an infra-only spec only in part. Scenarios A to E call HTTP endpoints and `docker compose` from a Playwright run. The Playwright config also starts Vite and a browser project for every run. | The scenarios need Docker and the stack, and they start the frontend dev server they do not use. | User (approve, or name another owner) | Least-bad option, proposed: keep acceptance-author, use the Playwright request API for HTTP and a child-process call for `docker compose`, and run through `npm run test:acceptance` with no browser steps. The alternative is a test path owned by infra-engineer, which needs a `roles.md` change. Not decided here. |
 | The breakdown rules allow 1 to 3 scenarios per ticket, so the single acceptance-author ticket the spec asked for becomes three (S1-03.06 to S1-03.08). | Dispatch has three red tickets, not one. | User (confirm) | The cap is a hard limit in `breakdown-rules.md`. Each ticket groups its scenarios by stack, sign-in and docs. |
@@ -167,7 +167,7 @@ Waves: a ticket is in wave N+1 only when every blocker is in wave N or earlier. 
 | Key | Ticket | Role | Wave | Status | Blocked by |
 | --- | --- | --- | --- | --- | --- |
 | S1-03.01 | [Local Keycloak service and realm import](S1-03.01-local-keycloak-service-and-realm.md) | infra-engineer | 2 | To Do | S1-03.06, S1-03.09, S1-03.10, S1-03.11 (ADR-0010 Accepted) |
-| S1-03.02 | [Keycloak smoke: PKCE sign-in, admin client, registration off](S1-03.02-keycloak-smoke-pkce-admin-checks.md) | infra-engineer | 3 | To Do | S1-03.01, S1-03.07, S1-03.10, S1-03.11 |
+| S1-03.02 | [Keycloak smoke: PKCE sign-in, admin client, registration on](S1-03.02-keycloak-smoke-pkce-admin-checks.md) | infra-engineer | 3 | To Do | S1-03.01, S1-03.07, S1-03.10, S1-03.11 |
 | S1-03.03 | [Local development guide: Keycloak and config contract](S1-03.03-local-keycloak-docs-and-config-contract.md) | docs-steward | 4 | To Do | S1-03.02, S1-03.08, S1-03.10 |
 | S1-03.04 | [Privacy review: synthetic realm and secrets](S1-03.04-privacy-review-local-keycloak.md) | privacy-reviewer | 5 | To Do | S1-03.01, S1-03.02, S1-03.03, S1-03.09, S1-03.10, S1-03.11, S1-03.12 |
 | S1-03.05 | [Close S1-03 and ADR-0010 local-service follow-up](S1-03.05-close-s1-03-and-adr-0010-follow-up.md) | docs-steward | 6 | To Do | S1-03.03, S1-03.04 |

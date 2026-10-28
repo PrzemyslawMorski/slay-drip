@@ -19,6 +19,17 @@ A passing run ends with `OK: S3 round-trip passed`. Run it again whenever you ch
 
 Stop the stack without losing data with `docker compose stop`. Wipe all local data with `docker compose down -v`. Local data is synthetic only, so wiping is always safe.
 
+## Start and check the identity stand-in
+
+```bash
+docker compose up -d keycloak        # start Keycloak on 127.0.0.1:8180 (realm imported from infra/dev/keycloak/realm/)
+bash scripts/dev/keycloak-smoke.sh   # discovery, JWKS, PKCE sign-in, admin lifecycle, registration setting
+```
+
+A passing run ends with `OK: Keycloak smoke passed`. Run it again after any change to the realm file or to `compose.yaml`.
+
+The pinned image is `keycloak/keycloak:26.8.1` (checked on Docker Hub on 2026-10-28; bump it deliberately). The bootstrap admin for the local console is in `infra/dev/keycloak/local-admin.conf` (throwaway). The local realm has no named volume, so each start imports from the committed realm file. Local realm users are synthetic (`*@example.test`). Self-service registration is on in this realm only (ADR-0010 amendment), so the Keycloak sign-in page offers a registration form for test users.
+
 ## Backend
 
 Run these from `backend/`.
@@ -49,6 +60,15 @@ The app reads these keys. It must not hard-code any of them, and the same names 
 | `S3_FORCE_PATH_STYLE` | `true` | `false` unless a reason is recorded |
 | `S3_ACCESS_KEY` / `S3_SECRET_KEY` | `slaydrip-local` / `slaydrip-local-secret` (in `infra/dev/s3.json`) | from the container environment, never from source |
 | `DATABASE_URL` | `postgres://slaydrip:slaydrip-local-secret@127.0.0.1:5432/slaydrip?sslmode=disable` (in `compose.yaml`) | from the container environment, never from source |
+| `OIDC_ISSUER_URL` | `http://127.0.0.1:8180/realms/slay-drip` | `https://<keycloak host>/realms/slay-drip` (host set at deploy) |
+| `OIDC_JWKS_URL` | `http://127.0.0.1:8180/realms/slay-drip/protocol/openid-connect/certs` | `https://<keycloak host>/realms/slay-drip/protocol/openid-connect/certs` (host set at deploy) |
+| `OIDC_CLIENT_ID` | `slay-drip-pwa` | `slay-drip-pwa` (public configuration, may be in the client build) |
+| `OIDC_AUDIENCE` | `slay-drip-api` | `slay-drip-api` |
+| `OIDC_REDIRECT_URI` | `http://localhost:5173/auth/callback` | `https://<PWA origin>/auth/callback` (public configuration) |
+| `KEYCLOAK_BASE_URL` | `http://127.0.0.1:8180` | `https://<keycloak host>` (set at deploy) |
+| `KEYCLOAK_REALM` | `slay-drip` | `slay-drip` |
+| `KEYCLOAK_ADMIN_CLIENT_ID` | `slay-drip-backend-admin` | `slay-drip-backend-admin` |
+| `KEYCLOAK_ADMIN_CLIENT_SECRET` | throwaway local value in `infra/dev/keycloak/realm/slay-drip-realm.json` | from the container environment, never from source |
 
 Local values are throwaway and are only valid against the local stand-in. Do not reuse them anywhere else.
 
@@ -73,6 +93,7 @@ Before a feature that uses a cloud service is marked done, its PR must show:
 
 ## What the local stack does not prove
 
+- Keycloak production settings. The local store is the Keycloak dev file store with no volume, not PostgreSQL. Realm settings such as registration and token lifetimes need review before any Scaleway deployment (ADR-0010).
 - Scaleway IAM and bucket policies, lifecycle rules and encryption settings. Check these on a Scaleway dev project in an allowed region before a staging deploy.
 - Performance. Local latency says nothing about the 10 s p95 target in CLAUDE.md.
 - Pinned versions of Scaleway's own API. The stand-in implements the S3 protocol, not Scaleway's management API.
@@ -82,4 +103,9 @@ Before a feature that uses a cloud service is marked done, its PR must show:
 - **Port 8333 already in use:** stop the other process, or change the host port in `compose.yaml` and set `S3_ENDPOINT` to match.
 - **`SignatureDoesNotMatch` (HTTP 403):** the secret in your environment does not match `infra/dev/s3.json`.
 - **Smoke script fails before the first request:** check `docker compose ps`. The container must be `Up`.
+- **Port 8180 already in use:** another Keycloak stack may be running, often from an older checkout. Check with `docker ps`, then stop that stack with `docker compose -p <project> stop` (not `down -v`). Or change the host port in `compose.yaml` and update `OIDC_ISSUER_URL`, `OIDC_JWKS_URL` and `KEYCLOAK_BASE_URL` to match.
+- **Realm change not picked up:** the import runs on container start. Run `docker compose up -d --force-recreate keycloak`.
+- **`invalid_redirect_uri` or an issuer mismatch:** the redirect URI and `KC_HOSTNAME` must match `OIDC_REDIRECT_URI` and `OIDC_ISSUER_URL`. Use `127.0.0.1` in the issuer, not `localhost`.
+- **Image tag check:** confirm the pinned tag exists with `docker pull keycloak/keycloak:26.8.1`, and compare it with the tags listed on Docker Hub before you bump it.
+- **Smoke step 3 fails at the login form:** the Keycloak login markup changed. Update the parse in `scripts/dev/keycloak-smoke.sh`.
 - **`migrate-up` fails with `first .: file does not exist`:** `backend/migrations/` has no migrations yet. The first migration arrives with the first feature that stores server-side data (ADR-0008).

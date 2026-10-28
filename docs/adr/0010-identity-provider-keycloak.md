@@ -54,6 +54,12 @@ We will run Keycloak, an open-source identity provider under the Apache License 
   - Session 1 walking skeleton: sign-up with the 18+ gate and consent (ADR-0001), using this provider.
   - Confirm Scaleway's DPA, sub-processors and encryption defaults for the managed PostgreSQL and container registry (security guide, section 13).
 
+## Amendment (2026-10-28): local self-registration on
+
+At the product owner's request, the local realm (`infra/dev/keycloak/realm/slay-drip-realm.json`) allows self-service registration (`registrationAllowed: true`). This applies to the local stand-in only. The earlier "registration off" setting in S1-03.01 and S1-03.02 is superseded.
+
+Consequence: a sign-up through the Keycloak form does not pass the app's 18+ gate. Before any real sign-up, the 18+ gate must be enforced on the server (F1.1, BE-49), and the production realm setting needs its own decision and review. The Scaleway deployment spike above is still a gate before any production user endpoint. Local development only, with synthetic users.
+
 ## Compliance check
 
 - [x] EU-only processing (Scaleway `fr-par` by default; `nl-ams` or `pl-waw` allowed). No third-party identity vendor. Scaleway DPA and sub-processor list still to be confirmed before launch.

@@ -26,8 +26,8 @@ Feature: Local identity provider sign-in and admin acceptance tests
     And the throwaway user is no longer found afterwards
 
   @timeout:300000
-  Scenario: Self-service registration is off in the local realm
+  Scenario: Self-service registration is on in the local realm
     Given the committed realm file is infra/dev/keycloak/realm/slay-drip-realm.json
     When the smoke script reads that file
-    Then registrationAllowed is false
+    Then registrationAllowed is true
     And the script reports this as a static check of the committed file
