@@ -34,6 +34,8 @@ export const en = {
     withdraw: 'Withdraw consent and delete photos',
     withdrawConfirm:
       'This deletes all photos and outfits on this device and turns off photo storage. It cannot be undone.',
+    withdrawConfirmAccount:
+      'This deletes all photos from your account and turns off photo storage. It cannot be undone.',
     withdrawYes: 'Yes, delete all photos',
     cancel: 'Cancel',
   },
@@ -66,6 +68,9 @@ export const en = {
   consent: {
     heading: 'Store photos of your clothes on this device?',
     body: 'Photos stay on this device. They are never uploaded. You can delete them and withdraw consent at any time from My wardrobe.',
+    accountHeading: 'Store photos of your clothes on your account?',
+    accountBody:
+      'Photos are stored on our servers in the EU and linked to your account. You can delete them and withdraw consent at any time from My wardrobe.',
     yes: 'Yes, store photos',
     no: 'No, not now',
   },
@@ -73,14 +78,14 @@ export const en = {
     unsupported: 'This file is not a JPEG, PNG or WebP photo.',
     tooLarge: 'This photo is larger than 10 MB. Choose a smaller photo.',
     unreadable: 'This photo could not be read. Try another photo.',
-    saveFailed: 'The photo could not be saved on this device. Try again.',
+    saveFailed: 'The photo could not be saved. Try again.',
   },
   auth: {
-    groupLabel: 'Account',
     signIn: 'Sign in',
-    register: 'Create account',
-    signedIn: 'Signed in',
+    createAccount: 'Create account',
     signOut: 'Sign out',
-    failed: 'Sign-in did not complete. Try again.',
+    signedIn: 'Signed in',
+    signingIn: 'Signing you in…',
+    signInFailed: 'We could not sign you in. Try again.',
   },
 } as const;

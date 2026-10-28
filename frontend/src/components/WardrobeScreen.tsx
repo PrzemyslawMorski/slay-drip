@@ -1,15 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { en } from '../strings/en';
 import { PhotoRejectedError, preparePhoto, type RejectionReason } from '../photos/preparePhoto';
-import {
-  addWardrobeItem,
-  deleteWardrobeItem,
-  getWardrobeConsent,
-  listWardrobeItems,
-  setWardrobeConsent,
-  withdrawWardrobeConsent,
-  type WardrobeItem,
-} from '../storage/localDb';
+import type { WardrobeItem } from '../storage/localDb';
+import type { WardrobeStore } from '../wardrobe/store';
 import { AppNav } from './AppNav';
 import { ConsentPanel } from './ConsentPanel';
 import { PhotoGrid } from './PhotoGrid';
@@ -21,11 +14,14 @@ const ERROR_MESSAGES: Record<RejectionReason, string> = {
 };
 
 interface WardrobeScreenProps {
-  onOpenOutfits: () => void;
-  onCreateOutfit: () => void;
+  store: WardrobeStore;
+  onOpenOutfits?: () => void;
+  onCreateOutfit?: () => void;
 }
 
-export function WardrobeScreen({ onOpenOutfits, onCreateOutfit }: WardrobeScreenProps) {
+export function WardrobeScreen({ store, onOpenOutfits, onCreateOutfit }: WardrobeScreenProps) {
+  // Outfits are device-only for now: their item ids point at the on-device wardrobe.
+  const onDevice = store.location === 'device';
   const [items, setItems] = useState<WardrobeItem[]>([]);
   const [consentGranted, setConsentGranted] = useState(false);
   const [askingConsent, setAskingConsent] = useState(false);
@@ -39,9 +35,8 @@ export function WardrobeScreen({ onOpenOutfits, onCreateOutfit }: WardrobeScreen
   useEffect(() => {
     void (async () => {
       try {
-        const consent = await getWardrobeConsent();
-        setConsentGranted(consent?.granted === true);
-        setItems(await listWardrobeItems());
+        setConsentGranted(await store.isConsentGranted());
+        setItems(await store.listItems());
       } catch {
         // Fail closed: without a readable consent record, consent is not granted.
         setConsentGranted(false);
@@ -49,7 +44,7 @@ export function WardrobeScreen({ onOpenOutfits, onCreateOutfit }: WardrobeScreen
         setError(en.wardrobe.loadFailed);
       }
     })();
-  }, []);
+  }, [store]);
 
   function handleAddClick() {
     setError(null);
@@ -68,20 +63,20 @@ export function WardrobeScreen({ onOpenOutfits, onCreateOutfit }: WardrobeScreen
       setError(en.outfits.needPhotos);
       return;
     }
-    onCreateOutfit();
+    onCreateOutfit?.();
   }
 
-  function handleAgree() {
+  async function handleAgree() {
     // The picker opens inside this click, so mobile browsers allow it.
     setConsentGranted(true);
     setAskingConsent(false);
     fileInput.current?.click();
-    void setWardrobeConsent(true);
+    await store.setConsent(true);
   }
 
-  function handleDecline() {
+  async function handleDecline() {
     setAskingConsent(false);
-    void setWardrobeConsent(false);
+    await store.setConsent(false);
   }
 
   async function handleFilesChosen(files: File[]) {
@@ -89,7 +84,7 @@ export function WardrobeScreen({ onOpenOutfits, onCreateOutfit }: WardrobeScreen
     try {
       for (const file of files) {
         const photo = await preparePhoto(file);
-        await addWardrobeItem(photo);
+        await store.addItem(photo);
       }
     } catch (caught) {
       if (caught instanceof PhotoRejectedError) {
@@ -98,21 +93,21 @@ export function WardrobeScreen({ onOpenOutfits, onCreateOutfit }: WardrobeScreen
         setError(en.upload.saveFailed);
       }
     }
-    setItems(await listWardrobeItems());
+    setItems(await store.listItems());
   }
 
   async function handleConfirmItemDelete() {
     if (!itemToDelete) {
       return;
     }
-    const deletedOutfitNames = await deleteWardrobeItem(itemToDelete.id);
+    const deletedOutfitNames = await store.deleteItem(itemToDelete.id);
     setItemToDelete(null);
     setNotice(deletedOutfitNames.map((name) => en.wardrobe.outfitDeleted(name)).join(' ') || null);
-    setItems(await listWardrobeItems());
+    setItems(await store.listItems());
   }
 
   async function handleWithdraw() {
-    await withdrawWardrobeConsent();
+    await store.withdrawConsent();
     setConsentGranted(false);
     setConfirmingWithdrawal(false);
     setNotice(null);
@@ -122,7 +117,9 @@ export function WardrobeScreen({ onOpenOutfits, onCreateOutfit }: WardrobeScreen
   return (
     <section aria-labelledby="wardrobe-heading" className="wardrobe">
       <h1 id="wardrobe-heading">{en.wardrobe.heading}</h1>
-      <AppNav current="wardrobe" onWardrobe={() => undefined} onOutfits={onOpenOutfits} />
+      {onDevice && onOpenOutfits && (
+        <AppNav current="wardrobe" onWardrobe={() => undefined} onOutfits={onOpenOutfits} />
+      )}
 
       <p className="item-count" aria-live="polite">
         {en.wardrobe.itemCount(items.length)}
@@ -137,9 +134,16 @@ export function WardrobeScreen({ onOpenOutfits, onCreateOutfit }: WardrobeScreen
         >
           {en.wardrobe.addPhotos}
         </button>
-        <button type="button" className="button" onClick={handleCreateClick} disabled={loadFailed}>
-          {en.outfits.create}
-        </button>
+        {onDevice && (
+          <button
+            type="button"
+            className="button"
+            onClick={handleCreateClick}
+            disabled={loadFailed}
+          >
+            {en.outfits.create}
+          </button>
+        )}
       </div>
       <input
         ref={fileInput}
@@ -156,7 +160,14 @@ export function WardrobeScreen({ onOpenOutfits, onCreateOutfit }: WardrobeScreen
         }}
       />
 
-      {askingConsent && <ConsentPanel onAgree={handleAgree} onDecline={handleDecline} />}
+      {askingConsent && (
+        <ConsentPanel
+          heading={onDevice ? en.consent.heading : en.consent.accountHeading}
+          body={onDevice ? en.consent.body : en.consent.accountBody}
+          onAgree={handleAgree}
+          onDecline={handleDecline}
+        />
+      )}
 
       {error && (
         <p role="alert" className="error">
@@ -198,7 +209,7 @@ export function WardrobeScreen({ onOpenOutfits, onCreateOutfit }: WardrobeScreen
       <footer className="privacy">
         {confirmingWithdrawal ? (
           <div className="panel">
-            <p>{en.wardrobe.withdrawConfirm}</p>
+            <p>{onDevice ? en.wardrobe.withdrawConfirm : en.wardrobe.withdrawConfirmAccount}</p>
             <div className="button-row">
               <button type="button" className="button button-danger" onClick={handleWithdraw}>
                 {en.wardrobe.withdrawYes}
