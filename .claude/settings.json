@@ -34,6 +34,15 @@
             "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/require-worktree.ps1\""
           }
         ]
+      },
+      {
+        "matcher": "Agent|Bash|PowerShell|Monitor|WebSearch|WebFetch|Artifact|ArtifactData|ArtifactComments|SendMessage|PushNotification|RemoteTrigger|PublishPlugin|DesignSync|CronCreate|Workflow|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/block-pii-egress.ps1\""
+          }
+        ]
       }
     ]
   }
