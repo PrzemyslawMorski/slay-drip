@@ -61,7 +61,7 @@ Repo activity from 2026-10-08 to 2026-10-28, grouped by day. Commit hashes are i
 
 ### 2026-10-28: Hooks in Python, local Keycloak and CI for integration services
 
-- Moved the agent hooks from PowerShell to Python and added compaction hooks [ea3d829]. The Python requirement is documented in [agent-guardrails.md](agent-guardrails.md) [3b5e8cf]. The guards are described there, not repeated here.
+- Moved the agent hooks from PowerShell to Python and added compaction hooks [ea3d829]. The Python requirement is documented in [agent-guardrails.md](docs/agent-guardrails.md) [3b5e8cf]. The guards are described there, not repeated here.
 - Added the local Keycloak stand-in, its realm, a PKCE smoke script and the signed-in wardrobe path on `feat/local-keycloak` [810b93c, ecd426d, 060033c, 7e878ba]. Wardrobe API and consent storage are on `feat/wardrobe-api` [cf6d38c, 008e221].
 - The backend integration job now applies migrations and starts the object-storage stand-in before its tests [b909bf0, dba7621 on `ci/integration-services`].
 
@@ -97,7 +97,7 @@ The PreCompact, PostCompact and SessionStart hooks never block. Only PreToolUse 
 
 - Registered the first MCP server for the repo: Context7, which serves current library documentation to agents. It is a project `.mcp.json` entry pointing at the hosted endpoint, with no key committed [6b78885].
 - MCP is an open protocol that connects AI applications to tools, data and prompts. Hosts run clients, and each client talks to one server. Servers expose tools, resources and prompts. See the [MCP introduction](https://modelcontextprotocol.io/docs/2026-07-28/getting-started/intro).
-- The PII egress hook already matches `mcp__.*`, so outbound MCP calls are checked like web calls. See [security.md](security.md) section 8.
+- The PII egress hook already matches `mcp__.*`, so outbound MCP calls are checked like web calls. See [security.md](docs/security.md) section 8.
 - Cloudflare's [code mode](https://blog.cloudflare.com/code-mode/) argues that agents do better when MCP tools are presented as a typed API and the model writes code that calls them, with only the final results returned. The post reports qualitative findings, not benchmark numbers, so treat the gain as unmeasured here.
 
 **Takeaway:** every MCP tool definition costs context and accuracy, so add servers with a clear purpose and few tools. Before adding a second server, measure its token cost on a real task.

@@ -15,7 +15,7 @@ The constraints that shape the choice:
 - ADR-0001 direction from the product owner: a self-hosted identity provider, deployed on Scaleway serverless infrastructure in an allowed EU region, not a Scaleway managed service.
 - The PWA signs users in with OIDC. The Go API takes user identity only from the verified token (BE-41 in the backend ruleset), so the provider must issue standard tokens that the API can check against a JWKS.
 - Local run is first class (ADR-0005). The provider must run in `compose.yaml` with the same config keys as production, using the same engine where possible (ADR-0006).
-- A Keycloak setup was tried and discarded on 2026-10-15 ([workshop takeaways](../workshop-takeaways.md)). Its reasons are not recorded in the repo, so the spike below has to address them.
+- A Keycloak setup was tried and discarded on 2026-10-15 ([workshop takeaways](../../workshop-takeaways.md)). Its reasons are not recorded in the repo, so the spike below has to address them.
 
 ## Decision
 
