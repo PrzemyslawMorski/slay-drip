@@ -1,8 +1,8 @@
 # ADR-0013: Where outfits live for signed-in people
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-11-02
-**Deciders:** Outfit Planner team. Proposed by the architect role (S1-06.01). The product owner must accept or change it, and the DPO must review the store before any personal data is written to it.
+**Deciders:** Outfit Planner team. Proposed by the architect role (S1-06.01). Accepted on the product owner's instruction (2026-11-02). The DPO must review the store before any personal data is written to it, and open questions 1 to 6 and 8 below remain open.
 **Related:** [S1-06.01](../specs/S1-06.01-propose-server-side-outfits-adr.md), [S1-06](../specs/S1-06-mcp-server-access.md), [S1-06.13](../specs/S1-06.13-outfits-store-postgresql.md) (store, blocked on this ADR), [S1-02](../specs/S1-02-manual-outfit-creation.md) (on-device outfits), [ADR-0004](0004-on-device-wardrobe-storage.md) (on-device storage, not amended here), [ADR-0008](0008-postgresql-data-store-and-migrations.md) (PostgreSQL), [ADR-0010](0010-identity-provider-keycloak.md) (account deletion through Keycloak), [ADR-0012](0012-mcp-server-transport-and-auth.md) (MCP transport and auth), [requirements](../requirements.md) (F3.7, F6, F7), [security guide](../security.md) (§3, §5, §6, §8, §10, §13, §14), [consent and GDPR rules](../code-review/consent-and-gdpr.md)
 
 ## Context
@@ -28,7 +28,7 @@ Facts that constrain the choice:
 
 ## Decision
 
-Proposed, not accepted. We recommend **Option A**: store signed-in people's outfits in the same PostgreSQL database as their wardrobe, as an `outfits` table and an `outfit_items` join table. Both tables carry `owner_sub`, and the join table has composite foreign keys to `outfits (owner_sub, id)` and `wardrobe_items (owner_sub, id)`. The database then rejects any row that links an outfit to an item owned by someone else. Outfits follow the wardrobe-photo consent and are erased with the items.
+Accepted: **Option A**. Store signed-in people's outfits in the same PostgreSQL database as their wardrobe, as an `outfits` table and an `outfit_items` join table. Both tables carry `owner_sub`, and the join table has composite foreign keys to `outfits (owner_sub, id)` and `wardrobe_items (owner_sub, id)`. The database then rejects any row that links an outfit to an item owned by someone else. Outfits follow the wardrobe-photo consent and are erased with the items.
 
 This recommendation does not choose the store for anyone. The owner must answer the open questions below before S1-06.13 starts.
 
