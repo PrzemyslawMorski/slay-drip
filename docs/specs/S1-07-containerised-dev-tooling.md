@@ -28,7 +28,7 @@ Go, Node with the Playwright browsers and Python are installed on each developer
 - Three tool images (Go, Node with Playwright, Python) and their compose services under a `tools` profile.
 - `api` and `web` compose services.
 - A discovery note on networking and host performance.
-- Red acceptance tests, ADR-0005 and ADR-0007 amendments, a guide rewrite and a review.
+- Red acceptance tests (including the rewrite of the stack scenarios), ADR-0005 and ADR-0007 amendments, a guide rewrite and a review.
 
 ## Design
 
@@ -39,7 +39,22 @@ Defaults below are proposals; the Spike S1-07.01 confirms or replaces them.
 - **Caches.** Named volumes for the Go module and build cache and for `node_modules`. Dependencies install inside containers.
 - **Config.** The services pass the existing config contract keys. Only hostnames may differ inside the network. Values live in `compose.yaml` or `infra/dev/`.
 - **Networking.** The Keycloak issuer is `http://127.0.0.1:8180/...` (ADR-0010). How a container reaches it is the Spike's first question.
-- **Stack setup stays on the host (owner decision, 2026-11-02).** The Playwright container gets no Docker socket and the test process never runs `docker compose`. One documented host command starts or stops the stack (`docker compose up -d`, `docker compose down`). The containerised Playwright run only talks to the running stack, headless. The `stack-lifecycle` Playwright project runs `docker compose` from the test process today, so it is excluded from the container run (for example `npm run test:acceptance -- --project=mobile-chromium --no-deps`). Scenario wording is unchanged: "Playwright acceptance tests run in the Playwright container" already says the scenarios run "against the stack", which is the running stack. Spec change note: the scenario's meaning is narrowed to the non-lifecycle project, and the lifecycle scenarios' fate is an open question below.
+- **Stack setup stays on the host (owner decision, 2026-11-02).** The Playwright container gets no Docker socket and the test process never runs `docker compose`. The host runs one command to start the stack (`docker compose up -d`; `docker compose down` stops it). Tests only check that the running stack answers. The containerised Playwright run covers the whole acceptance suite, headless, with no project excluded.
+- **Spec change note (2026-11-02, owner decision).** The stack-lifecycle scenario in S1-03 (`local-keycloak-stack.feature`) changes meaning from "starts and stops the stack" to "checks the running stack". Its title and its Then lines do not change. Only the Given and When change. Before:
+
+  ```gherkin
+  Given the local stack is stopped
+  When I run "docker compose up -d" from the repo root
+  ```
+
+  After:
+
+  ```gherkin
+  Given the local stack was started on the host with "docker compose up -d"
+  When I check the running services
+  ```
+
+  The rewritten scenario is the last scenario in the acceptance criteria below. S1-07.15 rewrites the feature and steps. The S1-03 spec carries a note that the two specs agree.
 - **CI (owner decision, 2026-11-02).** CI runs the same compose tool images as local development, headless.
 - **Ownership gap.** `docs/local-development.md` and `CLAUDE.md` are owned by no role in `roles.md`, so the guide rewrite is in a Blocked ticket (S1-07.13).
 
@@ -105,6 +120,14 @@ Scenario: The local stack keeps the production config keys
   When their environment is listed
   Then every key is a name in the config contract of docs/local-development.md
   And no key exists only for the containerised run
+
+Scenario: The local identity provider starts beside PostgreSQL and the S3 stand-in
+  Given the local stack was started on the host with "docker compose up -d"
+  When I check the running services
+  Then the keycloak service is running and reports healthy
+  And keycloak listens on 127.0.0.1 only
+  And the database and object-storage services are still running
+  And keycloak has no named volume
 ```
 
 ## Quality and compliance
@@ -128,7 +151,7 @@ Scenario: The local stack keeps the production config keys
 | No requirement in requirements.md names containerised tooling | The requirement gate has no direct match | Product owner | Decided by the owner (2026-11-02): treated as a prerequisite of F7 and the CLAUDE.md local-run rule. No requirements.md edit |
 | Performance target for file watching and tests on Windows and macOS bind mounts | Slow inner loop | Product owner | Open: not decided. Spike S1-07.01 measures; the owner sets the target |
 | Docker socket in the Playwright container | Root-equivalent access to the host | Product owner | Decided by the owner (2026-11-02): no socket, stack setup stays on the host. Closed |
-| Stack-lifecycle scenarios (S1-03, `local-keycloak-stack.feature`) run `docker compose` from the test process | They cannot run in the Playwright container | Product owner and S1-03 owner | Open: excluded from the container run. Decide whether they are rewritten to check a running stack, or kept as a host step. Not decided here; S1-07.08 notes it |
+| Stack-lifecycle scenarios (S1-03, `local-keycloak-stack.feature`) run `docker compose` from the test process | They could not run in the Playwright container | Product owner | Decided by the owner (2026-11-02): rewritten to check a running stack (S1-07.15). Closed |
 | Playwright headed or headless in CI | CI cost and debugging | Product owner | Decided by the owner (2026-11-02): headless. Closed |
 | CI on the same images or on setup actions | Drift between local and CI | Product owner | Decided by the owner (2026-11-02): CI runs the same compose images. Closed. S1-07.11 now waits only on its real dependencies |
 | Tool containers cannot reach `127.0.0.1` stand-ins; issuer must match | Auth smoke and tests fail | Architect | Spike S1-07.01 question 1 |
@@ -149,9 +172,10 @@ Breakdown from [tickets-from-spec](../../.claude/skills/tickets-from-spec/SKILL.
 | S1-07.03 | [Red acceptance: host-neutral commands and API plus frontend from compose](S1-07.03-red-acceptance-commands-and-app-services.md) | acceptance-author | 1 | To Do | None |
 | S1-07.04 | [Red acceptance: Go and frontend checks run in containers](S1-07.04-red-acceptance-go-and-frontend-containers.md) | acceptance-author | 1 | To Do | None |
 | S1-07.05 | [Red acceptance: Playwright and Python scripts run in containers](S1-07.05-red-acceptance-playwright-and-python-containers.md) | acceptance-author | 1 | To Do | None |
+| S1-07.15 | [Red acceptance: stack scenarios check a running stack](S1-07.15-red-acceptance-stack-scenarios-check-running-stack.md) | acceptance-author | 1 | To Do | None |
 | S1-07.06 | [Go tool container: tests, lint, govulncheck and migrations](S1-07.06-go-tool-container.md) | infra-engineer | 2 | To Do | S1-07.01, S1-07.02, S1-07.04 |
 | S1-07.07 | [Node and Playwright image: typecheck, lint, format and unit tests](S1-07.07-node-and-playwright-tool-container.md) | infra-engineer | 3 | To Do | S1-07.03, S1-07.04, S1-07.06 |
-| S1-07.08 | [Run Playwright acceptance tests in the container](S1-07.08-playwright-acceptance-run-in-container.md) | infra-engineer | 4 | To Do | S1-07.05, S1-07.07 |
+| S1-07.08 | [Run Playwright acceptance tests in the container](S1-07.08-playwright-acceptance-run-in-container.md) | infra-engineer | 4 | To Do | S1-07.05, S1-07.15, S1-07.07 |
 | S1-07.09 | [Python tool container for the dev scripts](S1-07.09-python-tool-container.md) | infra-engineer | 3 | To Do | S1-07.05, S1-07.06 |
 | S1-07.10 | [Run the API and frontend dev server from compose](S1-07.10-api-and-web-services-in-compose.md) | infra-engineer | 4 | To Do | S1-07.02, S1-07.03, S1-07.07, S1-07.09 |
 | S1-07.11 | [CI runs the same tool images](S1-07.11-ci-uses-the-same-tool-images.md) | infra-engineer | 5 | To Do | S1-07.06, S1-07.07, S1-07.08, S1-07.09 |
