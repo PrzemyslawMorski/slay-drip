@@ -8,6 +8,9 @@ import type { Page, Route } from '@playwright/test';
 const ISSUER_PATTERN = /\/realms\/slay-drip\/protocol\/openid-connect\/(auth|registrations)(\?|$)/;
 const TOKEN_PATTERN = /\/realms\/slay-drip\/protocol\/openid-connect\/token$/;
 const API_PATTERN = /^http:\/\/127\.0\.0\.1:8080\//;
+// Must equal the oidc.audience default in src/config.ts and the Keycloak audience mapper. Not imported from config.ts,
+// because that file reads import.meta.env, which Playwright's Node runner does not provide.
+const API_AUDIENCE = 'http://127.0.0.1:8080';
 const APP_ORIGIN = 'http://localhost:5173';
 const AUTH_CODE = 'stub-code';
 
@@ -43,7 +46,7 @@ const stubs = new WeakMap<Page, AccountStub>();
 function fakeAccessToken(): string {
   // Unsigned token with the audience the app checks. The app only reads the audience; the API verifies signatures.
   const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url');
-  return `${encode({ alg: 'none' })}.${encode({ aud: 'slay-drip-api', sub: randomUUID() })}.`;
+  return `${encode({ alg: 'none' })}.${encode({ aud: API_AUDIENCE, sub: randomUUID() })}.`;
 }
 
 // Installs the routes once per page, before the app navigates. Returns the state that the steps read and change.

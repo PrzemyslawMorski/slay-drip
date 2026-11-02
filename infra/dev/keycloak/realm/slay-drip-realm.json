@@ -34,7 +34,7 @@
           "protocolMapper": "oidc-audience-mapper",
           "consentRequired": false,
           "config": {
-            "included.custom.audience": "slay-drip-api",
+            "included.custom.audience": "http://127.0.0.1:8080",
             "access.token.claim": "true",
             "id.token.claim": "false"
           }
