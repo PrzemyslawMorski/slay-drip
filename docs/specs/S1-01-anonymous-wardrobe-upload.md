@@ -222,3 +222,38 @@ Scenario: The wardrobe has no detectable accessibility violations
 - **Synthetic test data only.** Test photos are generated in the test run (plain colour blocks with fake metadata). No real photos enter the repo.
 - Strings are externalised in `frontend/src/strings/en.ts` for later localisation.
 - The app lives in `frontend/`. The repo root holds only docs and repo configuration.
+
+## Tickets
+
+Breakdown from [tickets-from-spec](../../.claude/skills/tickets-from-spec/SKILL.md). Waves are computed over blockers inside this batch. Every ADR this spec names is Accepted in its file, so no ticket is Blocked.
+
+| Key | Ticket | Role | Wave | Status | Blocked by |
+| --- | --- | --- | --- | --- | --- |
+| S1-01.01 | [Red acceptance: an adult confirms their age and sees an empty wardrobe](S1-01.01-red-acceptance-adult-age-confirmation.md) | acceptance-author | 1 | To Do | None |
+| S1-01.02 | [Red acceptance, hard rule: a user under 18 is stopped and nothing is stored](S1-01.02-red-hard-rule-under-18-stopped.md) | acceptance-author | 1 | To Do | None |
+| S1-01.03 | [Red acceptance, hard rule: consent is asked before the first photo is added](S1-01.03-red-hard-rule-consent-before-first-photo.md) | acceptance-author | 1 | To Do | None |
+| S1-01.04 | [Red acceptance, hard rule: declining consent keeps the wardrobe empty](S1-01.04-red-hard-rule-decline-consent-empty.md) | acceptance-author | 1 | To Do | None |
+| S1-01.05 | [Red acceptance, hard rule: withdrawing consent deletes every stored photo](S1-01.05-red-hard-rule-withdraw-deletes-photos.md) | acceptance-author | 1 | To Do | None |
+| S1-01.06 | [Red acceptance: supported photo formats and several photos at once](S1-01.06-red-acceptance-formats-and-multiple-photos.md) | acceptance-author | 1 | To Do | None |
+| S1-01.07 | [Red acceptance: non-photo and oversized files are rejected](S1-01.07-red-acceptance-reject-non-photo-and-large-files.md) | acceptance-author | 1 | To Do | None |
+| S1-01.08 | [Red acceptance, hard rule: location and device details are removed](S1-01.08-red-hard-rule-strip-location-and-device-details.md) | acceptance-author | 1 | To Do | None |
+| S1-01.09 | [Red acceptance, hard rule: photos are not sent over the network](S1-01.09-red-hard-rule-no-network-for-photos.md) | acceptance-author | 1 | To Do | None |
+| S1-01.10 | [Red acceptance: the wardrobe grid, its count, and reload](S1-01.10-red-acceptance-grid-count-and-reload.md) | acceptance-author | 1 | To Do | None |
+| S1-01.11 | [Red acceptance: an unreadable wardrobe shows an error and blocks changes](S1-01.11-red-acceptance-unreadable-wardrobe-error.md) | acceptance-author | 1 | To Do | None |
+| S1-01.12 | [Red acceptance: keyboard-only use and the WCAG 2.1 AA axe check](S1-01.12-red-acceptance-keyboard-and-axe.md) | acceptance-author | 1 | To Do | None |
+| S1-01.13 | [On-device store for age confirmation, consent and photos](S1-01.13-on-device-store-age-consent-photos.md) | data-engineer | 2 | To Do | S1-01.10 |
+| S1-01.18 | [Validate photo type and size before storing](S1-01.18-validate-photo-type-and-size.md) | frontend-engineer | 2 | To Do | S1-01.07 |
+| S1-01.19 | [Remove location and device details from stored photos](S1-01.19-strip-location-device-details.md) | frontend-engineer | 2 | To Do | S1-01.08 |
+| S1-01.20 | [Photo intake makes no network request](S1-01.20-photo-intake-no-network.md) | frontend-engineer | 2 | To Do | S1-01.09 |
+| S1-01.14 | [Age gate screen: adults reach the wardrobe, under 18 is stopped](S1-01.14-age-gate-screen.md) | frontend-engineer | 3 | To Do | S1-01.01, S1-01.02, S1-01.13 |
+| S1-01.16 | [Withdrawing consent deletes the owner's photos in one storage step](S1-01.16-withdraw-consent-deletes-photos-storage.md) | data-engineer | 3 | To Do | S1-01.05, S1-01.13 |
+| S1-01.15 | [Consent prompt before the first photo; declining keeps the wardrobe empty](S1-01.15-consent-prompt-before-first-photo.md) | frontend-engineer | 4 | To Do | S1-01.03, S1-01.04, S1-01.14 |
+| S1-01.23 | [Storage reports when the wardrobe cannot be read](S1-01.23-storage-reports-read-failure.md) | data-engineer | 4 | To Do | S1-01.11, S1-01.13, S1-01.16 |
+| S1-01.17 | [Withdraw consent and delete photos, with a confirmation](S1-01.17-withdraw-consent-ui-confirmation.md) | frontend-engineer | 5 | To Do | S1-01.05, S1-01.15, S1-01.16 |
+| S1-01.21 | [Add photos: JPEG, PNG and WebP, several at once](S1-01.21-add-photos-formats-and-multiple.md) | frontend-engineer | 5 | To Do | S1-01.06, S1-01.15, S1-01.18, S1-01.19 |
+| S1-01.22 | [Wardrobe grid: photos, item names and count](S1-01.22-wardrobe-grid-photos-and-count.md) | frontend-engineer | 6 | To Do | S1-01.10, S1-01.13, S1-01.21 |
+| S1-01.25 | [Keyboard reach: Add photos by Tab and Enter](S1-01.25-keyboard-reach-add-photos.md) | frontend-engineer | 6 | To Do | S1-01.12, S1-01.21 |
+| S1-01.24 | [Unreadable wardrobe: error message, and changes are blocked](S1-01.24-unreadable-wardrobe-error-state.md) | frontend-engineer | 7 | To Do | S1-01.11, S1-01.22, S1-01.23 |
+| S1-01.26 | [Fix WCAG 2.1 AA violations on the wardrobe](S1-01.26-fix-wcag-violations-wardrobe.md) | frontend-engineer | 8 | To Do | S1-01.12, S1-01.21, S1-01.22, S1-01.24, S1-01.25 |
+| S1-01.27 | [Privacy review: anonymous wardrobe on-device storage](S1-01.27-privacy-review-anonymous-wardrobe.md) | privacy-reviewer | 9 | To Do | S1-01.13, S1-01.14, S1-01.15, S1-01.16, S1-01.17, S1-01.18, S1-01.19, S1-01.20, S1-01.21, S1-01.22, S1-01.23, S1-01.24, S1-01.25, S1-01.26 |
+| S1-01.28 | [Accessibility review: wardrobe screens](S1-01.28-a11y-review-wardrobe-screens.md) | a11y-reviewer | 9 | To Do | S1-01.21, S1-01.22, S1-01.24, S1-01.25, S1-01.26 |
