@@ -7,7 +7,7 @@ export const config = {
   oidc: {
     issuerUrl: env.VITE_OIDC_ISSUER_URL ?? 'http://127.0.0.1:8180/realms/slay-drip',
     clientId: env.VITE_OIDC_CLIENT_ID ?? 'slay-drip-pwa',
-    audience: env.VITE_OIDC_AUDIENCE ?? 'slay-drip-api',
+    audience: env.VITE_OIDC_AUDIENCE ?? 'http://127.0.0.1:8080',
     redirectUri: env.VITE_OIDC_REDIRECT_URI ?? 'http://localhost:5173/auth/callback',
   },
 };

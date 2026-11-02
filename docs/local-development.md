@@ -65,7 +65,7 @@ The app reads these keys. It must not hard-code any of them, and the same names 
 | `OIDC_ISSUER_URL` | `http://127.0.0.1:8180/realms/slay-drip` | `https://<keycloak host>/realms/slay-drip` (host set at deploy) |
 | `OIDC_JWKS_URL` | `http://127.0.0.1:8180/realms/slay-drip/protocol/openid-connect/certs` | `https://<keycloak host>/realms/slay-drip/protocol/openid-connect/certs` (host set at deploy) |
 | `OIDC_CLIENT_ID` | `slay-drip-pwa` | `slay-drip-pwa` (public configuration, may be in the client build) |
-| `OIDC_AUDIENCE` | `slay-drip-api` | `slay-drip-api` |
+| `OIDC_AUDIENCE` | `http://127.0.0.1:8080` (local API origin, matches the Keycloak audience mapper) | `https://<API host>` (the API's canonical URI, host set at deploy; ADR-0012) |
 | `OIDC_REDIRECT_URI` | `http://localhost:5173/auth/callback` | `https://<PWA origin>/auth/callback` (public configuration) |
 | `KEYCLOAK_BASE_URL` | `http://127.0.0.1:8180` | `https://<keycloak host>` (set at deploy) |
 | `KEYCLOAK_REALM` | `slay-drip` | `slay-drip` |

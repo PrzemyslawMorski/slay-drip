@@ -33,7 +33,7 @@ JWKS_URL = os.environ.get(
     "OIDC_JWKS_URL", "http://127.0.0.1:8180/realms/slay-drip/protocol/openid-connect/certs"
 )
 CLIENT_ID = os.environ.get("OIDC_CLIENT_ID", "slay-drip-pwa")
-AUDIENCE = os.environ.get("OIDC_AUDIENCE", "slay-drip-api")
+AUDIENCE = os.environ.get("OIDC_AUDIENCE", "http://127.0.0.1:8080")
 REDIRECT_URI = os.environ.get("OIDC_REDIRECT_URI", "http://localhost:5173/auth/callback")
 KEYCLOAK_BASE_URL = os.environ.get("KEYCLOAK_BASE_URL", "http://127.0.0.1:8180")
 KEYCLOAK_REALM = os.environ.get("KEYCLOAK_REALM", "slay-drip")
