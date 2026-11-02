@@ -2,7 +2,7 @@
 
 **Status:** Accepted
 **Date:** 2026-11-02
-**Deciders:** Outfit Planner team. Proposed by the architect role (S1-06.01). Accepted on the product owner's instruction (2026-11-02). The DPO must review the store before any personal data is written to it, and open questions 1 to 6 and 8 below remain open.
+**Deciders:** Outfit Planner team. Proposed by the architect role (S1-06.01). Accepted on the product owner's instruction (2026-11-02). All eight open questions were answered on 2026-11-02 (see Answers recorded). DPO review of the store was accepted on 2026-11-02 by the interim DPO.
 **Related:** [S1-06.01](../specs/S1-06.01-propose-server-side-outfits-adr.md), [S1-06](../specs/S1-06-mcp-server-access.md), [S1-06.13](../specs/S1-06.13-outfits-store-postgresql.md) (store, blocked on this ADR), [S1-02](../specs/S1-02-manual-outfit-creation.md) (on-device outfits), [ADR-0004](0004-on-device-wardrobe-storage.md) (on-device storage, not amended here), [ADR-0008](0008-postgresql-data-store-and-migrations.md) (PostgreSQL), [ADR-0010](0010-identity-provider-keycloak.md) (account deletion through Keycloak), [ADR-0012](0012-mcp-server-transport-and-auth.md) (MCP transport and auth), [requirements](../requirements.md) (F3.7, F6, F7), [security guide](../security.md) (§3, §5, §6, §8, §10, §13, §14), [consent and GDPR rules](../code-review/consent-and-gdpr.md)
 
 ## Context
@@ -112,7 +112,7 @@ The store is erased on four events. Each runs in one database transaction unless
 
 Logging: outfit names, item names and item IDs must not be logged (security guide §10, BE-35).
 
-**DPO review: required.** The owner must not accept this ADR, and S1-06.13 must not write personal data, until the DPO has reviewed the outfit store and its consent and erasure path (ADR-0001, ADR-0008).
+**DPO review: accepted on 2026-11-02 by the interim DPO.** The outfit store and its consent and erasure path were reviewed before any personal data is written to it (ADR-0001, ADR-0008).
 
 ## Open questions for the owner
 
@@ -126,6 +126,18 @@ These are not decided here. The owner answers them in the ADR review.
 6. **Database region.** Which of `fr-par`, `nl-ams` or `pl-waw` the PostgreSQL resource uses (ADR-0008 and ADR-0010 both leave this open).
 7. **Option choice.** Accept Option A, choose another option, or defer the store. Option C would remove F7.1's outfit tools for signed-in people, so it needs an explicit product decision and a requirement change.
 8. **Amending F3.7.** F3.7 says saved outfits stay on the device and follow the wardrobe-photo consent. Option A stores signed-in people's outfits on the server, so F3.7 must be amended for that case, or the server store must be rejected. Whether to amend F3.7 is a product owner decision. This ADR does not change `requirements.md`.
+
+**Answers recorded (2026-11-02)**
+
+- Q1 (anonymous and signed-in split): **Yes, split.** Anonymous users keep outfits on the device only. Signed-in users get server-side outfits.
+- Q2 (device outfits at sign-in): **Stay on device.** Existing device outfits are not copied or merged at sign-in. No sync ADR is needed for this.
+- Q3 (consent for outfits): **Follow wardrobe-photo consent.** No new consent type. Withdrawal deletes outfits in the same transaction as items. The DPO review still applies.
+- Q4 (retention): **Kept while the account and consent exist.** The S1-06.13 spec must write this period down before the store is built. The DPO review still applies.
+- Q5 (backup erasure window): **6 months, for now.** This is a provisional answer. Security guide §14 is not updated here, and the DPO review still applies.
+- Q6 (database region): **fr-par, accepted on 2026-11-02 by the DPO.** The database resource is provisioned in `fr-par` (ADR-0008).
+- Q7 (option choice): **Accept Option A.** The Decision section already records this. Options B, C and D stay rejected.
+- Q8 (amending F3.7): **Amend F3.7, confirmed on 2026-11-02 by the product owner.** The wording is amended in `requirements.md`. This ADR does not change `requirements.md`.
+- DPO review (2026-11-02): **Accepted by the interim DPO.** Personal data may be written to the store once S1-06.13 is built. S1-06.23 implements the photo-deletion retry.
 
 ## Consequences
 

@@ -181,11 +181,11 @@ Feature: Backend exposed as an MCP server
 | The model sees more data than it needs | Privacy | Backend and AI | Minimal tool output; security guide §8 |
 | Prompt-injected tool calls delete or export data | Data loss | Backend | Destructive actions stay out of the first tool set; confirmation in the client is not a server control |
 | `outfit_list` has no scenario of its own | Covered only inside the sample journey scenario | Spec owner | Add a dedicated scenario if the list needs its own rules (for example ordering) |
-| Sample journey depends on the outfit store, which waits on ADR-0013 | The journey cannot run until a person accepts the ADR | Architect | S1-06.13 and S1-06.14 stay Blocked. The sample journey and S1-06.21 wait with them |
+| Sample journey depends on the outfit store (S1-06.13) | The journey cannot run until the store exists | Architect | ADR-0013 is accepted (2026-11-02). S1-06.13 can start, but writes no personal data before the DPO review. S1-06.14 and S1-06.21 stay Blocked until it is done. The sample journey waits with them |
 | Sample items are PNG, but the upload scenario says JPEG | The format the tool accepts is not settled in the spec | Spec owner | Name the accepted formats in the spec before S1-06.09 is built |
 | Sample images are OpenRAIL, development-only, and some show brand logos | Licence and logo rules; product use is not allowed | Product owner and privacy reviewer | Keep them in `_samples/`. Do not copy them into `examples/` or product assets. The privacy review checks the logos |
 | `wardrobe_list_items` has no field list | The output-minimisation scenario cannot be written precisely | Spec owner | List the fields in Design (Tool set). S1-06.10 is Blocked until then |
-| Server-side outfits for signed-in people need a new store | Personal data in a new place | Architect | Spike S1-06.01 writes ADR-0013 as Proposed. A person accepts it, then S1-06.13 and S1-06.14 start |
+| Server-side outfits for signed-in people need a new store | Personal data in a new place | Architect | ADR-0013 is accepted (2026-11-02, Option A, answers recorded). DPO review of the store was accepted on 2026-11-02 |
 | Elicitation on clients below 2026-07-28, and the SDK's legacy path in stateless mode | The question never reaches the person | Backend | Spike before the first elicitation ticket. Until then the honest fallback result applies |
 | Elicitation not yet in requirements.md (F7.5) | A capability ships without an approved requirement | Product owner | Approve the proposed F7.5 wording before any elicitation ticket is cut |
 | Elicited answers are personal data | Privacy | Privacy reviewer | The category is the only answer the spec keeps. Review before any second use |
@@ -196,7 +196,7 @@ Breakdown from [tickets-from-spec](../../.claude/skills/tickets-from-spec/SKILL.
 
 | Key | Ticket | Role | Wave | Status | Blocked by |
 | --- | --- | --- | --- | --- | --- |
-| S1-06.01 | [Propose server-side outfits decision (ADR-0013)](S1-06.01-propose-server-side-outfits-adr.md) | architect | 1 | To Do | None |
+| S1-06.01 | [Propose server-side outfits decision (ADR-0013)](S1-06.01-propose-server-side-outfits-adr.md) | architect | 1 | Done | None |
 | S1-06.02 | [Keycloak audience mapper for the API URI](S1-06.02-keycloak-audience-mapper-api-uri.md) | infra-engineer | 1 | To Do | S1-03 (external) |
 | S1-06.03 | [Red acceptance: auth surface](S1-06.03-red-acceptance-auth-surface.md) | acceptance-author | 1 | To Do | None |
 | S1-06.04 | [Red acceptance: upload and identity](S1-06.04-red-acceptance-wardrobe-upload-and-identity.md) | acceptance-author | 2 | To Do | S1-06.03, S1-03 (external) |
@@ -208,7 +208,7 @@ Breakdown from [tickets-from-spec](../../.claude/skills/tickets-from-spec/SKILL.
 | S1-06.10 | [MCP tool: wardrobe_list_items](S1-06.10-wardrobe-list-items-tool.md) | backend-engineer | 4 | Blocked | S1-06.06, S1-06.08, S1-06.11 |
 | S1-06.11 | [Consent and 18+ gate for MCP tools](S1-06.11-consent-and-age-gate-for-mcp-tools.md) | backend-engineer | 3 | To Do | S1-06.05, S1-06.08, S1-04 (external) |
 | S1-06.12 | [Rate limit MCP tool calls](S1-06.12-rate-limit-mcp-tool-calls.md) | backend-engineer | 3 | To Do | S1-06.06, S1-06.08, S1-05 (external) |
-| S1-06.13 | [Server-side outfits store in PostgreSQL](S1-06.13-outfits-store-postgresql.md) | data-engineer | 2 | Blocked | S1-06.01 |
+| S1-06.13 | [Server-side outfits store in PostgreSQL](S1-06.13-outfits-store-postgresql.md) | data-engineer | 2 | To Do | S1-06.01 (done). DPO review accepted 2026-11-02 |
 | S1-06.14 | [MCP tool: outfit_create](S1-06.14-outfit-create-tool.md) | backend-engineer | 3 | Blocked | S1-06.07, S1-06.08, S1-06.13 |
 | S1-06.15 | [Privacy review: MCP access](S1-06.15-privacy-review-mcp-access.md) | privacy-reviewer | 7 | To Do | S1-06.02, S1-06.09, S1-06.10, S1-06.11, S1-06.12, S1-06.14, S1-06.19, S1-06.22 |
 | S1-06.16 | [Close S1-06: spec status and ticket table](S1-06.16-close-s1-06-spec.md) | docs-steward | 8 | To Do | S1-06.15 |
@@ -218,3 +218,5 @@ Breakdown from [tickets-from-spec](../../.claude/skills/tickets-from-spec/SKILL.
 | S1-06.20 | [Red acceptance: sample journey](S1-06.20-red-acceptance-sample-journey.md) | acceptance-author | 2 | To Do | S1-06.03 |
 | S1-06.21 | [MCP tool: outfit_list](S1-06.21-outfit-list-tool.md) | backend-engineer | 4 | Blocked | S1-06.08, S1-06.11, S1-06.13, S1-06.20 |
 | S1-06.22 | [Sample client: the typical journey, with elicitation](S1-06.22-sample-client-elicitation-journey.md) | backend-engineer | 6 | Blocked | S1-06.09, S1-06.14, S1-06.17, S1-06.19, S1-06.21 |
+| S1-06.23 | [Record photo keys for deletion in the withdrawal and account-deletion transactions](S1-06.23-photo-deletion-queue.md) | data-engineer | 3 | To Do | S1-06.13 |
+| S1-06.24 | [Retry photo deletion from object storage until it succeeds](S1-06.24-photo-deletion-retry.md) | backend-engineer | 4 | To Do | S1-06.23 |

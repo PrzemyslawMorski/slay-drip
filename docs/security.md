@@ -133,7 +133,7 @@ Anything that is not obviously in one of these classes is **Personal** until som
 
 - Self-service in the app: view, export (JSON and images), and delete all data in one action (S7-01).
 - Toggle raw photo retention and delete any single photo.
-- Erasure removes data from live stores and propagates to backups within a defined window. The window is an open decision: define it before launch.
+- Erasure removes data from live stores and propagates to backups within a defined window. For the outfit store (ADR-0013) the window is 6 months. This is a provisional answer from 2026-11-02, and the DPO confirms it before launch.
 - Respond to any request outside the app within one month of receipt (GDPR Art. 12). Log the request, not the content.
 
 ## 15. Incident response and disclosure
@@ -169,7 +169,7 @@ These block parts of this guide. Do not decide them in code.
 - Identity provider for user accounts (F02).
 - DPO review of special-category fields (modesty, adaptive needs) and whether age is stored at all.
 - DPIA, completed before real user data is collected.
-- Erasure window for backups.
+- Erasure window for backups: provisionally 6 months (outfit store, ADR-0013). The DPO confirms it before launch.
 - Supervisory authority and breach-notification route.
 - Security contact and `SECURITY.md`.
 - EU-hosted model choice (F10).
