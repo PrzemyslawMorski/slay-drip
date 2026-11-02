@@ -5,14 +5,17 @@ import (
 	"net/http"
 	"time"
 
+	"slaydrip/backend/internal/apidocs"
 	"slaydrip/backend/internal/auth"
 	"slaydrip/backend/internal/wardrobe"
 )
 
 // Dependencies are the collaborators the routes need. Every user route uses Verifier.
+// APIDocs turns on the API reference at /docs (API_DOCS_ENABLED, local development only).
 type Dependencies struct {
 	Verifier *auth.Verifier
 	Wardrobe *wardrobe.Service
+	APIDocs  bool
 }
 
 // NewHTTPServer returns the API's HTTP server for addr. The timeouts bound how long
@@ -39,6 +42,10 @@ func NewRouter(deps Dependencies) http.Handler {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", healthz)
+	if deps.APIDocs {
+		mux.Handle("GET /docs", apidocs.PageHandler())
+		mux.Handle("GET /openapi.yaml", apidocs.SpecHandler())
+	}
 
 	mux.Handle("GET /consents/wardrobe-photos", secure(h.getConsent))
 	mux.Handle("PUT /consents/wardrobe-photos", secure(h.putConsent))
