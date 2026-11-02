@@ -45,6 +45,7 @@ The MVP is a closed loop: **capture wardrobe → build profile → ask for an oc
 | Request input | Occasion presets + free-text mood/constraint tweak | Saved custom themes | Event planning (trip packing, week ahead) |
 | Context | Weather, wear history, laundry/availability | Calendar integration (opt-in) | — |
 | Personalisation | Likes, rejections, "wore it" feed a taste profile | Explainable taste profile the user can edit | — |
+| Agent access (MCP) | Wardrobe and outfit actions as MCP tools (F7), first-class for every new capability | — | — |
 | Monetisation | Free | Freemium: try-on, unlimited items, stylist chat | Affiliate revenue |
 
 **Explicitly out of scope for MVP:** native apps, social sharing/feeds, human stylists, users under 18, calendar access, purchase links.
@@ -92,6 +93,13 @@ The MVP is a closed loop: **capture wardrobe → build profile → ask for an oc
 
 1. View, export (JSON + images) and delete all data in one action.
 2. Toggle raw photo retention; delete any photo individually.
+
+**F7. Agent access (MCP)** *(MVP, first-class)*
+
+1. The backend exposes its wardrobe and outfit actions as an MCP server, so a signed-in person can use an MCP-capable AI client (for example Claude) to upload wardrobe images, create and save outfits, and read their own wardrobe.
+2. Every MCP tool call runs as the signed-in person, using a token issued by the same identity provider as the app. A tool can only act on that person's data, and it honours the same consent, 18+ and rate-limit rules as the app's API.
+3. The MCP surface is a second client of the same backend, not a second copy of the logic. Each tool states its OAuth scope and the consent it needs. Revoking consent removes that tool's access to the data.
+4. **MCP is first-class.** Every new user-facing capability is exposed as MCP tools in the same change, with the same identity, consent and rate-limit rules. A spec that does not do so states why, and the reason is reviewed with the spec.
 
 ## Privacy, GDPR & trust
 

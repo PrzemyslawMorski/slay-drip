@@ -62,6 +62,7 @@ Use git worktrees extensively so parallel work never shares a checkout. This app
 ## When making changes
 
 - Keep changes scoped to the requested task.
+- MCP is first-class: every new user-facing capability is also an MCP tool in the same change, on the same identity and consent rules. See `docs/requirements.md` (F7) and `docs/adr/0012-mcp-server-transport-and-auth.md`.
 
 ## Starting a feature or decision
 
