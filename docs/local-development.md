@@ -48,6 +48,8 @@ Run these from `backend/`.
 
 Run the API with `go run ./cmd/api` (listens on `PORT`, default 8080). `GET /healthz` returns `{"status":"ok"}`.
 
+To browse the API reference, start the API with `API_DOCS_ENABLED=true` and open `http://127.0.0.1:8080/docs`. The page is Scalar, loaded from jsDelivr, and reads the OpenAPI document at `/openapi.yaml`. The document lives in `backend/internal/apidocs/openapi.yaml`. A test fails if an operation in it has no matching route, so update it with every route change.
+
 ## Config contract
 
 The app reads these keys. It must not hard-code any of them, and the same names are used in every environment.
@@ -69,6 +71,7 @@ The app reads these keys. It must not hard-code any of them, and the same names 
 | `KEYCLOAK_REALM` | `slay-drip` | `slay-drip` |
 | `KEYCLOAK_ADMIN_CLIENT_ID` | `slay-drip-backend-admin` | `slay-drip-backend-admin` |
 | `KEYCLOAK_ADMIN_CLIENT_SECRET` | throwaway local value in `infra/dev/keycloak/realm/slay-drip-realm.json` | from the container environment, never from source |
+| `API_DOCS_ENABLED` | `true` (optional, default `false`) | not set. The API reference is never served in Scaleway environments |
 
 Local values are throwaway and are only valid against the local stand-in. Do not reuse them anywhere else.
 

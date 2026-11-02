@@ -1,0 +1,286 @@
+openapi: 3.1.0
+info:
+  title: Slay Drip API
+  version: 0.1.0
+  description: |
+    Reference for the Slay Drip HTTP API. This page is served only when the API runs with
+    `API_DOCS_ENABLED=true` (local development). Every route except `/healthz` needs a bearer
+    token from the identity provider. The examples use synthetic data only.
+servers:
+  - url: http://127.0.0.1:8080
+    description: Local API (`go run ./cmd/api`)
+tags:
+  - name: Health
+  - name: Consent
+  - name: Wardrobe
+paths:
+  /healthz:
+    get:
+      tags: [Health]
+      summary: Liveness check
+      operationId: healthz
+      security: []
+      responses:
+        "200":
+          description: The API is running.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    const: ok
+  /consents/wardrobe-photos:
+    get:
+      tags: [Consent]
+      summary: Read the wardrobe-photo consent
+      operationId: getWardrobeConsent
+      responses:
+        "200":
+          description: "The current consent. A user who has never answered gets `granted: false`."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Consent"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    put:
+      tags: [Consent]
+      summary: Grant or revoke wardrobe-photo consent
+      description: |
+        Revoking consent deletes every wardrobe photo the user has stored, in the same
+        request. Unknown fields are refused.
+      operationId: putWardrobeConsent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [granted]
+              properties:
+                granted:
+                  type: boolean
+            example:
+              granted: true
+      responses:
+        "200":
+          description: The consent after the change.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Consent"
+        "400":
+          $ref: "#/components/responses/InvalidBody"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /wardrobe/items:
+    get:
+      tags: [Wardrobe]
+      summary: List the user's wardrobe items
+      operationId: listWardrobeItems
+      responses:
+        "200":
+          description: The user's items. Only the caller's items are returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Item"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      tags: [Wardrobe]
+      summary: Upload a wardrobe photo
+      description: |
+        Needs wardrobe-photo consent, otherwise the request is refused with
+        `consent_required` before the upload is read. The photo must be a JPEG, PNG or WebP
+        image of at most 10 MB, and the server re-encodes it before storing.
+      operationId: addWardrobeItem
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [photo]
+              properties:
+                photo:
+                  type: string
+                  format: binary
+                  description: One JPEG, PNG or WebP image, at most 10 MB.
+      responses:
+        "201":
+          description: The stored item.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Item"
+        "400":
+          description: The upload is malformed or has no `photo` part (`invalid_upload` or `missing_photo`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "409":
+          description: Wardrobe-photo consent has not been granted (`consent_required`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "413":
+          description: The photo is larger than 10 MB (`photo_too_large`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "415":
+          description: The bytes are not a JPEG, PNG or WebP image (`unsupported_photo`).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /wardrobe/items/{id}/photo:
+    parameters:
+      - $ref: "#/components/parameters/ItemID"
+    get:
+      tags: [Wardrobe]
+      summary: Download a wardrobe photo
+      operationId: getWardrobeItemPhoto
+      responses:
+        "200":
+          description: The photo bytes, with the stored content type.
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /wardrobe/items/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ItemID"
+    delete:
+      tags: [Wardrobe]
+      summary: Delete a wardrobe item
+      operationId: deleteWardrobeItem
+      responses:
+        "204":
+          description: The item and its photo are deleted.
+        "401":
+          $ref: "#/components/responses/Unauthenticated"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: An RS256 access token from the identity provider, for the `slay-drip-api` audience.
+  parameters:
+    ItemID:
+      name: id
+      in: path
+      required: true
+      description: The item ID returned when the item was created.
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    Consent:
+      type: object
+      required: [granted, grantedAt]
+      properties:
+        granted:
+          type: boolean
+        grantedAt:
+          type: [string, "null"]
+          format: date-time
+          description: When consent was last granted, or null when it never was.
+      example:
+        granted: true
+        grantedAt: "2026-11-02T10:00:00Z"
+    Item:
+      type: object
+      required: [id, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+      example:
+        id: 4f0c8d2e-6b1a-4c7e-9d3f-2a5b8e1c7d90
+        createdAt: "2026-11-02T10:05:00Z"
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          description: A stable error code. Messages are never returned, so personal data stays out of responses.
+      example:
+        error: consent_required
+  responses:
+    Unauthenticated:
+      description: The bearer token is missing, expired or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: unauthenticated
+    InvalidBody:
+      description: The body is not valid JSON for this route, or has unknown fields (`invalid_body`).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: The item does not exist for this user (`not_found`). Items owned by others look the same.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    InternalError:
+      description: An unexpected server error (`internal_error`).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+security:
+  - bearerAuth: []
