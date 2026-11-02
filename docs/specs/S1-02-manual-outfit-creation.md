@@ -247,3 +247,41 @@ Scenario: The outfit builder and outfit list have no detectable accessibility vi
 - **"Anonymous" means no account,** as in S1-01. Data is scoped to one browser on one device.
 - **Synthetic test data only.** Test photos are generated in the test run, as in S1-01.
 - Strings are externalised in `frontend/src/strings/en.ts` for later localisation.
+
+## Tickets
+
+Breakdown from [tickets-from-spec](../../.claude/skills/tickets-from-spec/SKILL.md). Waves are computed over blockers inside this batch. S1-01 is a spec with no tickets yet, so the S1-01 blocker is recorded on the spec key.
+
+| Key | Ticket | Role | Wave | Status | Blocked by |
+| --- | --- | --- | --- | --- | --- |
+| S1-02.01 | [Amend ADR-0004 for an on-device outfits store](S1-02.01-amend-adr-0004-outfits-store.md) | architect | 1 | To Do | None |
+| S1-02.02 | [Red acceptance: starting an outfit](S1-02.02-start-outfit.md) | acceptance-author | 1 | To Do | None |
+| S1-02.03 | [Red acceptance: outfits are behind the 18+ confirmation](S1-02.03-age-gate-outfits.md) | acceptance-author | 1 | To Do | None |
+| S1-02.04 | [Red acceptance: choosing items in order and removing them](S1-02.04-select-items-order-toggle.md) | acceptance-author | 1 | To Do | None |
+| S1-02.05 | [Red acceptance: keyboard selection and the no-items rule](S1-02.05-select-keyboard-and-no-items.md) | acceptance-author | 1 | To Do | None |
+| S1-02.06 | [Red acceptance: saving a named or unnamed outfit](S1-02.06-save-named-and-numbered.md) | acceptance-author | 1 | To Do | None |
+| S1-02.07 | [Red acceptance: name length limit and outfits kept after reload](S1-02.07-name-length-and-reload.md) | acceptance-author | 1 | To Do | None |
+| S1-02.08 | [Red acceptance: changing items, deleting an outfit, adding a photo](S1-02.08-edit-and-delete-outfit.md) | acceptance-author | 1 | To Do | None |
+| S1-02.09 | [Red acceptance: deleting a wardrobe item updates outfits](S1-02.09-delete-item-cascade.md) | acceptance-author | 1 | To Do | None |
+| S1-02.10 | [Red acceptance: withdrawing consent deletes outfits](S1-02.10-withdraw-consent-deletes-outfits.md) | acceptance-author | 1 | To Do | None |
+| S1-02.11 | [Red acceptance: outfits never leave the device](S1-02.11-no-network-for-outfits.md) | acceptance-author | 1 | To Do | None |
+| S1-02.12 | [Red acceptance: outfit screens meet WCAG 2.1 AA](S1-02.12-a11y-outfit-screens.md) | acceptance-author | 1 | To Do | None |
+| S1-02.13 | [Outfits store persists across reloads](S1-02.13-outfits-store-on-device.md) | data-engineer | 2 | Blocked | S1-02.01, S1-02.07 |
+| S1-02.14 | [Deleting a wardrobe item updates outfits in one transaction](S1-02.14-cascade-item-delete-outfits.md) | data-engineer | 2 | Blocked | S1-02.01, S1-02.09 |
+| S1-02.15 | [Withdrawing consent clears outfits](S1-02.15-withdraw-consent-clears-outfits.md) | data-engineer | 2 | Blocked | S1-02.01, S1-02.10 |
+| S1-02.16 | [Create outfit entry shows items or the empty-wardrobe message](S1-02.16-start-outfit-ui.md) | frontend-engineer | 2 | To Do | S1-02.02, S1-01 |
+| S1-02.17 | [Outfits are unreachable until the 18+ confirmation](S1-02.17-age-gate-outfit-ui.md) | frontend-engineer | 2 | To Do | S1-02.03, S1-01 |
+| S1-02.18 | [Selecting items builds the preview in the order chosen](S1-02.18-select-items-ui.md) | frontend-engineer | 2 | To Do | S1-02.04, S1-01 |
+| S1-02.19 | [Keyboard selection works; a save with no items is refused](S1-02.19-keyboard-and-no-items-ui.md) | frontend-engineer | 2 | To Do | S1-02.05, S1-01 |
+| S1-02.20 | [Saving names the outfit and lists it](S1-02.20-save-outfit-ui.md) | frontend-engineer | 3 | To Do | S1-02.06, S1-02.13, S1-01 |
+| S1-02.21 | [Outfit names are limited to 60 characters](S1-02.21-name-length-rule.md) | frontend-engineer | 2 | To Do | S1-02.07, S1-01 |
+| S1-02.22 | [A saved outfit's items can be changed; adding a photo leaves it alone](S1-02.22-edit-items-ui.md) | frontend-engineer | 3 | To Do | S1-02.08, S1-02.13, S1-01 |
+| S1-02.23 | [Deleting an outfit asks for confirmation and keeps its items](S1-02.23-delete-outfit-ui.md) | frontend-engineer | 3 | To Do | S1-02.08, S1-02.13, S1-01 |
+| S1-02.24 | [Outfit screens make no network request](S1-02.24-no-network-outfits.md) | frontend-engineer | 2 | To Do | S1-02.11, S1-01 |
+| S1-02.25 | [Outfit screens pass the axe check and keyboard checks](S1-02.25-a11y-outfit-screens-ui.md) | frontend-engineer | 2 | To Do | S1-02.12, S1-01 |
+| S1-02.26 | [Privacy review of on-device outfits](S1-02.26-privacy-review-outfits.md) | privacy-reviewer | 4 | To Do | S1-02.13, S1-02.14, S1-02.15, S1-02.16, S1-02.17, S1-02.18, S1-02.19, S1-02.20, S1-02.21, S1-02.22, S1-02.23, S1-02.24, S1-02.25 |
+| S1-02.27 | [Accessibility review of the outfit screens](S1-02.27-a11y-review-outfit-screens.md) | a11y-reviewer | 3 | To Do | S1-02.25 |
+
+Key `S1-02.28` is unused. It was a docs-steward close-out ticket with no behaviour to own. Closing this spec is a manual step after the reviews.
+
+Dispatch waves: wave 1 is the ADR-0004 amendment and the red acceptance tickets; wave 2 is the store and the first frontend screens; wave 3 is the dependent screens and the accessibility review; wave 4 is the privacy review.
