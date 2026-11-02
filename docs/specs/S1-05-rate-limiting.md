@@ -77,3 +77,19 @@ Scenario: Rate-limited routes are listed and tested
 - **Role:** `backend-engineer`. Design choice: an in-process fixed-window or token-bucket limiter behind a port. It counts per instance, so with several instances the effective limit is higher. A shared store (for example Valkey on Scaleway) would need its own ADR, so it is not decided here.
 - **AI-backed routes:** none exist yet. When one is added, it must join the same list.
 - **Logging:** log the route category and the count only, never the subject identifier.
+
+## Tickets
+
+Breakdown from [tickets-from-spec](../../.claude/skills/tickets-from-spec/SKILL.md). Waves are computed over blockers inside this batch.
+
+| Key | Ticket | Role | Wave | Status | Blocked by |
+| --- | --- | --- | --- | --- | --- |
+| S1-05.01 | [Red acceptance: refusal above the limit and per-account limits](S1-05.01-red-acceptance-limit-and-account-isolation.md) | acceptance-author | 1 | To Do | None |
+| S1-05.02 | [Red acceptance: window reset and refusal before the limiter](S1-05.02-red-acceptance-window-reset-and-auth-first.md) | acceptance-author | 1 | To Do | None |
+| S1-05.03 | [Red acceptance: rate-limited routes are listed and tested](S1-05.03-red-acceptance-rate-limited-route-list.md) | acceptance-author | 1 | To Do | None |
+| S1-05.04 | [Rate limiter port with an in-process fixed window](S1-05.04-rate-limiter-port-and-fixed-window.md) | backend-engineer | 2 | To Do | S1-05.01, S1-05.02 |
+| S1-05.05 | [Rate-limit middleware: 429 with Retry-After, and per-account limits](S1-05.05-rate-limit-middleware-429-and-refusal.md) | backend-engineer | 3 | To Do | S1-05.01, S1-05.04 |
+| S1-05.06 | [Rate-limit window reset, and 401 before the limiter](S1-05.06-rate-limit-window-reset-and-auth-order.md) | backend-engineer | 4 | To Do | S1-05.02, S1-05.04, S1-05.05 |
+| S1-05.07 | [Mark rate-limited routes and test the list](S1-05.07-mark-rate-limited-routes-and-list-test.md) | backend-engineer | 5 | To Do | S1-05.03, S1-05.06 |
+| S1-05.08 | [Privacy review: rate limiting and its logs](S1-05.08-privacy-review-rate-limiting.md) | privacy-reviewer | 6 | To Do | S1-05.04, S1-05.05, S1-05.06, S1-05.07 |
+| S1-05.09 | [Close S1-05: spec status and single-instance follow-up](S1-05.09-close-s1-05-spec.md) | docs-steward | 7 | To Do | S1-05.08 |
