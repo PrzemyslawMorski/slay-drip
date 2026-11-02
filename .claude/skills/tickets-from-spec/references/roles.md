@@ -48,7 +48,7 @@ Every role also obeys these rules, which the ticket does not repeat:
 
 ### `backend-engineer`
 
-- **Owns:** `backend/internal/server/`, `backend/internal/<domain>/` (any new domain package; `db/`, `ai/` and `eval/` belong to other roles), `backend/cmd/api/`
+- **Owns:** `backend/internal/server/`, `backend/internal/<domain>/` (any new domain package; `db/`, `ai/` and `eval/` belong to other roles), `backend/cmd/api/`, `backend/go.mod`, `backend/go.sum`, `examples/`
 - **Reads first:** `docs/code-review/backend-ruleset.md`, `docs/code-review/age-gate.md`, `docs/code-review/consent-and-gdpr.md` for the route touched, `docs/security.md` sections 5 and 10.
 - **Does:** HTTP handlers, domain services, ports and their in-memory fakes, and contract tests (BE-22). Errors wrapped with `%w`, context first, timeouts on every outbound call.
 - **Must not:** take user identity from the body or a query string (BE-41), log content (BE-35), or add a mocking generator (BE-27).
