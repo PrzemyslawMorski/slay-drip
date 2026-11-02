@@ -82,6 +82,10 @@ func connect(ctx context.Context) (server.Dependencies, func(), error) {
 	if err != nil {
 		return server.Dependencies{}, nil, err
 	}
+	apiDocs, err := apiDocsFromEnv()
+	if err != nil {
+		return server.Dependencies{}, nil, err
+	}
 
 	pool, err := db.Open(ctx, databaseURL)
 	if err != nil {
@@ -96,8 +100,19 @@ func connect(ctx context.Context) (server.Dependencies, func(), error) {
 	deps := server.Dependencies{
 		Verifier: verifier,
 		Wardrobe: wardrobe.NewService(db.NewWardrobe(pool), blobs, slog.Default()),
+		APIDocs:  apiDocs,
 	}
 	return deps, pool.Close, nil
+}
+
+// apiDocsFromEnv reads API_DOCS_ENABLED. It is off unless set to true, so the API
+// reference is not served in any environment by default.
+func apiDocsFromEnv() (bool, error) {
+	enabled, err := strconv.ParseBool(getenv("API_DOCS_ENABLED", "false"))
+	if err != nil {
+		return false, errors.New("API_DOCS_ENABLED must be true or false")
+	}
+	return enabled, nil
 }
 
 func s3FromEnv() (*storage.S3, error) {
