@@ -4,6 +4,8 @@
 **Depends on:** None. [ADR-0010](../adr/0010-identity-provider-keycloak.md) (Accepted) decides the provider. [ADR-0005](../adr/0005-local-cloud-emulation.md) and [ADR-0006](../adr/0006-development-feedback-loops-ports-and-fakes.md) (Accepted) set the local-stand-in rules.
 **Related:** [requirements](../requirements.md) (Session 1 walking skeleton row; F1.1 age gate at sign-up; F6.1 delete all data), [ADR-0010](../adr/0010-identity-provider-keycloak.md) (follow-up "Local service"), [security guide](../security.md) (sections 2, 3, 5, 9, 13), [local development guide](../local-development.md), [compose.yaml](../../compose.yaml), [S1-01](S1-01-anonymous-wardrobe-upload.md) (spec format reference)
 
+**Note (2026-11-02):** the stack-lifecycle scenario "The local identity provider starts beside PostgreSQL and the S3 stand-in" is being rewritten under [S1-07](S1-07-containerised-dev-tooling.md) (S1-07.15), from "starts the stack" to "checks a stack that is already running", because all development tooling now runs in containers ([ADR-0014](../adr/0014-containerised-dev-tooling.md)). The scenario text below is unchanged here; S1-07's spec change note quotes the new wording.
+
 ## Problem
 
 ADR-0010 chose self-hosted Keycloak as the identity provider and left a local service as follow-up work. Without it, Session 1 sign-up and sign-in cannot run offline against the same issuer, JWKS and token flow that production uses, so developers would test against a fake or not at all.

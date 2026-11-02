@@ -2,7 +2,7 @@
 
 **Status:** Ready
 **Slice:** Session 1, now (MCP is an MVP capability, see F7) · **Priority:** P1
-**Depends on:** S1-03 (local Keycloak), S1-04 (server-side 18+ gate), S1-05 (rate limiting), server-side wardrobe for signed-in users (commit f5fb22c), S1-02 (outfit creation, for `outfit_create`)
+**Depends on:** [S1-07](S1-07-containerised-dev-tooling.md) (containerised development tooling, a blocker: S1-06 does not start until S1-07 is Done), S1-03 (local Keycloak), S1-04 (server-side 18+ gate), S1-05 (rate limiting), server-side wardrobe for signed-in users (commit f5fb22c), S1-02 (outfit creation, for `outfit_create`)
 **Related:** [requirements](../requirements.md) (F7, F6, Privacy §4, §6, §9), [ADR-0012](../adr/0012-mcp-server-transport-and-auth.md) (transport and auth), [ADR-0010](../adr/0010-identity-provider-keycloak.md), [security guide](../security.md) (§2, §5, §8, §10), [backend ruleset](../code-review/backend-ruleset.md) (BE-35, BE-41, BE-47, BE-49), [ADR-0005](../adr/0005-local-cloud-emulation.md), [ADR-0006](../adr/0006-development-feedback-loops-ports-and-fakes.md)
 
 ## Problem
