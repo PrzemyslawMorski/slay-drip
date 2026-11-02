@@ -91,6 +91,22 @@ The PreCompact, PostCompact and SessionStart hooks never block. Only PreToolUse 
 - The Keycloak and CI work needs review and merge.
 - The consent deletion gap from 2026-10-27 is still open.
 
+## Week 4 (30 October – 5 November)
+
+### 2026-11-02: MCP servers
+
+- Registered the first MCP server for the repo: Context7, which serves current library documentation to agents. It is a project `.mcp.json` entry pointing at the hosted endpoint, with no key committed [6b78885].
+- MCP is an open protocol that connects AI applications to tools, data and prompts. Hosts run clients, and each client talks to one server. Servers expose tools, resources and prompts. See the [MCP introduction](https://modelcontextprotocol.io/docs/2026-07-28/getting-started/intro).
+- The PII egress hook already matches `mcp__.*`, so outbound MCP calls are checked like web calls. See [security.md](security.md) section 8.
+- Cloudflare's [code mode](https://blog.cloudflare.com/code-mode/) argues that agents do better when MCP tools are presented as a typed API and the model writes code that calls them, with only the final results returned. The post reports qualitative findings, not benchmark numbers, so treat the gain as unmeasured here.
+
+**Takeaway:** every MCP tool definition costs context and accuracy, so add servers with a clear purpose and few tools. Before adding a second server, measure its token cost on a real task.
+
+**Still open**
+
+- No rule yet says which MCP servers are approved, how many tools a server may expose, or who reviews a new one.
+- Context7 queries leave the machine. Keep personal data out of them.
+
 ## The pipeline at a glance
 
 | Stage | What exists now | Where it started |
