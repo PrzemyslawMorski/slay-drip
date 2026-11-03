@@ -107,6 +107,14 @@ The PreCompact, PostCompact and SessionStart hooks never block. Only PreToolUse 
 - No rule yet says which MCP servers are approved, how many tools a server may expose, or who reviews a new one.
 - Context7 queries leave the machine. Keep personal data out of them.
 
+### 2026-11-03: LSP plugins for Go, TypeScript and Python
+
+- Enabled the official `gopls-lsp`, `typescript-lsp` and `pyright-lsp` plugins in the project `.claude/settings.json` (`enabledPlugins`), so agents get code intelligence for the three languages [dee4d58 on `chore/lsp-plugins`, PR #50].
+- The plugins only start language servers that are already on PATH. Each collaborator installs them once per machine with `claude plugin install <name>@claude-plugins-official --scope project`.
+- The change was not run in this session. The plugins are not yet installed or tested here, and cloud sessions do not start plugin language servers.
+
+**Takeaway:** a committed setting turns a capability on for everyone who clones the repo, but it does not install anything on their machine. Write down the per-machine steps next to the setting, or the setting does nothing for a new contributor.
+
 ## The pipeline at a glance
 
 | Stage | What exists now | Where it started |
@@ -119,6 +127,7 @@ The PreCompact, PostCompact and SessionStart hooks never block. Only PreToolUse 
 | CI | Backend workflow, pinned actions, Dependabot | 2026-10-22 |
 | Agent definitions | `.claude/agents/` (pr-reviewer, executor, orchestrator, planner), worktree rule | 2026-10-27 |
 | Hooks | `.claude/hooks/` (Python), PreToolUse guards, compaction hooks | 2026-10-13 (`.env` guard), 2026-10-28 (Python port and compaction hooks) |
+| Code intelligence | `.claude/settings.json` `enabledPlugins` (LSP for Go, TypeScript, Python), PR #50 open | 2026-11-03 |
 | Local identity | Keycloak stand-in on `feat/local-keycloak` (not merged) | 2026-10-27 (spec), 2026-10-28 (stack) |
 
 ## The master skill: one entry point that routes to playbooks
