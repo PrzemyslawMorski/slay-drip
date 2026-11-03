@@ -29,6 +29,8 @@ export default defineConfig({
   use: {
     baseURL: APP_URL,
     trace: 'retain-on-failure',
+    // Recording mode (recorded-browser-run-as-proof skill) keeps a video of every scenario, not only failures.
+    video: process.env.PROOF_RECORDING ? 'on' : 'retain-on-failure',
   },
   projects: [
     {

@@ -189,6 +189,8 @@ backend/bin/
 frontend/.features-gen/
 frontend/test-results/
 frontend/playwright-report/
+# Browser recordings from the recorded-browser-run-as-proof skill (synthetic data, kept local)
+frontend/proof-runs/
 
 # Handoff notes (kept local, see the handoff skill)
 docs/handoffs/
