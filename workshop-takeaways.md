@@ -115,6 +115,14 @@ The PreCompact, PostCompact and SessionStart hooks never block. Only PreToolUse 
 
 **Takeaway:** a committed setting turns a capability on for everyone who clones the repo, but it does not install anything on their machine. Write down the per-machine steps next to the setting, or the setting does nothing for a new contributor.
 
+### 2026-11-03: Recorded browser runs as proof
+
+- Added the `recorded-browser-run-as-proof` skill and its Python script. It records a Gherkin acceptance scenario as a Playwright video, converts it to MP4 with ffmpeg, and writes a `PROOF.md` with a still per step and a PASSED or FAILED verdict.
+- Recording is one env flag in `frontend/playwright.config.ts` (`PROOF_RECORDING`). Proofs go to `frontend/proof-runs/`, which is gitignored. The script needs ffmpeg on PATH.
+- Verified on the S1-02 "start a new outfit" scenario (passed, exit 0) and on a throwaway failing scenario (exit 1, marked FAILED). The stack path (`--with-deps`, Keycloak scenarios) has not been run yet.
+
+**Takeaway:** a recording shows what the scenario asserts and nothing more. Keep the assertions strict, and treat a failed run as a failure, not as evidence that the feature works.
+
 ## The pipeline at a glance
 
 | Stage | What exists now | Where it started |
@@ -128,6 +136,7 @@ The PreCompact, PostCompact and SessionStart hooks never block. Only PreToolUse 
 | Agent definitions | `.claude/agents/` (pr-reviewer, executor, orchestrator, planner), worktree rule | 2026-10-27 |
 | Hooks | `.claude/hooks/` (Python), PreToolUse guards, compaction hooks | 2026-10-13 (`.env` guard), 2026-10-28 (Python port and compaction hooks) |
 | Code intelligence | `.claude/settings.json` `enabledPlugins` (LSP for Go, TypeScript, Python), PR #50 open | 2026-11-03 |
+| Browser proof | `recorded-browser-run-as-proof` skill, Playwright recording mode, ffmpeg packaging | 2026-11-03 |
 | Local identity | Keycloak stand-in on `feat/local-keycloak` (not merged) | 2026-10-27 (spec), 2026-10-28 (stack) |
 
 ## The master skill: one entry point that routes to playbooks
