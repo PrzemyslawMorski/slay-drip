@@ -1,0 +1,12 @@
+id: no-aws-sdk-import-go
+snapshots:
+  import "github.com/aws/aws-sdk-go-v2/service/s3":
+    labels:
+    - source: "\"github.com/aws/aws-sdk-go-v2/service/s3\""
+      style: primary
+      start: 7
+      end: 48
+    - source: "\"github.com/aws/aws-sdk-go-v2/service/s3\""
+      style: secondary
+      start: 7
+      end: 48

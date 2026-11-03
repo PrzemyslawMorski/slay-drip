@@ -1,0 +1,14 @@
+id: no-sprintf-sql-go
+snapshots:
+  "query := fmt.Sprintf(\"SELECT id FROM items WHERE user_id = '%s'\", userID)":
+    labels:
+    - source: fmt.Sprintf("SELECT id FROM items WHERE user_id = '%s'", userID)
+      style: primary
+      start: 9
+      end: 73
+  "query := fmt.Sprintf(\"delete from outfits where id = %d\", id)":
+    labels:
+    - source: fmt.Sprintf("delete from outfits where id = %d", id)
+      style: primary
+      start: 9
+      end: 61

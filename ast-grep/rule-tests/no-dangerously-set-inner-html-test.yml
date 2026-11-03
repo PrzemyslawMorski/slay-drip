@@ -1,0 +1,6 @@
+id: no-dangerously-set-inner-html
+valid:
+  - 'const view = <p>{label}</p>'
+  - 'const config = { dangerouslySetInnerHTML: undefined }'
+invalid:
+  - 'const view = <div dangerouslySetInnerHTML={{ __html: rationale }} />'

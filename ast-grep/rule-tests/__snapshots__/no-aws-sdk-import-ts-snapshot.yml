@@ -1,0 +1,22 @@
+id: no-aws-sdk-import-ts
+snapshots:
+  "import { S3Client } from '@aws-sdk/client-s3'":
+    labels:
+    - source: import { S3Client } from '@aws-sdk/client-s3'
+      style: primary
+      start: 0
+      end: 45
+    - source: "'@aws-sdk/client-s3'"
+      style: secondary
+      start: 25
+      end: 45
+  "import { getSignedUrl } from \"@aws-sdk/s3-request-presigner\"":
+    labels:
+    - source: import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
+      style: primary
+      start: 0
+      end: 60
+    - source: "\"@aws-sdk/s3-request-presigner\""
+      style: secondary
+      start: 29
+      end: 60

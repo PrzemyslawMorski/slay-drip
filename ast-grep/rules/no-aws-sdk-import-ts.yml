@@ -1,0 +1,10 @@
+id: no-aws-sdk-import-ts
+language: Tsx
+severity: error
+message: AWS SDKs are not allowed. Scaleway is the only cloud provider (CLAUDE.md, ADR-0011).
+note: Use the S3-compatible client chosen in ADR-0011 instead.
+rule:
+  kind: import_statement
+  has:
+    field: source
+    regex: "^['\"]@aws-sdk/"

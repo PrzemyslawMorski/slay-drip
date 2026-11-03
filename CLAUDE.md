@@ -33,6 +33,7 @@ Read these on demand rather than up front:
 
 - `docs/`: requirements, security guide, specs (`specs/`), ADRs (`adr/`) and discovery notes (`discovery/`). Each folder holds its `_`-prefixed template. See `docs/README.md`.
 - `.claude/`: project settings and the `.env` guard hook.
+- `ast-grep/`, `sgconfig.yml`: structural lint rules for ast-grep (ADR-0015). Commands are in `docs/local-development.md`.
 - `compose.yaml`, `infra/dev/`, `scripts/dev/`: local stand-ins for Scaleway services (PostgreSQL, S3) and their smoke checks. See `docs/local-development.md` and ADR-0005.
 - `backend/`: Go API (module `slaydrip/backend`). `cmd/api` is the entry point, `internal/` holds the packages, `migrations/` the SQL migrations, `.golangci.yml` the lint config. Stack in ADR-0007 and ADR-0008.
 
