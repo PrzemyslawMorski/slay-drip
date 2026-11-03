@@ -1,0 +1,8 @@
+id: no-dangerously-set-inner-html
+snapshots:
+  "const view = <div dangerouslySetInnerHTML={{ __html: rationale }} />":
+    labels:
+    - source: "dangerouslySetInnerHTML={{ __html: rationale }}"
+      style: primary
+      start: 18
+      end: 65

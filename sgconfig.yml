@@ -1,0 +1,6 @@
+# ast-grep project configuration. Paths resolve relative to this file.
+# Run from the repo root: see docs/local-development.md (Structural search with ast-grep).
+ruleDirs:
+  - ast-grep/rules
+testConfigs:
+  - testDir: ast-grep/rule-tests

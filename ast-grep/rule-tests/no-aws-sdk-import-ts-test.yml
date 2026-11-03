@@ -1,0 +1,8 @@
+id: no-aws-sdk-import-ts
+valid:
+  - import { S3Client } from '@aws-sdk-compat/client-s3'
+  - import React from 'react'
+  - import { S3Client } from 's3-compatible-client'
+invalid:
+  - import { S3Client } from '@aws-sdk/client-s3'
+  - import { getSignedUrl } from "@aws-sdk/s3-request-presigner"

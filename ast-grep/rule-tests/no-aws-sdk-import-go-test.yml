@@ -1,0 +1,6 @@
+id: no-aws-sdk-import-go
+valid:
+  - import "fmt"
+  - import "github.com/minio/minio-go/v7"
+invalid:
+  - import "github.com/aws/aws-sdk-go-v2/service/s3"

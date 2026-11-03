@@ -1,0 +1,11 @@
+id: no-sprintf-sql-go
+language: Go
+severity: error
+message: Do not build SQL with fmt.Sprintf. Pass values as placeholder arguments.
+note: String-built SQL is an injection risk (OWASP A05). Use $1, $2 placeholders with the arguments after the query.
+rule:
+  kind: call_expression
+  pattern: fmt.Sprintf($FORMAT, $$$ARGS)
+constraints:
+  FORMAT:
+    regex: "(?i)^\"\\s*(select|insert|update|delete|with)\\b"
