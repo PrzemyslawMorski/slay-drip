@@ -123,6 +123,19 @@ The PreCompact, PostCompact and SessionStart hooks never block. Only PreToolUse 
 
 **Takeaway:** a recording shows what the scenario asserts and nothing more. Keep the assertions strict, and treat a failed run as a failure, not as evidence that the feature works.
 
+### 2026-11-03: Structural lint with ast-grep
+
+- Added [ast-grep](https://ast-grep.github.io/) for checks that ESLint and golangci-lint cannot express. Four rules ship with it: no `@aws-sdk/*` imports in TSX or Go, no `dangerouslySetInnerHTML`, and no `fmt.Sprintf` with an SQL verb. Rules are YAML in `ast-grep/rules/`, with tests in `ast-grep/rule-tests/`, and the project config is `sgconfig.yml` [ADR-0015, proposed].
+- The CLI is pinned to `@ast-grep/cli` 0.51.0 and run through `npx`, so no dependency is added to `frontend/` or `backend/`. The pin is 0.51.0 because 0.51.1 was published on 2026-11-02, which is inside the two-week wait.
+- Verified locally: the rule tests pass, and `ast-grep scan` finds no violations in the repo. CI does not run the scan yet. The ADR defers it until the containerised tooling of ADR-0014 exists.
+
+**Takeaway:** a structural rule that matches nothing looks the same as a clean scan. Two bugs showed this during the work. A rule that combined `kind` with `pattern` on a JSX attribute matched nothing. A rule set to the `TypeScript` grammar skipped every `.tsx` file, and the repo has many. Only a test sample that must fire, or a probe file, caught either one. Give every rule a sample that must fail before trusting a clean scan.
+
+**Still open**
+
+- The ADR is proposed, not accepted. Until the product owner accepts it, the rules are advisory.
+- The `Tsx` grammar also parses `.ts` files. Angle-bracket type casts in `.ts` files were not tested against the rules.
+>
 ## The pipeline at a glance
 
 | Stage | What exists now | Where it started |
@@ -137,6 +150,7 @@ The PreCompact, PostCompact and SessionStart hooks never block. Only PreToolUse 
 | Hooks | `.claude/hooks/` (Python), PreToolUse guards, compaction hooks | 2026-10-13 (`.env` guard), 2026-10-28 (Python port and compaction hooks) |
 | Code intelligence | `.claude/settings.json` `enabledPlugins` (LSP for Go, TypeScript, Python), PR #50 open | 2026-11-03 |
 | Browser proof | `recorded-browser-run-as-proof` skill, Playwright recording mode, ffmpeg packaging | 2026-11-03 |
+| Structural lint | `ast-grep/` rules and `sgconfig.yml` (ADR-0015, proposed), not yet in CI | 2026-11-03 |
 | Local identity | Keycloak stand-in on `feat/local-keycloak` (not merged) | 2026-10-27 (spec), 2026-10-28 (stack) |
 
 ## The master skill: one entry point that routes to playbooks

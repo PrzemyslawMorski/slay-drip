@@ -50,6 +50,20 @@ Run the API with `go run ./cmd/api` (listens on `PORT`, default 8080). `GET /hea
 
 To browse the API reference, start the API with `API_DOCS_ENABLED=true` and open `http://127.0.0.1:8080/docs`. The page is Scalar, loaded from jsDelivr, and reads the OpenAPI document at `/openapi.yaml`. The document lives in `backend/internal/apidocs/openapi.yaml`. A test fails if an operation in it has no matching route, so update it with every route change.
 
+## Structural search and lint (ast-grep)
+
+[ast-grep](https://ast-grep.github.io/) matches code by its syntax tree, so it catches patterns that text search misses. The rules live in `ast-grep/rules/`, their tests in `ast-grep/rule-tests/`, and the project config in `sgconfig.yml`. The decision is in [ADR-0015](adr/0015-structural-search-with-ast-grep.md).
+
+Run these from the repo root. The CLI is pinned and runs through `npx` (Node 22 or later), so nothing is added to `frontend/` or `backend/`:
+
+| Task | Command | What it does |
+| --- | --- | --- |
+| Test the rules | `npx --yes -p @ast-grep/cli@0.51.0 ast-grep test` | Each rule must flag its invalid samples and skip its valid ones |
+| Scan the repo | `npx --yes -p @ast-grep/cli@0.51.0 ast-grep scan` | Run every rule over the tracked code. Exit code is non-zero on any `error` |
+| Ad hoc search | `npx --yes -p @ast-grep/cli@0.51.0 ast-grep run --lang go --pattern 'fmt.Sprintf($$$)' backend` | Find one pattern without writing a rule |
+
+Rule snapshots live in `ast-grep/rule-tests/__snapshots__/`. After you change a rule, rerun `ast-grep test` and review the diff; `ast-grep test --update-all` regenerates them, so commit only the reviewed result.
+
 ## Config contract
 
 The app reads these keys. It must not hard-code any of them, and the same names are used in every environment.

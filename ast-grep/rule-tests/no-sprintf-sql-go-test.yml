@@ -1,0 +1,7 @@
+id: no-sprintf-sql-go
+valid:
+  - query := fmt.Sprintf("visible to %s", name)
+  - rows, err := db.Query("SELECT id FROM items WHERE user_id = $1", userID)
+invalid:
+  - query := fmt.Sprintf("SELECT id FROM items WHERE user_id = '%s'", userID)
+  - query := fmt.Sprintf("delete from outfits where id = %d", id)

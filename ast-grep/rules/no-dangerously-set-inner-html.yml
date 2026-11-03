@@ -1,0 +1,8 @@
+id: no-dangerously-set-inner-html
+language: Tsx
+severity: error
+message: Do not render raw HTML with dangerouslySetInnerHTML. Build the element tree in React instead.
+note: Wardrobe items, labels and rationales are user or model text, so raw HTML is an XSS risk (OWASP A05). See docs/security.md.
+rule:
+  kind: jsx_attribute
+  regex: "^dangerouslySetInnerHTML="
