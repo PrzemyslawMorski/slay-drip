@@ -1,9 +1,22 @@
 # S1-07 · Containerised development tooling
 
-**Status:** Ready
+**Status:** In progress (partial, not merged to main)
 **Slice:** Session 1, prerequisite to the MCP work (S1-06) · **Priority:** P1
 **Depends on:** None. [ADR-0014](../adr/0014-containerised-dev-tooling.md) (Accepted) records the owner's decision.
 **Related:** [ADR-0014](../adr/0014-containerised-dev-tooling.md), [S1-06](S1-06-mcp-server-access.md) (blocked by this spec), [ADR-0005](../adr/0005-local-cloud-emulation.md), [ADR-0006](../adr/0006-development-feedback-loops-ports-and-fakes.md), [ADR-0007](../adr/0007-backend-go-and-test-stack.md), [ADR-0003](../adr/0003-gherkin-acceptance-tests-with-playwright.md), [ADR-0009](../adr/0009-frontend-lint-format-and-unit-tests.md), [local development guide](../local-development.md), [requirements](../requirements.md) (F7 through S1-06; no requirement names tooling, see Risks)
+
+## Status (2026-11-15)
+
+**State.** Not merged to main. Work exists only on branches, and on this branch for S1-07.15. Nothing below is verified in this session except where the status says so. Status cells use the vocabulary To Do, Blocked, Partial, Done and Red. Here "Done" and "Red" mean committed on a branch, not merged to main.
+
+- **Done (branch):** S1-07.01 spike note, branch `docs/s1-07.01-spike-networking`.
+- **Red (branch):** S1-07.02 (`feat/s1-07.02-red-host-requirements`), S1-07.03 (`feat/s1-07.03-red-commands-app-services`), S1-07.04 (`feat/s1-07.04-red-go-frontend`), S1-07.05 (`feat/s1-07.05-red-playwright-python`). S1-07.15 is red on this branch (commit f5161ad).
+- **Partial (branch):** S1-07.06 Go tool service (`feat/s1-07.06-go-tool-container`, commit 3cae109) and S1-07.07 Node and Playwright tool service (`feat/s1-07.07-node-tool-container`, commit 77d05fa). Neither is verified.
+- **To Do:** S1-07.09. Its branch `feat/s1-07.09-python-tool-container` points at the same commit as S1-07.07, so it is treated as unfinished.
+- **To Do (not started):** S1-07.08, S1-07.10, S1-07.11, S1-07.12, S1-07.14. S1-07.13 is Blocked on S1-07.12 and S1-07.14.
+- **Known issue:** the Go image build re-downloads modules on every rebuild. BuildKit cache mounts did not persist on this Docker Desktop host. The owner decided to leave it, to be fixed under S1-07.06.
+- **Downstream:** [S1-08](S1-08-local-stack.md) depends on S1-07.06, .07, .08 and .10. Its status is in its own spec.
+- **Open:** whether the stack-lifecycle Playwright project is removed (S1-08 open decision 1). S1-07.15 says yes. Not decided here.
 
 ## Problem
 
@@ -167,18 +180,18 @@ Breakdown from [tickets-from-spec](../../.claude/skills/tickets-from-spec/SKILL.
 
 | Key | Ticket | Role | Wave | Status | Blocked by |
 | --- | --- | --- | --- | --- | --- |
-| S1-07.01 | [Spike: container networking, stack setup and host performance](S1-07.01-spike-container-networking-socket-and-performance.md) | architect | 1 | To Do | None |
-| S1-07.02 | [Red acceptance: host needs only Docker, no .env, same config keys](S1-07.02-red-acceptance-host-requirements-and-config.md) | acceptance-author | 1 | To Do | None |
-| S1-07.03 | [Red acceptance: host-neutral commands and API plus frontend from compose](S1-07.03-red-acceptance-commands-and-app-services.md) | acceptance-author | 1 | To Do | None |
-| S1-07.04 | [Red acceptance: Go and frontend checks run in containers](S1-07.04-red-acceptance-go-and-frontend-containers.md) | acceptance-author | 1 | To Do | None |
-| S1-07.05 | [Red acceptance: Playwright and Python scripts run in containers](S1-07.05-red-acceptance-playwright-and-python-containers.md) | acceptance-author | 1 | To Do | None |
-| S1-07.15 | [Red acceptance: stack scenarios check a running stack](S1-07.15-red-acceptance-stack-scenarios-check-running-stack.md) | acceptance-author | 1 | To Do | None |
-| S1-07.06 | [Go tool container: tests, lint, govulncheck and migrations](S1-07.06-go-tool-container.md) | infra-engineer | 2 | To Do | S1-07.01, S1-07.02, S1-07.04 |
-| S1-07.07 | [Node and Playwright image: typecheck, lint, format and unit tests](S1-07.07-node-and-playwright-tool-container.md) | infra-engineer | 3 | To Do | S1-07.03, S1-07.04, S1-07.06 |
-| S1-07.08 | [Run Playwright acceptance tests in the container](S1-07.08-playwright-acceptance-run-in-container.md) | infra-engineer | 4 | To Do | S1-07.05, S1-07.15, S1-07.07 |
-| S1-07.09 | [Python tool container for the dev scripts](S1-07.09-python-tool-container.md) | infra-engineer | 3 | To Do | S1-07.05, S1-07.06 |
-| S1-07.10 | [Run the API and frontend dev server from compose](S1-07.10-api-and-web-services-in-compose.md) | infra-engineer | 4 | To Do | S1-07.02, S1-07.03, S1-07.07, S1-07.09 |
-| S1-07.11 | [CI runs the same tool images](S1-07.11-ci-uses-the-same-tool-images.md) | infra-engineer | 5 | To Do | S1-07.06, S1-07.07, S1-07.08, S1-07.09 |
-| S1-07.12 | [Amend ADR-0007 and ADR-0005 for containerised tooling](S1-07.12-amend-adrs-for-containerised-tooling.md) | docs-steward | 5 | To Do | S1-07.06, S1-07.10 |
+| S1-07.01 | [Spike: container networking, stack setup and host performance](S1-07.01-spike-container-networking-socket-and-performance.md) | architect | 1 | Done | None |
+| S1-07.02 | [Red acceptance: host needs only Docker, no .env, same config keys](S1-07.02-red-acceptance-host-requirements-and-config.md) | acceptance-author | 1 | Red | None |
+| S1-07.03 | [Red acceptance: host-neutral commands and API plus frontend from compose](S1-07.03-red-acceptance-commands-and-app-services.md) | acceptance-author | 1 | Red | None |
+| S1-07.04 | [Red acceptance: Go and frontend checks run in containers](S1-07.04-red-acceptance-go-and-frontend-containers.md) | acceptance-author | 1 | Red | None |
+| S1-07.05 | [Red acceptance: Playwright and Python scripts run in containers](S1-07.05-red-acceptance-playwright-and-python-containers.md) | acceptance-author | 1 | Red | None |
+| S1-07.15 | [Red acceptance: stack scenarios check a running stack](S1-07.15-red-acceptance-stack-scenarios-check-running-stack.md) | acceptance-author | 1 | Red | None |
+| S1-07.06 | [Go tool container: tests, lint, govulncheck and migrations](S1-07.06-go-tool-container.md) | infra-engineer | 2 | Partial | S1-07.01 (Done, branch), S1-07.02 (Red, branch), S1-07.04 (Red, branch) |
+| S1-07.07 | [Node and Playwright image: typecheck, lint, format and unit tests](S1-07.07-node-and-playwright-tool-container.md) | infra-engineer | 3 | Partial | S1-07.03 (Red, branch), S1-07.04 (Red, branch), S1-07.06 (Partial, branch) |
+| S1-07.08 | [Run Playwright acceptance tests in the container](S1-07.08-playwright-acceptance-run-in-container.md) | infra-engineer | 4 | To Do | S1-07.05 (Red, branch), S1-07.15 (Red, branch), S1-07.07 (Partial, branch) |
+| S1-07.09 | [Python tool container for the dev scripts](S1-07.09-python-tool-container.md) | infra-engineer | 3 | To Do | S1-07.05 (Red, branch), S1-07.06 (Partial, branch) |
+| S1-07.10 | [Run the API and frontend dev server from compose](S1-07.10-api-and-web-services-in-compose.md) | infra-engineer | 4 | To Do | S1-07.02 (Red, branch), S1-07.03 (Red, branch), S1-07.07 (Partial, branch), S1-07.09 |
+| S1-07.11 | [CI runs the same tool images](S1-07.11-ci-uses-the-same-tool-images.md) | infra-engineer | 5 | To Do | S1-07.06 (Partial, branch), S1-07.07 (Partial, branch), S1-07.08, S1-07.09 |
+| S1-07.12 | [Amend ADR-0007 and ADR-0005 for containerised tooling](S1-07.12-amend-adrs-for-containerised-tooling.md) | docs-steward | 5 | To Do | S1-07.06 (Partial, branch), S1-07.10 |
 | S1-07.13 | [Rewrite the local development guide and close S1-07](S1-07.13-close-s1-07-and-rewrite-the-guide.md) | docs-steward | 7 | Blocked | S1-07.12, S1-07.14 (owner decision) |
-| S1-07.14 | [Privacy and supply-chain review: containerised tooling](S1-07.14-privacy-review-containerised-tooling.md) | privacy-reviewer | 6 | To Do | S1-07.06, S1-07.07, S1-07.08, S1-07.09, S1-07.10, S1-07.11, S1-07.12 |
+| S1-07.14 | [Privacy and supply-chain review: containerised tooling](S1-07.14-privacy-review-containerised-tooling.md) | privacy-reviewer | 6 | To Do | S1-07.06 (Partial, branch), S1-07.07 (Partial, branch), S1-07.08, S1-07.09, S1-07.10, S1-07.11, S1-07.12 |

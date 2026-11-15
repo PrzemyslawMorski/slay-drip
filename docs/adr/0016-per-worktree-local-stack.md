@@ -70,3 +70,14 @@ The Vite dev server proxies `/api` to the worktree's API port, so the browser ne
 ## Revisit when
 
 The 30 s budget is missed in the spike or by the measured run, the application stack or identity provider changes, or CI moves to a different stack runner.
+
+## Amendment 2026-11-15
+
+The owner dropped the 30 s start-up cap for this MVP ("no time constraints, smaller MVP, get the build working"). The Context, Decision (budget paragraph and step 6) and Consequences above are unchanged as history. For the MVP:
+
+- The 30 s budget is removed. The timing gate is not applied to `up.py` or to S1-08.13 for the MVP.
+- 30 s stays the target for a later iteration. Revisit it when that iteration is scheduled.
+- The spike results stand (S1-08.01, [discovery note](../discovery/2026-11-15-local-stack-startup-budget.md)): the stock stack takes about 44 s median, so 10 s is not reachable.
+- Unchanged: per-worktree project names and ports, the single entry script, the test database, and the requirement that the concurrency and Playwright checks pass.
+
+This amendment does not change the status, which stays Accepted.

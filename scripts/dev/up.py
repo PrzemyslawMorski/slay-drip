@@ -7,9 +7,9 @@
     python scripts/dev/up.py sql --database NAME --query SQL
     python scripts/dev/up.py e2e [-- ARGS...]          run the Playwright suite against the stack
 
-Only this script calls docker for the local stack (ADR-0014). Standard library only. It never
-reads or writes a .env file: every local value comes from compose.yaml, infra/dev/ or the
-stack file it writes to .stack/stack.json (gitignored).
+Only this script calls docker for the local stack (ADR-0014). Standard library only. It reads no
+environment file: every local value comes from compose.yaml, infra/dev/ or the stack file
+it writes to .stack/stack.json (gitignored).
 
 The compose project name and host ports come from scripts/dev/stack_config.py, so two worktrees
 never share a project, a port or a database. The dev database "slaydrip" is never used by tests.
@@ -409,7 +409,10 @@ def migrate(alloc: dict, database: str) -> None:
 
 
 def create_test_database(alloc: dict) -> None:
-    """Build a migrated template, then copy it to slaydrip_test. Runs on every up, so the test DB is fresh."""
+    """Build a migrated template, copy it to slaydrip_test (fresh on every up) and keep the dev DB migrated.
+
+    The tests never use the dev database. It is migrated only so that it has the current schema.
+    """
     maintenance = "postgres"
     sql(alloc, maintenance, f"DROP DATABASE IF EXISTS {TEST_DATABASE} WITH (FORCE)")
     sql(alloc, maintenance, f"DROP DATABASE IF EXISTS {TEMPLATE_DATABASE} WITH (FORCE)")
@@ -423,6 +426,7 @@ def create_test_database(alloc: dict) -> None:
     if dirty != "f":
         raise UpError(f"{TEST_DATABASE} is at migration {version} but marked dirty")
     print(f"   {TEST_DATABASE} is at migration {version}", flush=True)
+    migrate(alloc, DEV_DATABASE)
 
 
 # ---------------------------------------------------------------- S3 and Keycloak checks
@@ -525,7 +529,7 @@ def cmd_up(args: argparse.Namespace) -> int:
     with timer.step("create the S3 bucket"):
         ensure_bucket(values)
 
-    with timer.step("create and migrate the test database"):
+    with timer.step("create and migrate the test and dev databases"):
         create_test_database(alloc)
 
     with timer.step("check keycloak and the synthetic test user"):

@@ -2,6 +2,8 @@
 
 Local run is a first-class target. Every feature that touches a cloud service must run on a developer's machine with the commands below, using the same config keys as production. The decision and its alternatives are in [ADR-0005](adr/0005-local-cloud-emulation.md).
 
+> **Status (2026-11-15): not yet verified end to end.** Each worktree is moving to its own stack, started with `python scripts/dev/up.py up` (ADR-0016, [S1-08](specs/S1-08-local-stack.md)). The compose file now needs the `SLAYDRIP_PORT_*` variables that `up.py` sets, so the plain `docker compose` commands below need those variables set and have not been run. The fixed ports in the commands and the config table are the old values; a worktree's ports are in `.stack/stack.json`. The stack, the test database and the Playwright suite have not been run end to end. This guide is rewritten in S1-08.14.
+
 ## Prerequisites
 
 - Docker (Docker Desktop on Windows or macOS, Docker Engine on Linux) with Compose v2.
@@ -28,7 +30,7 @@ python scripts/dev/keycloak_smoke.py   # discovery, JWKS, PKCE sign-in, admin li
 
 A passing run ends with `OK: Keycloak smoke passed`. Run it again after any change to the realm file or to `compose.yaml`.
 
-The pinned image is `keycloak/keycloak:26.8.1` (checked on Docker Hub on 2026-10-28; bump it deliberately). The bootstrap admin for the local console is in `infra/dev/keycloak/local-admin.conf` (throwaway). The local realm has no named volume, so each start imports from the committed realm file. Local realm users are synthetic (`*@example.test`). Self-service registration is on in this realm only (ADR-0010 amendment), so the Keycloak sign-in page offers a registration form for test users.
+The pinned image is `keycloak/keycloak:26.8.1` (checked on Docker Hub on 2026-10-28; bump it deliberately). The bootstrap admin for the local console is set in `compose.yaml` (throwaway). The local realm has no named volume, so each start imports from the committed realm file. Local realm users are synthetic (`*@example.test`). Self-service registration is on in this realm only (ADR-0010 amendment), so the Keycloak sign-in page offers a registration form for test users.
 
 ## Backend
 
@@ -42,7 +44,7 @@ Run these from `backend/`.
 | Vulnerabilities | `go tool govulncheck ./...` | Known vulnerabilities in dependencies and the Go standard library |
 | Unit tests | `go test ./...` | The inner loop, no Docker |
 | Unit tests, race | `go test -race ./...` | Race detector. Needs cgo, so CI runs it on Linux |
-| Integration tests | `DATABASE_URL=... go test -tags=integration ./...` | Against the compose PostgreSQL |
+| Integration tests | `DATABASE_URL=... go test -tags=integration ./...` | Against the compose PostgreSQL. Once a worktree's stack is up, `backend/internal/testenv` reads `.stack/stack.json` and uses the test database `slaydrip_test`; the dev database is refused. Not run yet |
 | Migrate up | `go run -tags postgres github.com/golang-migrate/migrate/v4/cmd/migrate@v4.20.1 -path migrations -database "$DATABASE_URL" up` | Apply migrations |
 | Migrate down | same, with `down 1` | Roll back the last migration |
 
@@ -125,4 +127,4 @@ Before a feature that uses a cloud service is marked done, its PR must show:
 - **`invalid_redirect_uri` or an issuer mismatch:** the redirect URI and `KC_HOSTNAME` must match `OIDC_REDIRECT_URI` and `OIDC_ISSUER_URL`. Use `127.0.0.1` in the issuer, not `localhost`.
 - **Image tag check:** confirm the pinned tag exists with `docker pull keycloak/keycloak:26.8.1`, and compare it with the tags listed on Docker Hub before you bump it.
 - **Smoke step 3 fails at the login form:** the Keycloak login markup changed. Update the parse in `scripts/dev/keycloak_smoke.py`.
-- **`migrate-up` fails with `first .: file does not exist`:** `backend/migrations/` has no migrations yet. The first migration arrives with the first feature that stores server-side data (ADR-0008).
+- **`migrate-up` fails with `first .: file does not exist`:** the `-path migrations` argument is relative, so run the command from `backend/`. The first migration is `backend/migrations/000001_wardrobe.up.sql` (ADR-0008).

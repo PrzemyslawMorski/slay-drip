@@ -4,14 +4,17 @@
 // The live local stack (docker compose, ADR-0010) is checked separately by the smoke scripts.
 import { createHash, randomUUID } from 'node:crypto';
 import type { Page, Route } from '@playwright/test';
+import { apiOrigin, appOrigin } from './stack';
 
 const ISSUER_PATTERN = /\/realms\/slay-drip\/protocol\/openid-connect\/(auth|registrations)(\?|$)/;
 const TOKEN_PATTERN = /\/realms\/slay-drip\/protocol\/openid-connect\/token$/;
-const API_PATTERN = /^http:\/\/127\.0\.0\.1:8080\//;
-// Must equal the oidc.audience default in src/config.ts and the Keycloak audience mapper. Not imported from config.ts,
-// because that file reads import.meta.env, which Playwright's Node runner does not provide.
-const API_AUDIENCE = 'http://127.0.0.1:8080';
-const APP_ORIGIN = 'http://localhost:5173';
+// The API and app origins come from this worktree's stack file (ADR-0016), so the stub matches the app's ports.
+const API_ORIGIN = apiOrigin();
+const API_PATTERN = new RegExp(`^${API_ORIGIN.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`);
+// Must equal the oidc.audience of this worktree's dev server (the API origin) and the Keycloak audience mapper. Not
+// imported from config.ts, because that file reads import.meta.env, which Playwright's Node runner does not provide.
+const API_AUDIENCE = API_ORIGIN;
+const APP_ORIGIN = appOrigin();
 const AUTH_CODE = 'stub-code';
 
 export interface StubPhoto {

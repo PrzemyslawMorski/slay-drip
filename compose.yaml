@@ -43,9 +43,10 @@ services:
     # Tag checked on Docker Hub 2026-10-28 (latest stable 26.8.x).
     image: keycloak/keycloak:26.8.1
     command: start-dev --import-realm
-    env_file:
-      - ./infra/dev/keycloak/local-admin.conf
     environment:
+      # Throwaway bootstrap admin for the local Keycloak console only.
+      KC_BOOTSTRAP_ADMIN_USERNAME: slaydrip-local-admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: slaydrip-local-admin-secret
       # The issuer is the browser's URL for this worktree's Keycloak port (ADR-0016).
       KC_HOSTNAME: http://127.0.0.1:${SLAYDRIP_PORT_KEYCLOAK:?start the stack with python scripts/dev/up.py up}
       KC_HEALTH_ENABLED: "true"

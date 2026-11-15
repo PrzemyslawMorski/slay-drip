@@ -7,6 +7,7 @@ import { readFile } from 'node:fs/promises';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readStack } from './stack';
 
 // Repo root: this file is in frontend/tests/support/.
 export const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
@@ -18,15 +19,23 @@ export interface KeycloakConfig {
   redirectUri: string;
 }
 
-// Reads the OIDC_* keys from the environment, falling back to the local values.
+// Reads the OIDC_* keys from the environment, then from this worktree's stack file (ADR-0016), then the fixed defaults.
 export function keycloakConfig(): KeycloakConfig {
+  const stackEnv = readStack().env;
   return {
-    issuerUrl: process.env.OIDC_ISSUER_URL ?? 'http://127.0.0.1:8180/realms/slay-drip',
+    issuerUrl:
+      process.env.OIDC_ISSUER_URL ??
+      stackEnv.OIDC_ISSUER_URL ??
+      'http://127.0.0.1:8180/realms/slay-drip',
     jwksUrl:
       process.env.OIDC_JWKS_URL ??
+      stackEnv.OIDC_JWKS_URL ??
       'http://127.0.0.1:8180/realms/slay-drip/protocol/openid-connect/certs',
-    clientId: process.env.OIDC_CLIENT_ID ?? 'slay-drip-pwa',
-    redirectUri: process.env.OIDC_REDIRECT_URI ?? 'http://localhost:5173/auth/callback',
+    clientId: process.env.OIDC_CLIENT_ID ?? stackEnv.OIDC_CLIENT_ID ?? 'slay-drip-pwa',
+    redirectUri:
+      process.env.OIDC_REDIRECT_URI ??
+      stackEnv.OIDC_REDIRECT_URI ??
+      'http://localhost:5173/auth/callback',
   };
 }
 
