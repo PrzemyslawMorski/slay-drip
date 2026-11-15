@@ -9,6 +9,10 @@ import react from '@vitejs/plugin-react';
 const STACK_START_COMMAND = 'python scripts/dev/up.py up';
 // The API is reached through the dev server's /api proxy, so the browser calls the API same-origin (no CORS).
 const API_PROXY_PREFIX = '/api';
+// Set by the web service in compose.yaml. The dev server then listens on the container port and proxies to the
+// API on the compose network, because 127.0.0.1 inside the container is not the host.
+const IN_CONTAINER = process.env.SLAYDRIP_CONTAINER === '1';
+const CONTAINER_PORT = 5173;
 
 // The dev-only values that src/config.ts reads through the __SLAYDRIP_DEV_STACK__ define. Null outside the dev server.
 export interface DevStack {
@@ -16,6 +20,9 @@ export interface DevStack {
   webOrigin: string;
   apiOrigin: string;
   keycloakOrigin: string;
+  // Where the /api proxy sends requests: the host URL on the host, the compose-network URL in the web container.
+  apiProxyTarget: string;
+  listenPort: number;
 }
 
 function portFrom(stack: Record<string, unknown>, service: string, file: string): number {
@@ -43,12 +50,32 @@ function readDevStack(): DevStack {
   }
   const stack = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
   const webPort = portFrom(stack, 'web', file);
+  const apiPort = portFrom(stack, 'api', file);
   return {
     webPort,
     webOrigin: `http://localhost:${webPort}`,
-    apiOrigin: `http://127.0.0.1:${portFrom(stack, 'api', file)}`,
+    apiOrigin: `http://127.0.0.1:${apiPort}`,
     keycloakOrigin: `http://127.0.0.1:${portFrom(stack, 'keycloak', file)}`,
+    apiProxyTarget: IN_CONTAINER ? networkUrl(stack, 'api', file) : `http://127.0.0.1:${apiPort}`,
+    listenPort: IN_CONTAINER ? CONTAINER_PORT : webPort,
   };
+}
+
+// The compose-network URL of a service, from urls.network in the stack file. Only the container needs it.
+function networkUrl(stack: Record<string, unknown>, service: string, file: string): string {
+  const urls = stack.urls;
+  const network =
+    typeof urls === 'object' && urls !== null
+      ? (urls as Record<string, unknown>).network
+      : undefined;
+  const value =
+    typeof network === 'object' && network !== null
+      ? (network as Record<string, unknown>)[service]
+      : undefined;
+  if (typeof value !== 'string' || value === '') {
+    throw new Error(`${file} has no urls.network.${service}. Run "${STACK_START_COMMAND}" again.`);
+  }
+  return value;
 }
 
 // Fills the connect-src placeholder in index.html. Dev adds the local identity provider. Builds use VITE_CSP_CONNECT_SRC,
@@ -77,12 +104,14 @@ export default defineConfig(({ command, mode }) => {
       __SLAYDRIP_DEV_STACK__: JSON.stringify(devStack),
     },
     server: {
-      port: devStack?.webPort,
+      port: devStack?.listenPort,
       strictPort: true,
+      // The container publishes the port on 127.0.0.1 of the host, so it must listen on all container interfaces.
+      host: devStack && IN_CONTAINER ? '0.0.0.0' : undefined,
       proxy: devStack
         ? {
             [API_PROXY_PREFIX]: {
-              target: devStack.apiOrigin,
+              target: devStack.apiProxyTarget,
               // The API routes have no /api prefix (for example /healthz), so the prefix is stripped here.
               // Only the exact segment is stripped, so /apidocs is not rewritten.
               rewrite: (urlPath: string) => urlPath.replace(/^\/api(?=\/|\?|$)/, '') || '/',
