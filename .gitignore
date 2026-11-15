@@ -156,6 +156,8 @@ temp/
 # Local development
 .local/
 local/
+# Per-worktree local stack allocation (ports, project name), written by scripts/dev (S1-08.04)
+.stack/
 
 # Backup files
 *.bak
