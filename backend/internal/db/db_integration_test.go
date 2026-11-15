@@ -11,7 +11,7 @@ import (
 	"slaydrip/backend/internal/testenv"
 )
 
-// TestOpenAgainstPostgres needs the compose stack running (docker compose up -d).
+// TestOpenAgainstPostgres needs this worktree's stack running (python scripts/dev/up.py up).
 // See docs/local-development.md.
 func TestOpenAgainstPostgres(t *testing.T) {
 	pool, err := Open(context.Background(), testenv.Get(t, "DATABASE_URL"))

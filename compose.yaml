@@ -1,9 +1,12 @@
-# Local cloud stand-ins for development and tests. See docs/local-development.md
-# and docs/adr/0005-local-cloud-emulation.md.
+# Local stack for development and tests. See docs/local-development.md and docs/adr/0005-local-cloud-emulation.md,
+# docs/adr/0016-per-worktree-local-stack.md.
+#
+# Start it with `python scripts/dev/up.py up`, never with a bare `docker compose up`. up.py sets the compose project
+# name (-p) and the host ports below for one worktree, so two worktrees run side by side without a clash. There is no
+# fixed project name and no .env file.
 #
 # Every credential here is a throwaway value for this machine only. It must never be
 # used outside local development, and no production value may live in this file.
-name: slay-drip-local
 
 services:
   database:
@@ -14,7 +17,7 @@ services:
       POSTGRES_USER: slaydrip
       POSTGRES_PASSWORD: slaydrip-local-secret
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${SLAYDRIP_PORT_POSTGRES:?start the stack with python scripts/dev/up.py up}:5432"
     volumes:
       - database-data:/var/lib/postgresql/data
     healthcheck:
@@ -29,7 +32,7 @@ services:
     image: chrislusf/seaweedfs:4.22
     command: server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json -ip.bind=0.0.0.0
     ports:
-      - "127.0.0.1:8333:8333"
+      - "127.0.0.1:${SLAYDRIP_PORT_S3:?start the stack with python scripts/dev/up.py up}:8333"
     volumes:
       - ./infra/dev/s3.json:/etc/seaweedfs/s3.json:ro
       - object-storage-data:/data
@@ -40,15 +43,18 @@ services:
     # Tag checked on Docker Hub 2026-10-28 (latest stable 26.8.x).
     image: keycloak/keycloak:26.8.1
     command: start-dev --import-realm
-    env_file:
-      - ./infra/dev/keycloak/local-admin.conf
     environment:
-      KC_HOSTNAME: http://127.0.0.1:8180
+      # Throwaway bootstrap admin for the local Keycloak console only.
+      KC_BOOTSTRAP_ADMIN_USERNAME: slaydrip-local-admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: slaydrip-local-admin-secret
+      # The issuer is the browser's URL for this worktree's Keycloak port (ADR-0016).
+      KC_HOSTNAME: http://127.0.0.1:${SLAYDRIP_PORT_KEYCLOAK:?start the stack with python scripts/dev/up.py up}
       KC_HEALTH_ENABLED: "true"
     ports:
-      - "127.0.0.1:8180:8080"
+      - "127.0.0.1:${SLAYDRIP_PORT_KEYCLOAK}:8080"
     volumes:
-      - ./infra/dev/keycloak/realm:/opt/keycloak/data/import:ro
+      # up.py renders the realm with this worktree's web origin and API audience into .stack/.
+      - ./.stack/keycloak/realm:/opt/keycloak/data/import:ro
     healthcheck:
       # The image ships bash but no curl. The management port (9000) serves /health/ready.
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.0\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '\"status\": \"UP\"'"]
@@ -60,17 +66,19 @@ services:
 
   api:
     # Throwaway local values, same as the database service. Never used outside local development.
+    # Runs against the dedicated test database. up.py creates and migrates it before this service starts.
     build:
       context: ./backend
       dockerfile: Dockerfile
+    image: slaydrip-api:local
     environment:
       PORT: "8080"
-      DATABASE_URL: postgres://slaydrip:slaydrip-local-secret@database:5432/slaydrip?sslmode=disable
-      OIDC_ISSUER_URL: http://127.0.0.1:8180/realms/slay-drip
+      DATABASE_URL: postgres://slaydrip:slaydrip-local-secret@database:5432/slaydrip_test?sslmode=disable
+      OIDC_ISSUER_URL: http://127.0.0.1:${SLAYDRIP_PORT_KEYCLOAK:?start the stack with python scripts/dev/up.py up}/realms/slay-drip
       # Issuer stays on the host URL so it matches the token iss claim (KC_HOSTNAME). The JWKS
       # fetch runs inside this container, so it uses the container-network host.
       OIDC_JWKS_URL: http://keycloak:8080/realms/slay-drip/protocol/openid-connect/certs
-      OIDC_AUDIENCE: slay-drip-api
+      OIDC_AUDIENCE: http://127.0.0.1:${SLAYDRIP_PORT_API:?start the stack with python scripts/dev/up.py up}
       S3_ENDPOINT: http://object-storage:8333
       S3_REGION: fr-par
       S3_BUCKET: slay-drip-local
@@ -78,7 +86,7 @@ services:
       S3_ACCESS_KEY: slaydrip-local
       S3_SECRET_KEY: slaydrip-local-secret
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:${SLAYDRIP_PORT_API}:8080"
     depends_on:
       database:
         condition: service_healthy
@@ -88,6 +96,48 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  web:
+    # Vite dev server in a container (S1-08.11). It reads .stack/stack.json for its proxy target and listens on
+    # 5173 inside the container. node_modules and the npm cache are named volumes, so the host's install never mixes
+    # with it. The first start runs npm ci inside the container. No Docker socket is mounted.
+    image: node:22-bookworm-slim
+    working_dir: /src/frontend
+    command: ["sh", "-c", "if [ ! -x node_modules/.bin/vite ]; then npm ci --no-audit --no-fund; fi && exec npm run dev"]
+    environment:
+      SLAYDRIP_CONTAINER: "1"
+      npm_config_update_notifier: "false"
+    ports:
+      - "127.0.0.1:${SLAYDRIP_PORT_WEB:?start the stack with python scripts/dev/up.py up}:5173"
+    volumes:
+      - ./frontend:/src/frontend
+      - frontend-node-modules:/src/frontend/node_modules
+      - frontend-npm-cache:/root/.npm
+      - ./.stack:/src/.stack:ro
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+
+  go:
+    # Go tool service (ADR-0014, S1-07.06). Runs go commands in backend/, for example the pinned golang-migrate that
+    # up.py uses. Started only by `docker compose run --rm go <command>` (profile "tools"), so `up` never starts it.
+    # Tag pinned to the toolchain in backend/go.mod (checked 2026-11-15). No Docker socket is mounted.
+    image: golang:1.27.3
+    profiles: ["tools"]
+    working_dir: /src/backend
+    command: ["go", "version"]
+    environment:
+      GOTOOLCHAIN: local
+      CGO_ENABLED: "1"
+    volumes:
+      - ./backend:/src/backend
+      - go-mod-cache:/go/pkg/mod
+      - go-build-cache:/root/.cache/go-build
+
 volumes:
   database-data:
   object-storage-data:
+  frontend-node-modules:
+  frontend-npm-cache:
+  go-mod-cache:
+  go-build-cache:

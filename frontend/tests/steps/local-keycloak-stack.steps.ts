@@ -1,20 +1,24 @@
-// Step definitions for tests/features/local-keycloak-stack.feature (S1-03.06).
-// HTTP uses the Playwright request API. docker compose runs as a child process. No browser is opened.
-import { expect, test, type TestInfo } from '@playwright/test';
+// Step definitions for tests/features/local-keycloak-stack.feature (S1-03.06, rewritten in S1-07.15).
+// The host starts the stack with "docker compose up -d". These steps only check that the running stack
+// answers: HTTP goes through the Playwright request API, TCP probes use node:net, and compose.yaml is read
+// as text. No step runs docker compose, and no browser is opened.
+import { expect, test, type APIRequestContext, type TestInfo } from '@playwright/test';
 import { createBdd } from 'playwright-bdd';
 import {
-  composePs,
-  composeArgsFrom,
-  composeServices,
+  composeFileText,
+  composeServiceFacts,
   discoveryUrl,
+  isNamedVolume,
   keycloakConfig,
   readRealmFile,
-  runCompose,
+  tcpAnswers,
 } from '../support/keycloak-stack';
 
 const { Given, When, Then } = createBdd();
 
 interface StackResponses {
+  keycloakStatus?: number;
+  serviceAnswers?: Record<string, boolean>;
   discoveryStatus?: number;
   discoveryBody?: Record<string, unknown>;
   jwksStatus?: number;
@@ -28,73 +32,96 @@ function recordedResponses(testInfo: TestInfo): StackResponses {
   return responses.get(testInfo) ?? {};
 }
 
-// Fails at once when compose has no keycloak service (the composePs call rejects), then waits for the healthcheck.
-async function waitForKeycloakHealthy(): Promise<void> {
-  await composePs('keycloak');
-  await expect
-    .poll(async () => (await composePs('keycloak'))[0]?.Health ?? '', {
-      timeout: 180_000,
-      intervals: [1_000, 2_000, 5_000],
-    })
-    .toBe('healthy');
+// The discovery document answers 200 only when keycloak is up and the realm is imported.
+// Returns 0 when nothing answers (connection refused), so the caller can report "not running".
+async function keycloakStatus(request: APIRequestContext): Promise<number> {
+  try {
+    const response = await request.get(discoveryUrl(keycloakConfig()));
+    return response.status();
+  } catch {
+    return 0;
+  }
 }
 
-Given('the local stack is stopped', async () => {
-  // Stops and removes only the keycloak service. The database and object storage keep running,
-  // because the up scenario checks that they are still running after compose up.
-  await runCompose(['rm', '--stop', '--force', 'keycloak'], 300_000);
-});
+// Waits up to three minutes for keycloak to answer, because the host command returns before keycloak has
+// finished starting. Returns the last status seen; it is 0 when nothing ever answered.
+async function waitForKeycloak(request: APIRequestContext): Promise<number> {
+  const deadline = Date.now() + 180_000;
+  let status = await keycloakStatus(request);
+  while (status !== 200 && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+    status = await keycloakStatus(request);
+  }
+  return status;
+}
+
+// The host ports of one service as written in compose.yaml, for the TCP probes.
+async function publishedPorts(service: string): Promise<number[]> {
+  const facts = composeServiceFacts(await composeFileText(), service);
+  return facts.ports.map((port) => port.hostPort);
+}
 
 // playwright-bdd needs an object pattern as the first argument. This step uses no fixture, so the pattern is empty.
+// The command is only checked for its shape. The test never runs it.
 // eslint-disable-next-line no-empty-pattern
-When('I run {string} from the repo root', async ({}, command: string) => {
-  // An image pull on the first run can take minutes, so the test gets more time than the default.
-  test.setTimeout(900_000);
-  await runCompose(composeArgsFrom(command), 600_000);
+Given('the local stack was started on the host with {string}', ({}, command: string) => {
+  expect(command, 'the documented host command').toMatch(/^docker compose /);
 });
 
-Then('the keycloak service is running and reports healthy', async () => {
-  await expect
-    .poll(
-      async () => {
-        const [container] = await composePs('keycloak');
-        return container ? `${container.State}/${container.Health}` : 'not created';
-      },
-      { timeout: 180_000, intervals: [1_000, 2_000, 5_000] },
-    )
-    .toBe('running/healthy');
+When('I check the running services', async ({ request }) => {
+  // Waits for keycloak to answer, then probes the other two services on their published ports.
+  const keycloak = await waitForKeycloak(request);
+  const serviceAnswers: Record<string, boolean> = {};
+  for (const service of ['database', 'object-storage']) {
+    const [port] = await publishedPorts(service);
+    serviceAnswers[service] = port !== undefined && (await tcpAnswers('127.0.0.1', port));
+  }
+  responses.set(test.info(), { keycloakStatus: keycloak, serviceAnswers });
+});
+
+Then('the keycloak service is running and reports healthy', () => {
+  const status = recordedResponses(test.info()).keycloakStatus ?? 0;
+  if (status !== 200) {
+    throw new Error(
+      `keycloak is not running: no HTTP 200 from ${discoveryUrl(keycloakConfig())} (got ${status || 'no answer'}). ` +
+        'Start the stack on the host with "docker compose up -d".',
+    );
+  }
 });
 
 Then('keycloak listens on 127.0.0.1 only', async () => {
-  const [container] = await composePs('keycloak');
-  const publishers = (container?.Publishers ?? []).filter(
-    (publisher) => publisher.PublishedPort > 0,
-  );
-  expect(publishers.length, 'keycloak publishes at least one port').toBeGreaterThan(0);
-  for (const publisher of publishers) {
-    expect(publisher.URL, `published binding on port ${publisher.PublishedPort}`).toBe('127.0.0.1');
+  const facts = composeServiceFacts(await composeFileText(), 'keycloak');
+  expect(facts.ports.length, 'keycloak publishes at least one port').toBeGreaterThan(0);
+  for (const port of facts.ports) {
+    expect(port.hostIp, `published binding on port ${port.hostPort}`).toBe('127.0.0.1');
   }
-  const issuerPort = new URL(keycloakConfig().issuerUrl).port;
-  expect(publishers.map((publisher) => String(publisher.PublishedPort))).toContain(issuerPort);
+  const issuerPort = Number(new URL(keycloakConfig().issuerUrl).port);
+  expect(facts.ports.map((port) => port.hostPort)).toContain(issuerPort);
 });
 
-Then('the database and object-storage services are still running', async () => {
+Then('the database and object-storage services are still running', () => {
+  const answers = recordedResponses(test.info()).serviceAnswers ?? {};
   for (const service of ['database', 'object-storage']) {
-    const [container] = await composePs(service);
-    expect(container?.State, `${service} state`).toBe('running');
+    if (answers[service] !== true) {
+      throw new Error(
+        `${service} is not running: nothing accepts a connection on its published port. ` +
+          'Start the stack on the host with "docker compose up -d".',
+      );
+    }
   }
 });
 
 Then('keycloak has no named volume', async () => {
-  const services = await composeServices();
-  const keycloak = services.keycloak;
-  expect(keycloak, 'keycloak is defined in compose.yaml').toBeDefined();
-  const namedVolumes = (keycloak?.volumes ?? []).filter((volume) => volume.type === 'volume');
-  expect(namedVolumes.length, 'named volumes on keycloak').toBe(0);
+  const facts = composeServiceFacts(await composeFileText(), 'keycloak');
+  const namedVolumes = facts.volumeSources.filter(isNamedVolume);
+  expect(namedVolumes, 'named volumes on keycloak').toEqual([]);
 });
 
-Given('the keycloak service is healthy', async () => {
-  await waitForKeycloakHealthy();
+Given('the keycloak service is healthy', async ({ request }) => {
+  const status = await waitForKeycloak(request);
+  expect(status, 'keycloak discovery status (0 means no answer: the stack is not running)').toBe(
+    200,
+  );
 });
 
 When(

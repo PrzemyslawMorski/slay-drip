@@ -1,11 +1,13 @@
 // Helpers for the local identity provider scenarios (tests/features/local-keycloak-*.feature).
 // Config values come from the keys in docs/specs/S1-03-local-keycloak.md, with the local defaults from
-// S1-03.03. HTTP goes through the Playwright request API. docker compose runs as a child process.
-// No browser is used. Nothing here prints a token, a password or a compose config dump.
-import { execFile } from 'node:child_process';
+// S1-03.03. HTTP goes through the Playwright request API. The stack is started on the host with
+// "docker compose up -d"; nothing here starts, stops or queries it through Docker. compose.yaml is read
+// as text. No browser is used. Nothing here prints a token, a password or a compose config dump.
 import { readFile } from 'node:fs/promises';
+import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readStack } from './stack';
 
 // Repo root: this file is in frontend/tests/support/.
 export const REPO_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
@@ -17,91 +19,24 @@ export interface KeycloakConfig {
   redirectUri: string;
 }
 
-// Reads the OIDC_* keys from the environment, falling back to the local values.
+// Reads the OIDC_* keys from the environment, then from this worktree's stack file (ADR-0016), then the fixed defaults.
 export function keycloakConfig(): KeycloakConfig {
+  const stackEnv = readStack().env;
   return {
-    issuerUrl: process.env.OIDC_ISSUER_URL ?? 'http://127.0.0.1:8180/realms/slay-drip',
+    issuerUrl:
+      process.env.OIDC_ISSUER_URL ??
+      stackEnv.OIDC_ISSUER_URL ??
+      'http://127.0.0.1:8180/realms/slay-drip',
     jwksUrl:
       process.env.OIDC_JWKS_URL ??
+      stackEnv.OIDC_JWKS_URL ??
       'http://127.0.0.1:8180/realms/slay-drip/protocol/openid-connect/certs',
-    clientId: process.env.OIDC_CLIENT_ID ?? 'slay-drip-pwa',
-    redirectUri: process.env.OIDC_REDIRECT_URI ?? 'http://localhost:5173/auth/callback',
+    clientId: process.env.OIDC_CLIENT_ID ?? stackEnv.OIDC_CLIENT_ID ?? 'slay-drip-pwa',
+    redirectUri:
+      process.env.OIDC_REDIRECT_URI ??
+      stackEnv.OIDC_REDIRECT_URI ??
+      'http://localhost:5173/auth/callback',
   };
-}
-
-export interface ComposePublisher {
-  URL: string;
-  TargetPort: number;
-  PublishedPort: number;
-  Protocol: string;
-}
-
-export interface ComposeContainer {
-  Service: string;
-  State: string;
-  Health: string;
-  Publishers?: ComposePublisher[] | null;
-}
-
-// Runs `docker compose <args>` in the repo root. Rejects with the command and its stderr on a non-zero exit.
-// stdout is returned to the caller and never printed, because `compose config` can contain secrets.
-export function runCompose(args: string[], timeoutMs = 120_000): Promise<string> {
-  return new Promise((resolve, reject) => {
-    execFile(
-      'docker',
-      ['compose', ...args],
-      { cwd: REPO_ROOT, timeout: timeoutMs, maxBuffer: 32 * 1024 * 1024, windowsHide: true },
-      (error, stdout, stderr) => {
-        if (error) {
-          const reason = stderr.trim() || error.message;
-          reject(new Error(`docker compose ${args.join(' ')} failed: ${reason}`));
-          return;
-        }
-        resolve(stdout);
-      },
-    );
-  });
-}
-
-// Splits a command such as `docker compose up -d` into compose arguments. Refuses anything else.
-export function composeArgsFrom(command: string): string[] {
-  const parts = command.trim().split(/\s+/);
-  if (parts[0] !== 'docker' || parts[1] !== 'compose' || parts.length < 3) {
-    throw new Error(`Only "docker compose ..." commands are run here, got: ${command}`);
-  }
-  return parts.slice(2);
-}
-
-// `docker compose ps --format json` prints one object per line in current releases and an array in older ones.
-function parseJsonOutput(text: string): unknown[] {
-  const trimmed = text.trim();
-  if (trimmed === '') {
-    return [];
-  }
-  if (trimmed.startsWith('[')) {
-    return JSON.parse(trimmed) as unknown[];
-  }
-  return trimmed
-    .split('\n')
-    .filter((line) => line.trim() !== '')
-    .map((line) => JSON.parse(line) as unknown);
-}
-
-// The containers for one compose service, including stopped ones. Rejects at once when compose cannot find the service.
-export async function composePs(service: string): Promise<ComposeContainer[]> {
-  const stdout = await runCompose(['ps', '--all', '--format', 'json', service]);
-  return parseJsonOutput(stdout) as ComposeContainer[];
-}
-
-// The `services` section of the compose file, as compose resolves it. Only the shape is returned to the caller.
-export async function composeServices(): Promise<
-  Record<string, { volumes?: { type?: string }[] | null } | undefined>
-> {
-  const stdout = await runCompose(['config', '--format', 'json']);
-  const parsed = JSON.parse(stdout) as {
-    services?: Record<string, { volumes?: { type?: string }[] | null } | undefined>;
-  };
-  return parsed.services ?? {};
 }
 
 // Reads the committed realm import file. Used for the static checks on the file.
@@ -117,4 +52,102 @@ export async function readRealmFile(): Promise<{
 // Fetches the OIDC discovery document for the issuer from the config.
 export function discoveryUrl(config: KeycloakConfig): string {
   return `${config.issuerUrl}/.well-known/openid-configuration`;
+}
+
+// What the static checks need from one service in compose.yaml.
+export interface ComposeServiceFacts {
+  // Each published port: the host IP as written (null when none is given) and the host port.
+  ports: { hostIp: string | null; hostPort: number }[];
+  // Each volume source as written. A named volume has a source that is a name, not a path.
+  volumeSources: string[];
+}
+
+// Reads compose.yaml as text. The file is not executed.
+export async function composeFileText(): Promise<string> {
+  return readFile(path.join(REPO_ROOT, 'compose.yaml'), 'utf8');
+}
+
+function indentOf(line: string): number {
+  return line.length - line.trimStart().length;
+}
+
+function isBlankOrComment(line: string): boolean {
+  const trimmed = line.trim();
+  return trimmed === '' || trimmed.startsWith('#');
+}
+
+// Strips the dash, quotes and a trailing comment from one list item such as - "127.0.0.1:8180:8080".
+function listItemValue(line: string): string {
+  return line
+    .trim()
+    .replace(/^-\s*/, '')
+    .replace(/\s+#.*$/, '')
+    .replace(/^["']|["']$/g, '');
+}
+
+// Returns the facts for one service. Throws when the service is not defined, so a missing service fails the check.
+export function composeServiceFacts(compose: string, service: string): ComposeServiceFacts {
+  const lines = compose.split(/\r?\n/);
+  const start = lines.findIndex((line) => line === `  ${service}:`);
+  if (start < 0) {
+    throw new Error(`compose.yaml defines no "${service}" service`);
+  }
+  const block: string[] = [];
+  for (const line of lines.slice(start + 1)) {
+    if (!isBlankOrComment(line) && indentOf(line) <= 2) {
+      break;
+    }
+    block.push(line);
+  }
+
+  // The list items directly under one key of the service (for example ports or volumes).
+  const listUnder = (key: string): string[] => {
+    const items: string[] = [];
+    let inKey = false;
+    for (const line of block) {
+      if (isBlankOrComment(line)) {
+        continue;
+      }
+      if (indentOf(line) === 4) {
+        inKey = line.trim() === `${key}:`;
+        continue;
+      }
+      if (inKey && indentOf(line) > 4 && line.trim().startsWith('-')) {
+        items.push(listItemValue(line));
+      }
+    }
+    return items;
+  };
+
+  const ports = listUnder('ports').map((item) => {
+    const parts = item.split(':');
+    return {
+      hostIp: parts.length === 3 ? (parts[0] ?? null) : null,
+      hostPort: Number(parts.length === 3 ? parts[1] : parts[0]),
+    };
+  });
+  const volumeSources = listUnder('volumes').map((item) => item.split(':')[0] ?? '');
+  return { ports, volumeSources };
+}
+
+// A named volume is referenced by a name. Paths start with "." or "/" or contain a Windows separator.
+export function isNamedVolume(source: string): boolean {
+  return (
+    source !== '' && !source.startsWith('.') && !source.startsWith('/') && !source.includes('\\')
+  );
+}
+
+// True when something accepts a TCP connection on host:port within the timeout.
+export function tcpAnswers(host: string, port: number, timeoutMs = 3_000): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = net.createConnection({ host, port });
+    const finish = (answered: boolean) => {
+      socket.destroy();
+      resolve(answered);
+    };
+    socket.setTimeout(timeoutMs);
+    socket.once('connect', () => finish(true));
+    socket.once('timeout', () => finish(false));
+    socket.once('error', () => finish(false));
+  });
 }

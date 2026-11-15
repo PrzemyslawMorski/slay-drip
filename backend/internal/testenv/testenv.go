@@ -1,35 +1,124 @@
-// Package testenv reads the config keys for integration tests (docs/local-development.md).
+// Package testenv resolves config for integration tests from the stack file that
+// scripts/dev/up.py writes for this worktree (ADR-0016, docs/local-development.md).
+// It never falls back to the dev database or to built-in secrets.
 package testenv
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/fs"
+	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 )
 
-// localDefaults are the throwaway values of the local stack. They apply only when a key
-// is unset, the same way scripts/dev/s3_smoke.py does. Never use them outside local development.
+const (
+	// StackFileEnv overrides the stack file path.
+	StackFileEnv = "SLAYDRIP_STACK_FILE"
 
-//nolint:gosec // G101: throwaway local-stack values (docs/local-development.md), never used outside local development.
-var localDefaults = map[string]string{
-	"DATABASE_URL":        "postgres://slaydrip:slaydrip-local-secret@127.0.0.1:5432/slaydrip?sslmode=disable",
-	"S3_ENDPOINT":         "http://127.0.0.1:8333",
-	"S3_REGION":           "fr-par",
-	"S3_BUCKET":           "slay-drip-local",
-	"S3_FORCE_PATH_STYLE": "true",
-	"S3_ACCESS_KEY":       "slaydrip-local",
-	"S3_SECRET_KEY":       "slaydrip-local-secret",
+	entryScript  = "python scripts/dev/up.py up"
+	devDatabase  = "slaydrip"
+	testDatabase = "slaydrip_test"
+)
+
+// Stack is the subset of .stack/stack.json that the tests read.
+type Stack struct {
+	TestDatabaseURL string            `json:"test_database_url"`
+	Env             map[string]string `json:"env"`
 }
 
-// Get returns the value of key, falling back to the local default.
-func Get(t *testing.T, key string) string {
-	t.Helper()
-	v := os.Getenv(key)
+// ReadStack loads and parses a stack file. A missing file names the entry script.
+func ReadStack(path string) (Stack, error) {
+	var s Stack
+	data, err := os.ReadFile(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		return s, fmt.Errorf("stack file %s not found: start the local stack with `%s` from the worktree root", path, entryScript)
+	}
+	if err != nil {
+		return s, fmt.Errorf("read stack file %s: %w", path, err)
+	}
+	if err := json.Unmarshal(data, &s); err != nil {
+		return s, fmt.Errorf("parse stack file %s: %w", path, err)
+	}
+	return s, nil
+}
+
+// CheckTestDatabaseURL rejects any URL that does not point at the dedicated test database.
+func CheckTestDatabaseURL(raw string) error {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return fmt.Errorf("database URL is not valid: %w", err)
+	}
+	name := strings.TrimPrefix(u.Path, "/")
+	if name == devDatabase {
+		return fmt.Errorf("refusing to use the dev database %q in tests; use %q (run `%s`)", devDatabase, testDatabase, entryScript)
+	}
+	if name != testDatabase {
+		return fmt.Errorf("database %q is not the test database %q", name, testDatabase)
+	}
+	return nil
+}
+
+// Resolve returns the value of key. A process env var wins, then the stack file.
+// DATABASE_URL always comes from the stack's test database and is checked.
+func Resolve(key string, getenv func(string) string, s Stack) (string, error) {
+	v := getenv(key)
 	if v == "" {
-		v = localDefaults[key]
+		if key == "DATABASE_URL" {
+			v = s.TestDatabaseURL
+		} else {
+			v = s.Env[key]
+		}
 	}
 	if v == "" {
-		t.Fatalf("%s must be set for integration tests (see docs/local-development.md)", key)
+		return "", fmt.Errorf("%s is not set: it is missing from the stack file (run `%s`)", key, entryScript)
+	}
+	if key == "DATABASE_URL" {
+		if err := CheckTestDatabaseURL(v); err != nil {
+			return "", err
+		}
+	}
+	return v, nil
+}
+
+// FindStackFile returns SLAYDRIP_STACK_FILE if set, else the nearest .stack/stack.json
+// above the current directory. If none exists, it returns the path under the current directory.
+func FindStackFile() string {
+	if p := os.Getenv(StackFileEnv); p != "" {
+		return p
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		return filepath.Join(".stack", "stack.json")
+	}
+	return findStackFileFrom(wd)
+}
+
+func findStackFileFrom(dir string) string {
+	for d := dir; ; {
+		candidate := filepath.Join(d, ".stack", "stack.json")
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate
+		}
+		parent := filepath.Dir(d)
+		if parent == d {
+			return filepath.Join(dir, ".stack", "stack.json")
+		}
+		d = parent
+	}
+}
+
+// Get returns the resolved value of key or fails the test with a clear message.
+func Get(t *testing.T, key string) string {
+	t.Helper()
+	s := load(t)
+	v, err := Resolve(key, os.Getenv, s)
+	if err != nil {
+		t.Fatalf("%v", err)
 	}
 	return v
 }
@@ -42,4 +131,13 @@ func Bool(t *testing.T, key string) bool {
 		t.Fatalf("%s must be true or false", key)
 	}
 	return v
+}
+
+func load(t *testing.T) Stack {
+	t.Helper()
+	s, err := ReadStack(FindStackFile())
+	if err != nil {
+		t.Fatalf("%v", err)
+	}
+	return s
 }

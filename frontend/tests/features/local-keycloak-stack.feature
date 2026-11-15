@@ -1,4 +1,4 @@
-@S1-03 @mode:serial @stack-lifecycle
+@S1-03 @mode:serial
 Feature: Local identity provider stack acceptance tests
   As a considered dresser
   I want the local identity provider's start-up and discovery behaviour checked by executable tests
@@ -6,12 +6,14 @@ Feature: Local identity provider stack acceptance tests
 
   # Executable copy of the stack and discovery scenarios in docs/specs/S1-03-local-keycloak.md (S1-03.06).
   # Keep the two in step. The scenarios share one local stack, so they run in order (serial mode).
-  # No browser is used: HTTP goes through the Playwright request API and docker compose runs as a child process.
+  # The host starts the stack with "docker compose up -d" (docker compose down stops it). The tests never
+  # start or stop the stack and never run docker compose: they only check that the running stack answers.
+  # No browser is used: HTTP goes through the Playwright request API.
 
-  @timeout:900000
+  @timeout:300000
   Scenario: The local identity provider starts beside PostgreSQL and the S3 stand-in
-    Given the local stack is stopped
-    When I run "docker compose up -d" from the repo root
+    Given the local stack was started on the host with "docker compose up -d"
+    When I check the running services
     Then the keycloak service is running and reports healthy
     And keycloak listens on 127.0.0.1 only
     And the database and object-storage services are still running
