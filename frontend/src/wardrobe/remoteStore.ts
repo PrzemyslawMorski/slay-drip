@@ -5,7 +5,7 @@ import type { WardrobeStore } from './store';
 // Wardrobe for a signed-in person. The server is the source of truth. Routes used:
 //   GET    /consents/wardrobe-photos        consent record (404 when none was given)
 //   PUT    /consents/wardrobe-photos        {granted, wordingVersion}; granted false deletes the photos
-//   GET    /wardrobe/items                  [{id, number, addedAt}]
+//   GET    /wardrobe/items                  {items: [{id, number, addedAt}]}
 //   POST   /wardrobe/items                  multipart field "photo"
 //   GET    /wardrobe/items/{id}/photo       image bytes
 //   DELETE /wardrobe/items/{id}
@@ -48,7 +48,8 @@ export const accountWardrobeStore: WardrobeStore = {
   setConsent: setRemoteConsent,
   async listItems(): Promise<WardrobeItem[]> {
     const response = await apiFetch(ITEMS_PATH);
-    const items = (await response.json()) as ItemResponse[];
+    // The API wraps the list: {"items": [...]} (openapi.yaml, GET /wardrobe/items).
+    const { items } = (await response.json()) as { items: ItemResponse[] };
     return Promise.all(
       items.map(async (item) => {
         const photoResponse = await apiFetch(`${ITEMS_PATH}/${item.id}/photo`);
