@@ -18,6 +18,14 @@ export const en = {
     wardrobe: 'My wardrobe',
     outfits: 'My outfits',
   },
+  carousel: {
+    label: 'Wardrobe items',
+    roleDescription: 'carousel',
+    slideRoleDescription: 'slide',
+    previous: 'Previous item',
+    next: 'Next item',
+    position: (current: number, total: number) => `${current} of ${total}`,
+  },
   wardrobe: {
     heading: 'My wardrobe',
     empty: 'Your wardrobe is empty. Add a photo of a clothing item to start.',

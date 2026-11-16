@@ -8,10 +8,10 @@ interface AppNavProps {
 
 export function AppNav({ current, onWardrobe, onOutfits }: AppNavProps) {
   return (
-    <nav aria-label={en.nav.label} className="button-row">
+    <nav aria-label={en.nav.label} className="segmented">
       <button
         type="button"
-        className="button"
+        className="segment"
         aria-current={current === 'wardrobe' ? 'page' : undefined}
         onClick={onWardrobe}
       >
@@ -19,7 +19,7 @@ export function AppNav({ current, onWardrobe, onOutfits }: AppNavProps) {
       </button>
       <button
         type="button"
-        className="button"
+        className="segment"
         aria-current={current === 'outfits' ? 'page' : undefined}
         onClick={onOutfits}
       >
