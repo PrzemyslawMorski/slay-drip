@@ -27,7 +27,9 @@ export function stackFilePath(): string {
 export function readStack(): StackFile {
   const file = stackFilePath();
   if (!existsSync(file)) {
-    throw new Error(`The stack file ${file} does not exist. Start this worktree's stack first: ${START_COMMAND}`);
+    throw new Error(
+      `The stack file ${file} does not exist. Start this worktree's stack first: ${START_COMMAND}`,
+    );
   }
   const data = JSON.parse(readFileSync(file, 'utf8')) as Partial<StackFile>;
   if (!data.project || !data.ports || !data.urls?.host?.web || !data.urls.host.api) {
