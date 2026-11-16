@@ -1,0 +1,53 @@
+name: Nightly integration
+
+# Runs the full browser acceptance suite against the local stack, the same one developers run (ADR-0014, ADR-0016).
+# It is too heavy for every pull request, so it runs nightly and on demand. Read-only. No secrets, no deploy step.
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+
+      - name: Install Playwright browser
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Start the local stack
+        # The acceptance tests read this worktree's stack file (ADR-0016). The stack is the one local development uses.
+        run: python3 scripts/dev/up.py up
+
+      - name: Acceptance tests
+        working-directory: frontend
+        run: npm run test:acceptance
+
+      - name: Stop the local stack
+        if: always()
+        run: python3 scripts/dev/up.py down
