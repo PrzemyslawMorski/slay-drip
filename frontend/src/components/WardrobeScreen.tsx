@@ -5,7 +5,7 @@ import type { WardrobeItem } from '../storage/localDb';
 import type { WardrobeStore } from '../wardrobe/store';
 import { AppNav } from './AppNav';
 import { ConsentPanel } from './ConsentPanel';
-import { PhotoGrid } from './PhotoGrid';
+import { WardrobeCarousel } from './WardrobeCarousel';
 
 const ERROR_MESSAGES: Record<RejectionReason, string> = {
   unsupported: en.upload.unsupported,
@@ -184,7 +184,7 @@ export function WardrobeScreen({ store, onOpenOutfits, onCreateOutfit }: Wardrob
       {items.length === 0 ? (
         <p className="empty">{en.wardrobe.empty}</p>
       ) : (
-        <PhotoGrid items={items} onDelete={setItemToDelete} />
+        <WardrobeCarousel items={items} onDelete={setItemToDelete} />
       )}
 
       {itemToDelete && (
