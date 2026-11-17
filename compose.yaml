@@ -58,10 +58,11 @@ services:
     healthcheck:
       # The image ships bash but no curl. The management port (9000) serves /health/ready.
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.0\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '\"status\": \"UP\"'"]
-      interval: 5s
+      interval: 1s
       timeout: 3s
-      retries: 30
+      retries: 150
       start_period: 20s
+      start_interval: 1s
     restart: unless-stopped
 
   api:

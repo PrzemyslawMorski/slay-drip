@@ -6,11 +6,15 @@ Run with: python -m unittest scripts/dev/test_up.py   (or python scripts/dev/tes
 
 from __future__ import annotations
 
+import argparse
 import copy
+import threading
 import json
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
+from tempfile import TemporaryDirectory
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import stack_config as sc  # noqa: E402
@@ -102,6 +106,38 @@ class StackValuesTests(unittest.TestCase):
 
     def test_the_stack_file_body_is_valid_json_for_the_readers(self) -> None:
         json.dumps(self.values)
+
+
+class StartupSequencingTests(unittest.TestCase):
+    def test_database_preparation_overlaps_keycloak_readiness_and_web_starts_early(self) -> None:
+        database_ready = threading.Event()
+        calls = []
+
+        def healthy(alloc, services, timeout):
+            if services == ("keycloak",):
+                self.assertTrue(database_ready.wait(2), "database work waited for Keycloak")
+
+        def database(alloc):
+            database_ready.set()
+
+        with TemporaryDirectory() as folder, \
+                patch.object(up, "RENDERED_REALM_DIR", Path(folder)), \
+                patch.object(up, "read_stack", return_value=None), \
+                patch.object(sc, "allocate", return_value={"project": "slaydrip-test0001", "ports": sc.block_ports(0)}), \
+                patch.object(sc, "write_stack_file"), \
+                patch.object(up, "compose", side_effect=lambda alloc, *args, **kwargs: calls.append(args)), \
+                patch.object(up, "require_services_healthy", side_effect=healthy), \
+                patch.object(up, "create_test_database", side_effect=database), \
+                patch.object(up, "ensure_bucket") as bucket, \
+                patch.object(up, "_probe_keycloak", return_value=(True, "")) as keycloak, \
+                patch.object(up, "_probe", return_value=(True, "")) as probe:
+            self.assertEqual(up.cmd_up(argparse.Namespace(budget=30)), 0)
+        self.assertIn("web", calls[0])
+        self.assertIn("--no-deps", calls[0])
+        self.assertEqual(calls[2], ("up", "-d", "--no-build", "api"))
+        bucket.assert_called_once()
+        keycloak.assert_called_once()
+        self.assertEqual(probe.call_count, 2)
 
 
 class ComposeJsonTests(unittest.TestCase):

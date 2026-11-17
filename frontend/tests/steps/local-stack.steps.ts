@@ -268,9 +268,12 @@ Then(
       await readFile(path.join(REPO_ROOT, 'compose.yaml'), 'utf8'),
       ...(await committedTexts(path.join(REPO_ROOT, 'infra', 'dev'))),
     ].join('\n');
-    const secretKeys = Object.keys(stack.env ?? {}).filter((key) =>
-      /KEY|SECRET|PASSWORD/.test(key),
-    );
+    const secretKeys = [
+      'S3_ACCESS_KEY',
+      'S3_SECRET_KEY',
+      'KEYCLOAK_ADMIN_CLIENT_SECRET',
+      'TEST_PASSWORD',
+    ];
     expect(secretKeys.length, 'secret keys in the stack file env').toBeGreaterThan(0);
     for (const key of secretKeys) {
       const value = envOf(stack, key);

@@ -29,6 +29,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Iterator, Optional
@@ -517,26 +518,33 @@ def cmd_up(args: argparse.Namespace) -> int:
         )
         sc.write_stack_file(REPO_ROOT, values)
 
-    with timer.step("build api image (cache hit is quick)", build=True):
-        compose(alloc, "build", "api", capture=False, timeout=3600)
+    with timer.step("start database, object storage, keycloak and web"):
+        compose(alloc, "up", "-d", "--no-build", "--no-deps", "database", "object-storage", "keycloak", "web", timeout=900)
 
-    with timer.step("start database, object storage and keycloak"):
-        compose(alloc, "up", "-d", "--no-build", "database", "object-storage", "keycloak", timeout=900)
+    def prepare_database_and_api() -> None:
+        with timer.step("build api image (cache hit is quick)", build=True):
+            compose(alloc, "build", "api", capture=False, timeout=3600)
+        with timer.step("wait for database to be healthy"):
+            require_services_healthy(alloc, ("database",), timeout=300)
+        with timer.step("create and migrate the test and dev databases"):
+            create_test_database(alloc)
+        with timer.step("start api"):
+            compose(alloc, "up", "-d", "--no-build", "api", timeout=900)
 
-    with timer.step("wait for database and keycloak to be healthy"):
-        require_services_healthy(alloc, HEALTH_CHECKED, timeout=300)
+    def prepare_s3() -> None:
+        with timer.step("create the S3 bucket"):
+            ensure_bucket(values)
 
-    with timer.step("create the S3 bucket"):
-        ensure_bucket(values)
+    def prepare_keycloak() -> None:
+        with timer.step("wait for keycloak to be healthy"):
+            require_services_healthy(alloc, ("keycloak",), timeout=300)
+        with timer.step("check keycloak and the synthetic test user"):
+            wait_for("keycloak discovery", lambda: _probe_keycloak(values, template), timeout=120)
 
-    with timer.step("create and migrate the test and dev databases"):
-        create_test_database(alloc)
-
-    with timer.step("check keycloak and the synthetic test user"):
-        wait_for("keycloak discovery", lambda: _probe_keycloak(values, template), timeout=120)
-
-    with timer.step("start api and web"):
-        compose(alloc, "up", "-d", "--no-build", "api", "web", timeout=900)
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = [executor.submit(task) for task in (prepare_database_and_api, prepare_s3, prepare_keycloak)]
+        for future in futures:
+            future.result()
 
     with timer.step("wait for the api and the web dev server"):
         api_url = f"{values['urls']['host']['api']}/healthz"
@@ -557,7 +565,7 @@ def cmd_up(args: argparse.Namespace) -> int:
     print(f"api   {values['urls']['host']['api']}", flush=True)
     print(f"keycloak {values['urls']['host']['keycloak']}", flush=True)
     print(f"test database {TEST_DATABASE} (user {TEST_USERNAME}, password in the stack file)", flush=True)
-    print(f"timing: {total} s total, build {timer.build_seconds} s (outside the budget)", flush=True)
+    print(f"timing: {total} s total (including build), build {timer.build_seconds} s", flush=True)
     if args.budget is not None and total > args.budget:
         raise UpError(f"over budget: {total} s is more than {args.budget} s")
     print(f"OK: local stack is up for {alloc['project']}", flush=True)
