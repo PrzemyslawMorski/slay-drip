@@ -50,6 +50,7 @@ services:
       # The issuer is the browser's URL for this worktree's Keycloak port (ADR-0016).
       KC_HOSTNAME: http://127.0.0.1:${SLAYDRIP_PORT_KEYCLOAK:?start the stack with python scripts/dev/up.py up}
       KC_HEALTH_ENABLED: "true"
+      JAVA_OPTS_APPEND: "-XX:TieredStopAtLevel=1"
     ports:
       - "127.0.0.1:${SLAYDRIP_PORT_KEYCLOAK}:8080"
     volumes:

@@ -521,13 +521,16 @@ def cmd_up(args: argparse.Namespace) -> int:
     with timer.step("start database, object storage, keycloak and web"):
         compose(alloc, "up", "-d", "--no-build", "--no-deps", "database", "object-storage", "keycloak", "web", timeout=900)
 
-    def prepare_database_and_api() -> None:
+    def build_api() -> None:
         with timer.step("build api image (cache hit is quick)", build=True):
             compose(alloc, "build", "api", capture=False, timeout=3600)
+
+    def prepare_database_and_api() -> None:
         with timer.step("wait for database to be healthy"):
             require_services_healthy(alloc, ("database",), timeout=300)
         with timer.step("create and migrate the test and dev databases"):
             create_test_database(alloc)
+        api_build.result()
         with timer.step("start api"):
             compose(alloc, "up", "-d", "--no-build", "api", timeout=900)
 
@@ -541,7 +544,8 @@ def cmd_up(args: argparse.Namespace) -> int:
         with timer.step("check keycloak and the synthetic test user"):
             wait_for("keycloak discovery", lambda: _probe_keycloak(values, template), timeout=120)
 
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        api_build = executor.submit(build_api)
         futures = [executor.submit(task) for task in (prepare_database_and_api, prepare_s3, prepare_keycloak)]
         for future in futures:
             future.result()

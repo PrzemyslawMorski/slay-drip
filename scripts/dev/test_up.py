@@ -111,7 +111,17 @@ class StackValuesTests(unittest.TestCase):
 class StartupSequencingTests(unittest.TestCase):
     def test_database_preparation_overlaps_keycloak_readiness_and_web_starts_early(self) -> None:
         database_ready = threading.Event()
+        build_ready = threading.Event()
         calls = []
+
+        def compose(alloc, *args, **kwargs):
+            calls.append(args)
+            if args == ("build", "api"):
+                self.assertTrue(database_ready.wait(2), "database work waited for the API build")
+                build_ready.set()
+            elif args == ("up", "-d", "--no-build", "api"):
+                self.assertTrue(build_ready.is_set(), "API started before its build finished")
+                self.assertTrue(database_ready.is_set(), "API started before database preparation")
 
         def healthy(alloc, services, timeout):
             if services == ("keycloak",):
@@ -125,7 +135,7 @@ class StartupSequencingTests(unittest.TestCase):
                 patch.object(up, "read_stack", return_value=None), \
                 patch.object(sc, "allocate", return_value={"project": "slaydrip-test0001", "ports": sc.block_ports(0)}), \
                 patch.object(sc, "write_stack_file"), \
-                patch.object(up, "compose", side_effect=lambda alloc, *args, **kwargs: calls.append(args)), \
+                patch.object(up, "compose", side_effect=compose), \
                 patch.object(up, "require_services_healthy", side_effect=healthy), \
                 patch.object(up, "create_test_database", side_effect=database), \
                 patch.object(up, "ensure_bucket") as bucket, \

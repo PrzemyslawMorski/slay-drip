@@ -14,8 +14,8 @@ import { REPO_ROOT } from '../support/keycloak-stack';
 
 const { Given, When, Then } = createBdd();
 
-// ADR-0016: the budget for a cold start is 30 seconds (the 10 seconds of the spike goal is not reachable).
-const BUDGET_SECONDS = 30;
+// The owner-approved nightly cold-start budget is two minutes (ADR-0016).
+const BUDGET_SECONDS = 120;
 const UP_SCRIPT = 'scripts/dev/up.py';
 const SECOND_WORKTREE_ENV = 'SLAYDRIP_SECOND_WORKTREE';
 
@@ -61,7 +61,7 @@ function requireUpScript(root: string): void {
   }
 }
 
-// Splits "python scripts/dev/up.py up --budget 30" into arguments. Refuses any other command.
+// Splits "python scripts/dev/up.py up --budget 120" into arguments. Refuses any other command.
 function upPyArgsFrom(command: string): string[] {
   const parts = command.trim().split(/\s+/);
   if (parts[0] !== 'python' || parts[1] !== UP_SCRIPT) {
@@ -197,7 +197,7 @@ When('I run {string}', async ({}, command: string) => {
   states.set(test.info(), { roots: [REPO_ROOT], runs: [run] });
 });
 
-Then('the command exits with code 0 within 30 seconds', () => {
+Then('the command exits with code 0 within 120 seconds', () => {
   const run = singleRun();
   expect(run.exitCode, `up.py exit status, last output line: ${lastLine(run)}`).toBe(0);
   expect(

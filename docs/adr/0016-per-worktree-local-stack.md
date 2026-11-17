@@ -81,3 +81,7 @@ The owner dropped the 30 s start-up cap for this MVP ("no time constraints, smal
 - Unchanged: per-worktree project names and ports, the single entry script, the test database, and the requirement that the concurrency and Playwright checks pass.
 
 This amendment does not change the status, which stays Accepted.
+
+## Amendment 2026-11-17
+
+For PR #60, the owner approved a two-minute cold-start acceptance budget for nightly integration, replacing the previous 30 s target and the uncapped MVP amendment. The executable acceptance and S1-08.02 now require `up.py up --budget 120` to exit successfully within 120 s wall clock, including cache-hit image builds. All API, S3, database and Keycloak readiness checks, credential provenance checks and concurrent-worktree isolation checks remain required. Startup optimisations are retained; historical timings above are not evidence of meeting this revised budget.
