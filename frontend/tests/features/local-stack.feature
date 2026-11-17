@@ -5,15 +5,15 @@ Feature: Per-worktree local stack start-up acceptance tests
   So that I and the agents can test it end to end without clashes
 
   # Executable copy of the scenarios in docs/specs/S1-08.02-red-acceptance-cold-start-budget-no-env-and-no-clash-between-worktrees.md.
-  # Keep the two in step. The budget is 30 seconds (ADR-0016), not the 10 seconds of the spike goal.
+  # Keep the two in step. The owner-approved nightly budget is 120 seconds (ADR-0016).
   # The steps run the entry script scripts/dev/up.py as a child process. The test process never runs docker (ADR-0014).
   # The scenarios start and stop the shared local stack, so they run in the stack-lifecycle project, one at a time.
 
   @timeout:900000
-  Scenario: Cold start of the local stack takes at most 30 seconds
+  Scenario: Cold start of the local stack takes at most 120 seconds
     Given a worktree with no running stack and the stack's images already pulled
-    When I run "python scripts/dev/up.py up --budget 30"
-    Then the command exits with code 0 within 30 seconds
+    When I run "python scripts/dev/up.py up --budget 120"
+    Then the command exits with code 0 within 120 seconds
     And the API, the S3 bucket, the test database and Keycloak all answer their checks
 
   @timeout:900000

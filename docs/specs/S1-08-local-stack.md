@@ -5,6 +5,10 @@
 **Depends on:** [ADR-0016](../adr/0016-per-worktree-local-stack.md) (Accepted 2026-11-15), spike S1-08.01 (Done)
 **Related:** [ADR-0005](../adr/0005-local-cloud-emulation.md), [ADR-0010](../adr/0010-identity-provider-keycloak.md), [ADR-0014](../adr/0014-containerised-dev-tooling.md), [S1-07](S1-07-containerised-dev-tooling.md), [S1-03](S1-03-local-keycloak.md), [local development guide](../local-development.md), [requirements](../requirements.md) (no requirement names local tooling; the closest reference is the local-run rule in CLAUDE.md, see Risks)
 
+## Current cold-start budget (2026-11-17)
+
+The owner approved a 120 s wall-clock budget for nightly cold-start acceptance in PR #60, with startup optimisations retained and all readiness checks unchanged. This supersedes the historical 30 s wording and uncapped MVP scope below. Current executable criteria are in [S1-08.02](S1-08.02-red-acceptance-cold-start-budget-no-env-and-no-clash-between-worktrees.md); [ADR-0016](../adr/0016-per-worktree-local-stack.md) records the amendment.
+
 ## Status (2026-11-15)
 
 **MVP scope change (owner, 2026-11-15).** The owner dropped the 30 s start-up cap for this MVP ("no time constraints, smaller MVP, get the build working"). The 30 s wording in the Goals, Design, Acceptance criteria, Test plan and Risks below is kept as written, for history. ADR-0016 records the same change in an Amendment dated 2026-11-15; its status stays Accepted. 30 s stays the target for a later iteration (open decision 5). The spike numbers stand: the stock stack takes about 44 s median, so 10 s is not reachable. The concurrency and Playwright checks still apply.

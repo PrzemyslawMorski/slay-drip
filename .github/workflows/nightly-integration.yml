@@ -40,6 +40,18 @@ jobs:
         working-directory: frontend
         run: npx playwright install --with-deps chromium
 
+      - name: Create a second worktree at the tested commit
+        shell: python
+        run: |
+          import os
+          import subprocess
+          from pathlib import Path
+
+          root = Path(os.environ["RUNNER_TEMP"]) / "slaydrip-second-worktree"
+          subprocess.run(["git", "worktree", "add", "--detach", str(root), "HEAD"], check=True)
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
+              env.write(f"SLAYDRIP_SECOND_WORKTREE={root}\n")
+
       - name: Start the local stack
         # The acceptance tests read this worktree's stack file (ADR-0016). The stack is the one local development uses.
         run: python3 scripts/dev/up.py up
@@ -50,4 +62,17 @@ jobs:
 
       - name: Stop the local stack
         if: always()
-        run: python3 scripts/dev/up.py down
+        shell: python
+        run: |
+          import os
+          import subprocess
+
+          results = [subprocess.run(["python3", "scripts/dev/up.py", "down"]).returncode]
+          second = os.environ.get("SLAYDRIP_SECOND_WORKTREE")
+          if second:
+              try:
+                  results.append(subprocess.run(["python3", "scripts/dev/up.py", "down"], cwd=second).returncode)
+              finally:
+                  subprocess.run(["git", "worktree", "remove", "--force", second], check=True)
+          if any(results):
+              raise SystemExit("Local stack teardown failed")
